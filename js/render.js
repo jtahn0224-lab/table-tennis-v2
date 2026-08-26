@@ -165,6 +165,10 @@ function openLevelGuideModal() {
   openModal('levelGuideModal');
 }
 
+function openTimetableModal() {
+  openModal('timetableModal');
+}
+
 function renderUI() {
   checkReadOnlyGuard();
   const student = getCurrentStudent();
@@ -180,6 +184,12 @@ function renderUI() {
   if (settingsBtn) {
     if (isAdmin) settingsBtn.classList.remove('hidden');
     else settingsBtn.classList.add('hidden');
+  }
+
+  const timetableBtn = document.getElementById('timetableBtn');
+  if (timetableBtn) {
+    if (isAdmin) timetableBtn.classList.remove('hidden');
+    else timetableBtn.classList.add('hidden');
   }
 
   const modeSwitchBtn = document.getElementById('modeSwitchBtn');
