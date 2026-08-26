@@ -801,6 +801,11 @@
         </div>
 
         <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">미션 설명 및 수행 팁 (선택)</label>
+          <textarea id="missionDescInput" rows="2" placeholder="미션 수행 팁, 올바른 자세, 주의사항 등을 입력하세요." class="w-full px-3 py-2 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs font-medium resize-none"></textarea>
+        </div>
+
+        <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">적용 대상</label>
           <div class="grid grid-cols-2 gap-2">
             <label class="cursor-pointer">
@@ -865,6 +870,77 @@
           미션 저장하기
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Mission Detail & Description Modal -->
+  <div id="missionDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop max-h-[90vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-start mb-3.5 pb-2.5 border-b border-slate-100 shrink-0">
+        <div class="min-w-0 pr-2">
+          <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
+            <span id="detailMissionWeekBadge" class="bg-emerald-800 text-white text-[11px] font-black px-2.5 py-0.5 rounded-lg shadow-2xs">1주차</span>
+            <span id="detailMissionCategoryBadge" class="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-lg">개인 챌린지</span>
+            <span id="detailMissionDifficultyBadge" class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-lg">보통</span>
+            <span id="detailMissionPointsBadge" class="bg-amber-100 text-amber-900 text-[11px] font-black px-2.5 py-0.5 rounded-lg border border-amber-200 shadow-2xs">+20 P</span>
+          </div>
+          <h3 id="detailMissionTitle" class="text-base sm:text-lg font-black text-slate-900 leading-snug">미션 제목</h3>
+        </div>
+        <button onclick="closeModal('missionDetailModal')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors shrink-0">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto space-y-3.5 pr-1 text-left">
+        <!-- Status Banner -->
+        <div id="detailMissionStatusBanner" class="p-3 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between shadow-2xs">
+          <span id="detailMissionStatusText">미완료</span>
+          <span id="detailMissionStatusIcon" class="text-lg">✨</span>
+        </div>
+
+        <!-- Description Section -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs sm:text-sm font-black text-slate-800 flex items-center space-x-1.5">
+              <span class="text-base">💡</span>
+              <span>미션 가이드 및 수행 요령</span>
+            </label>
+            <!-- Teacher Only Edit Toggle Button (Large & Visible) -->
+            <button id="detailDescEditBtn" onclick="toggleMissionDescEdit(true)" class="hidden text-xs font-black text-indigo-700 hover:text-white bg-indigo-100 hover:bg-indigo-600 border border-indigo-200 hover:border-indigo-600 px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs active:scale-95">
+              <i class="fa-solid fa-pen-to-square text-xs"></i>
+              <span>설명 수정하기 ✏️</span>
+            </button>
+          </div>
+
+          <!-- Student Read-Only View -->
+          <div id="detailDescReadView" class="p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 border border-emerald-200/90 rounded-2xl text-xs sm:text-sm text-slate-800 leading-relaxed min-h-[90px] whitespace-pre-wrap font-medium shadow-inner">
+            설명 내용이 여기에 표시됩니다.
+          </div>
+
+          <!-- Teacher Edit Form (Hidden by default) -->
+          <div id="detailDescEditView" class="hidden space-y-2.5">
+            <textarea id="detailDescEditTextarea" rows="4" placeholder="미션 설명 및 수행 요령을 상세히 입력하세요." class="w-full p-3.5 rounded-2xl border-2 border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm font-medium leading-relaxed resize-none shadow-xs"></textarea>
+            <div class="flex justify-end space-x-2">
+              <button onclick="toggleMissionDescEdit(false)" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors">
+                취소
+              </button>
+              <button onclick="saveMissionDescFromModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center space-x-1.5 active:scale-95 transition-all">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>수정 완료 (저장) 💾</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div id="detailMissionFooter" class="pt-3 border-t border-slate-100 flex space-x-2 shrink-0 mt-3">
+        <button onclick="closeModal('missionDetailModal')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
+          닫기
+        </button>
+      </div>
     </div>
   </div>
 

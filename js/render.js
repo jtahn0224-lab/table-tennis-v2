@@ -526,14 +526,16 @@ function renderMissionsView() {
             : isPending 
               ? 'bg-amber-500 border-amber-500 text-white animate-pulse' 
               : 'border-slate-300 bg-slate-50 hover:border-emerald-500'
-        }">
+        }" title="미션 체크/승인요청">
           <i class="fa-solid ${isDone ? 'fa-check text-sm' : isPending ? 'fa-hourglass-half text-xs animate-spin' : 'fa-check text-xs text-slate-300'}"></i>
         </button>
 
-        <div class="min-w-0 flex-1">
+        <div onclick="openMissionDetailModal('${mission.id}')" class="min-w-0 flex-1 cursor-pointer group select-none">
           <div class="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
             <span class="bg-emerald-800 text-white text-[9px] font-black px-1.5 py-0.2 rounded-md shrink-0 shadow-2xs">[${mission.week || 1}주차]</span>
-            <p class="font-black text-xs text-slate-800 truncate ${isDone ? 'line-through text-slate-500 opacity-90' : ''}">${escapeHtml(mission.title)}</p>
+            <p class="font-black text-xs sm:text-sm text-slate-800 truncate group-hover:text-emerald-700 transition-colors ${isDone ? 'line-through text-slate-500 opacity-90' : ''}">
+              ${escapeHtml(mission.title)}
+            </p>
           </div>
 
           <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
@@ -556,7 +558,13 @@ function renderMissionsView() {
         </div>
       </div>
 
-      <div class="flex items-center space-x-1 shrink-0 relative z-10">
+      <div class="flex items-center space-x-1.5 shrink-0 relative z-10">
+        <!-- 큼직하고 직관적인 설명 보기 버튼 -->
+        <button onclick="openMissionDetailModal('${mission.id}')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-900 font-extrabold text-[11px] sm:text-xs border border-emerald-300 shadow-2xs flex items-center space-x-1 transition-all active:scale-95 hover:shadow-xs" title="미션 설명 및 수행 팁 보기">
+          <span class="text-sm">💡</span>
+          <span class="font-black">설명 보기</span>
+        </button>
+
         ${isAdmin ? `
           <div class="flex flex-col space-y-0.5 mr-1">
             <button onclick="moveMission('${mission.id}', 'up')" class="w-6 h-5 bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-800 rounded flex items-center justify-center text-[10px] font-bold border border-slate-200 transition-colors" title="위로 이동">

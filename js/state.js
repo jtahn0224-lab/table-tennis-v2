@@ -110,7 +110,8 @@ function getInitialMissionsForNewStudent() {
             difficulty: m.difficulty || '보통',
             points: m.points || 20,
             completed: false,
-            pending: false
+            pending: false,
+            description: m.description || ''
           });
         }
       });
@@ -120,6 +121,7 @@ function getInitialMissionsForNewStudent() {
   return Array.from(missionMap.values()).map(m => ({
     ...m,
     completed: false,
-    pending: false
+    pending: false,
+    description: m.description || ''
   }));
 }

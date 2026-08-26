@@ -76,15 +76,105 @@ const ALL_CEREMONIES = [
 
 /* 10-WEEK TABLE TENNIS CURRICULUM DEFAULT MISSIONS */
 const DEFAULT_MISSIONS = [
-  { id: 'm_w1_1', week: 1, title: '쉐이크핸드/펜홀더 라켓 올바른 그립 잡기', category: 'personal', difficulty: '쉬움', points: 10, completed: false, pending: false },
-  { id: 'm_w1_2', week: 1, title: '포핸드 stroke 기본 랠리 20회 성공', category: 'personal', difficulty: '보통', points: 20, completed: false, pending: false },
-  { id: 'm_w2_1', week: 2, title: '백핸드 쇼트 기본자세 및 10회 리턴', category: 'personal', difficulty: '쉬움', points: 10, completed: false, pending: false },
-  { id: 'm_w2_2', week: 2, title: '포핸드 & 백핸드 대각선 랠리 교대 성공', category: 'personal', difficulty: '보통', points: 20, completed: false, pending: false },
-  { id: 'm_w3_1', week: 3, title: '정확한 법규 대각선 서브 5회 성공', category: 'personal', difficulty: '보통', points: 20, completed: false, pending: false },
-  { id: 'm_w4_1', week: 4, title: '2보 풋워크 좌우 이동 포핸드 10회 랠리', category: 'personal', difficulty: '어려움', points: 30, completed: false, pending: false },
-  { id: 'm_w5_1', week: 5, title: '포핸드 드라이브 상회전 공 만들기', category: 'personal', difficulty: '어려움', points: 30, completed: false, pending: false },
-  { id: 'm_w8_1', week: 8, title: '파트너와 함께 10구 복식 랠리 성공', category: 'team', difficulty: '보통', points: 20, completed: false, pending: false },
-  { id: 'm_w10_1', week: 10, title: '학급 토너먼트 경기 심판 활동 성실 수행', category: 'team', difficulty: '보통', points: 20, completed: false, pending: false }
+  { 
+    id: 'm_w1_1', 
+    week: 1, 
+    title: '쉐이크핸드/펜홀더 라켓 올바른 그립 잡기', 
+    category: 'personal', 
+    difficulty: '쉬움', 
+    points: 10, 
+    completed: false, 
+    pending: false,
+    description: '라켓을 손에 쥐었을 때 악수하듯 자연스럽게 잡고, 검지와 엄지로 라켓 면을 살짝 지지합니다. 손목에 무리한 힘이 들어가지 않도록 편안한 각도를 유지해 보세요.' 
+  },
+  { 
+    id: 'm_w1_2', 
+    week: 1, 
+    title: '포핸드 stroke 기본 랠리 20회 성공', 
+    category: 'personal', 
+    difficulty: '보통', 
+    points: 20, 
+    completed: false, 
+    pending: false,
+    description: '상대방과 부드럽게 포핸드로 공을 주고받으며 20회 연속 랠리를 달성합니다. 타구 시 라켓 면이 정면을 향하고 몸 앞쪽 타점에서 맞추는 것이 핵심입니다.' 
+  },
+  { 
+    id: 'm_w2_1', 
+    week: 2, 
+    title: '백핸드 쇼트 기본자세 및 10회 리턴', 
+    category: 'personal', 
+    difficulty: '쉬움', 
+    points: 10, 
+    completed: false, 
+    pending: false,
+    description: '몸의 중심을 살짝 낮추고 라켓을 가슴 앞쪽에 둔 상태에서, 공이 바운드된 직후 가볍게 밀어주듯 쇼트 10회를 성공합니다.' 
+  },
+  { 
+    id: 'm_w2_2', 
+    week: 2, 
+    title: '포핸드 & 백핸드 대각선 랠리 교대 성공', 
+    category: 'personal', 
+    difficulty: '보통', 
+    points: 20, 
+    completed: false, 
+    pending: false,
+    description: '포핸드 1번, 백핸드 1번 번갈아 치며 대각선 코스로 공을 컨트롤하는 감각과 라켓 전환 연습을 진행합니다.' 
+  },
+  { 
+    id: 'm_w3_1', 
+    week: 3, 
+    title: '정확한 법규 대각선 서브 5회 성공', 
+    category: 'personal', 
+    difficulty: '보통', 
+    points: 20, 
+    completed: false, 
+    pending: false,
+    description: '손바닥 위에 공을 올려두고 16cm 이상 정직하게 띄운 뒤, 대각선 코스로 정확하게 바운드시키는 규정 서브를 5회 성공합니다.' 
+  },
+  { 
+    id: 'm_w4_1', 
+    week: 4, 
+    title: '2보 풋워크 좌우 이동 포핸드 10회 랠리', 
+    category: 'personal', 
+    difficulty: '어려움', 
+    points: 30, 
+    completed: false, 
+    pending: false,
+    description: '제자리에서 치지 않고 좌우 2스텝으로 빠르게 발을 움직여 적절한 거리를 확보한 후 안정적인 포핸드 랠리를 이어갑니다.' 
+  },
+  { 
+    id: 'm_w5_1', 
+    week: 5, 
+    title: '포핸드 드라이브 상회전 공 만들기', 
+    category: 'personal', 
+    difficulty: '어려움', 
+    points: 30, 
+    completed: false, 
+    pending: false,
+    description: '라켓을 아래에서 위로 회전시키듯 타구하여 공에 강한 전진 상회전(Top-spin)을 걸어 네트를 부드럽게 넘어 테이블에 꽂히도록 연습합니다.' 
+  },
+  { 
+    id: 'm_w8_1', 
+    week: 8, 
+    title: '파트너와 함께 10구 복식 랠리 성공', 
+    category: 'team', 
+    difficulty: '보통', 
+    points: 20, 
+    completed: false, 
+    pending: false,
+    description: '복식 경기 규칙에 맞추어 짝과 번갈아 교대로 공을 치며, 서로 호흡을 맞추어 10구 이상 랠리를 달성합니다.' 
+  },
+  { 
+    id: 'm_w10_1', 
+    week: 10, 
+    title: '학급 토너먼트 경기 심판 활동 성실 수행', 
+    category: 'team', 
+    difficulty: '보통', 
+    points: 20, 
+    completed: false, 
+    pending: false,
+    description: '학급 토너먼트 경기에서 공정하게 득점 및 서브권을 선언하고, 라이브 스코어보드를 성실하게 조작하여 원활한 경기 진행을 돕습니다.' 
+  }
 ];
 
 const DEFAULT_REWARDS = [
