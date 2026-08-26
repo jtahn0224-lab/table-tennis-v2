@@ -125,62 +125,81 @@ function openMissionDetailModal(missionId) {
 
   const isAdmin = state.role === 'admin';
 
-  // 1. 헤더 배지 & 타이틀
-  const weekBadge = document.getElementById('detailMissionWeekBadge');
-  const catBadge = document.getElementById('detailMissionCategoryBadge');
-  const diffBadge = document.getElementById('detailMissionDifficultyBadge');
-  const ptsBadge = document.getElementById('detailMissionPointsBadge');
   const titleEl = document.getElementById('detailMissionTitle');
-
-  if (weekBadge) weekBadge.innerText = `${mission.week || 1}주차`;
-  if (catBadge) {
-    catBadge.innerText = mission.category === 'team' ? '팀 챌린지' : '개인 챌린지';
-    catBadge.className = mission.category === 'team' 
-      ? 'bg-teal-100 text-teal-800 text-[10px] font-black px-2 py-0.5 rounded-lg' 
-      : 'bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-lg';
-  }
-  if (diffBadge) diffBadge.innerText = mission.difficulty || '보통';
-  if (ptsBadge) ptsBadge.innerText = `+${mission.points || 20} P`;
   if (titleEl) titleEl.innerText = mission.title;
 
-  // 2. 상태 배너
-  const statusBanner = document.getElementById('detailMissionStatusBanner');
-  const statusText = document.getElementById('detailMissionStatusText');
-  const statusIcon = document.getElementById('detailMissionStatusIcon');
+  const teacherBadge = document.getElementById('detailMissionTeacherHeaderBadge');
+  const studentBadges = document.getElementById('detailMissionStudentHeaderBadges');
+  const teacherForm = document.getElementById('detailMissionTeacherEditForm');
+  const studentView = document.getElementById('detailMissionStudentView');
 
-  if (statusBanner && statusText && statusIcon) {
-    if (mission.completed) {
-      statusBanner.className = 'p-2.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 text-xs font-black flex items-center justify-between shadow-2xs';
-      statusText.innerText = '선생님 승인 완료 (도장 획득 💮)';
-      statusIcon.innerText = '💮';
-    } else if (mission.pending) {
-      statusBanner.className = 'p-2.5 rounded-2xl border-2 border-amber-400 bg-amber-50 text-amber-900 text-xs font-black flex items-center justify-between shadow-2xs animate-pulse';
-      statusText.innerText = '선생님 승인 대기 중 (확인 대기 ⏳)';
-      statusIcon.innerText = '⏳';
-    } else {
-      statusBanner.className = 'p-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-between';
-      statusText.innerText = '미완료 (도전 진행 중 🏓)';
-      statusIcon.innerText = '🏓';
+  if (isAdmin) {
+    // 👑 선생님 모드: 전체 편집 폼 활성화
+    if (teacherBadge) teacherBadge.classList.remove('hidden');
+    if (studentBadges) studentBadges.classList.add('hidden');
+    if (teacherForm) teacherForm.classList.remove('hidden');
+    if (studentView) studentView.classList.add('hidden');
+
+    const titleInput = document.getElementById('editMissionTitleInput');
+    const weekSelect = document.getElementById('editMissionWeekSelect');
+    const catSelect = document.getElementById('editMissionCategorySelect');
+    const diffSelect = document.getElementById('editMissionDifficultySelect');
+    const ptsInput = document.getElementById('editMissionPointsInput');
+    const descTextarea = document.getElementById('editMissionDescTextarea');
+
+    if (titleInput) titleInput.value = mission.title || '';
+    if (weekSelect) weekSelect.value = String(mission.week || 1);
+    if (catSelect) catSelect.value = mission.category || 'personal';
+    if (diffSelect) diffSelect.value = mission.difficulty || '보통';
+    if (ptsInput) ptsInput.value = mission.points || 20;
+    if (descTextarea) descTextarea.value = mission.description || '';
+  } else {
+    // 🏓 학생 모드: 읽기 전용 뷰 활성화
+    if (teacherBadge) teacherBadge.classList.add('hidden');
+    if (studentBadges) studentBadges.classList.remove('hidden');
+    if (teacherForm) teacherForm.classList.add('hidden');
+    if (studentView) studentView.classList.remove('hidden');
+
+    const weekBadge = document.getElementById('detailMissionWeekBadge');
+    const catBadge = document.getElementById('detailMissionCategoryBadge');
+    const diffBadge = document.getElementById('detailMissionDifficultyBadge');
+    const ptsBadge = document.getElementById('detailMissionPointsBadge');
+
+    if (weekBadge) weekBadge.innerText = `${mission.week || 1}주차`;
+    if (catBadge) {
+      catBadge.innerText = mission.category === 'team' ? '팀 챌린지' : '개인 챌린지';
+      catBadge.className = mission.category === 'team' 
+        ? 'bg-teal-100 text-teal-800 text-[10px] font-black px-2 py-0.5 rounded-lg' 
+        : 'bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-lg';
     }
+    if (diffBadge) diffBadge.innerText = mission.difficulty || '보통';
+    if (ptsBadge) ptsBadge.innerText = `+${mission.points || 20} P`;
+
+    const statusBanner = document.getElementById('detailMissionStatusBanner');
+    const statusText = document.getElementById('detailMissionStatusText');
+    const statusIcon = document.getElementById('detailMissionStatusIcon');
+
+    if (statusBanner && statusText && statusIcon) {
+      if (mission.completed) {
+        statusBanner.className = 'p-2.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 text-xs font-black flex items-center justify-between shadow-2xs';
+        statusText.innerText = '선생님 승인 완료 (도장 획득 💮)';
+        statusIcon.innerText = '💮';
+      } else if (mission.pending) {
+        statusBanner.className = 'p-2.5 rounded-2xl border-2 border-amber-400 bg-amber-50 text-amber-900 text-xs font-black flex items-center justify-between shadow-2xs animate-pulse';
+        statusText.innerText = '선생님 승인 대기 중 (확인 대기 ⏳)';
+        statusIcon.innerText = '⏳';
+      } else {
+        statusBanner.className = 'p-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-between';
+        statusText.innerText = '미완료 (도전 진행 중 🏓)';
+        statusIcon.innerText = '🏓';
+      }
+    }
+
+    const readView = document.getElementById('detailDescReadView');
+    if (readView) readView.innerText = mission.description || '등록된 미션 설명이 없습니다.';
   }
 
-  // 3. 설명 (Description) 뷰 & 수정 버튼
-  const editBtn = document.getElementById('detailDescEditBtn');
-  const readView = document.getElementById('detailDescReadView');
-  const editTextarea = document.getElementById('detailDescEditTextarea');
-
-  if (readView) readView.innerText = mission.description || '등록된 미션 설명이 없습니다.';
-  if (editTextarea) editTextarea.value = mission.description || '';
-
-  if (editBtn) {
-    if (isAdmin) editBtn.classList.remove('hidden');
-    else editBtn.classList.add('hidden');
-  }
-
-  // 항상 읽기 모드로 시작
-  toggleMissionDescEdit(false);
-
-  // 4. 푸터 액션 버튼들
+  // 푸터 액션 버튼들
   const footer = document.getElementById('detailMissionFooter');
   if (footer) {
     let actionButtons = '';
@@ -195,7 +214,7 @@ function openMissionDetailModal(missionId) {
           `;
         } else {
           actionButtons += `
-            <button onclick="toggleMissionCompletion(getCurrentStudent(), getCurrentStudent().missions.find(m=>m.id==='${mission.id}')); openMissionDetailModal('${mission.id}');" class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
+            <button onclick="toggleMissionCompletion(getCurrentStudent(), getCurrentStudent().missions.find(m=>m.id==='${mission.id}')); openMissionDetailModal('${mission.id}');" class="flex-1 bg-rose-100 hover:rose-200 text-rose-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
               완료 취소
             </button>
           `;
@@ -223,6 +242,79 @@ function openMissionDetailModal(missionId) {
   openModal('missionDetailModal');
 }
 
+function saveFullMissionEditFromModal() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 미션을 수정할 수 있습니다.', '🔒');
+    return;
+  }
+
+  const student = getCurrentStudent();
+  const mission = student ? student.missions.find(m => m.id === currentDetailMissionId) : null;
+  if (!mission) {
+    showToast('수정할 미션을 찾을 수 없습니다.', '⚠️');
+    return;
+  }
+
+  const newTitle = document.getElementById('editMissionTitleInput')?.value.trim();
+  const newWeek = parseInt(document.getElementById('editMissionWeekSelect')?.value) || 1;
+  const newCategory = document.getElementById('editMissionCategorySelect')?.value || 'personal';
+  const newDifficulty = document.getElementById('editMissionDifficultySelect')?.value || '보통';
+  const newPoints = parseInt(document.getElementById('editMissionPointsInput')?.value) || 20;
+  const newDesc = document.getElementById('editMissionDescTextarea')?.value.trim() || '';
+
+  if (!newTitle) {
+    showToast('미션 제목을 입력해 주세요!', '⚠️');
+    return;
+  }
+
+  const prevTitle = mission.title;
+
+  // 전체 학생의 해당 미션 일괄 업데이트 & RTDB 저장
+  state.students.forEach(s => {
+    if (s.missions) {
+      s.missions.forEach(m => {
+        if (m.id === currentDetailMissionId || m.title === prevTitle) {
+          m.title = newTitle;
+          m.week = newWeek;
+          m.category = newCategory;
+          m.difficulty = newDifficulty;
+          m.points = newPoints;
+          m.description = newDesc;
+        }
+      });
+    }
+    saveStudentToRTDB(s);
+  });
+
+  // DEFAULT_MISSIONS 템플릿도 업데이트
+  if (typeof DEFAULT_MISSIONS !== 'undefined') {
+    const defM = DEFAULT_MISSIONS.find(m => m.id === currentDetailMissionId || m.title === prevTitle);
+    if (defM) {
+      defM.title = newTitle;
+      defM.week = newWeek;
+      defM.category = newCategory;
+      defM.difficulty = newDifficulty;
+      defM.points = newPoints;
+      defM.description = newDesc;
+    }
+  }
+
+  closeModal('missionDetailModal');
+  renderUI();
+  showToast(`미션 '${newTitle}' 수정 사항이 모든 부원에게 저장되었습니다! 💾`, '🎉');
+}
+
+function deleteMissionFromDetailModal() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 미션을 삭제할 수 있습니다.', '🔒');
+    return;
+  }
+  if (!currentDetailMissionId) return;
+
+  closeModal('missionDetailModal');
+  deleteMission(currentDetailMissionId);
+}
+
 function toggleMissionDescEdit(isEditing) {
   if (isEditing && state.role !== 'admin') {
     showToast('선생님 모드에서만 설명을 수정할 수 있습니다.', '🔒');
@@ -245,12 +337,6 @@ function toggleMissionDescEdit(isEditing) {
 }
 
 function saveMissionDescFromModal() {
-  if (state.role !== 'admin') {
-    showToast('선생님 모드에서만 설명을 수정할 수 있습니다.', '🔒');
-    return;
-  }
-
-  if (!currentDetailMissionId) return;
 
   const newDesc = document.getElementById('detailDescEditTextarea')?.value.trim() || '';
 

@@ -101,6 +101,70 @@ function toggleRankingClassAccordion(groupKey) {
   toggleRankingTopGroup(groupKey);
 }
 
+function openLevelGuideModal() {
+  const student = getCurrentStudent();
+  const points = student ? (student.totalPoints || 0) : 0;
+  const currentTitle = calculateLevelTitle(points);
+
+  const container = document.getElementById('levelGuideListContainer');
+  const summaryEl = document.getElementById('levelGuideUserSummary');
+
+  if (summaryEl) {
+    const guideList = typeof GRADE_LEVEL_GUIDE !== 'undefined' ? GRADE_LEVEL_GUIDE : [
+      { level: 1, title: '🌱 탁구 입문자', min: 0, max: 49, desc: '기본 자세 및 라켓 잡는 법 익히기 단계', color: 'text-slate-700' },
+      { level: 2, title: '🏓 핑퐁 아마추어', min: 50, max: 99, desc: '기본 랠리 10회 이상 지속 가능', color: 'text-emerald-700' },
+      { level: 3, title: '⭐ 스핀 루키', min: 100, max: 199, desc: '정확한 서브 및 백핸드 리턴 완성', color: 'text-amber-600' },
+      { level: 4, title: '⚡ 드라이브 스페셜리스트', min: 200, max: 349, desc: '회전 공 공격 및 풋워크 습득', color: 'text-sky-600' },
+      { level: 5, title: '🔥 스매시 마스터', min: 350, max: 499, desc: '강력한 스매싱 결정을 내리는 에이스', color: 'text-orange-600' },
+      { level: 6, title: '🛡️ 철벽 커트 에이스', min: 500, max: 749, desc: '다양한 회전 커트와 방어 수비 달인', color: 'text-indigo-600' },
+      { level: 7, title: '👑 핑퐁 챔피언', min: 750, max: 999, desc: '학급 토너먼트 상위권의 실력자', color: 'text-purple-600' },
+      { level: 8, title: '🌟 탁구의 신', min: 1000, max: Infinity, desc: '탁구 기술과 매너를 모두 정복한 전설', color: 'text-rose-600' }
+    ];
+
+    const nextGrade = guideList.find(g => g.min > points);
+    const ptsToNext = nextGrade ? nextGrade.min - points : 0;
+
+    summaryEl.innerHTML = `
+      <div class="p-3.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl shadow-sm mb-3">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-xs font-semibold text-emerald-100">${student ? escapeHtml(student.name) : '내'} 현재 점수</span>
+          <span class="text-base font-black text-amber-300">${points} P</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-black">${currentTitle}</span>
+          ${nextGrade ? `<span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full text-emerald-100 font-bold">다음 등급까지 <b class="text-amber-300">${ptsToNext}P</b></span>` : `<span class="text-[11px] text-amber-300 font-black">최고 등급 달성! 🎉</span>`}
+        </div>
+      </div>
+    `;
+
+    if (container) {
+      container.innerHTML = guideList.map(g => {
+        const isCurrent = points >= g.min && (g.max === Infinity || points <= g.max);
+        return `
+          <div class="p-3 rounded-2xl border transition-all ${
+            isCurrent 
+              ? 'border-2 border-emerald-500 bg-emerald-50 shadow-md ring-2 ring-emerald-300/60 scale-[1.02]' 
+              : 'bg-slate-50 border-slate-200'
+          }">
+            <div class="flex justify-between items-center mb-0.5">
+              <p class="font-extrabold text-xs ${g.color || 'text-slate-800'} flex items-center space-x-1.5">
+                <span>${g.title}</span>
+                ${isCurrent ? `<span class="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-md font-black shadow-2xs">📍 현재 등급</span>` : ''}
+              </p>
+              <span class="text-[10px] font-black text-slate-600 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                ${g.max === Infinity ? `${g.min} P 이상` : `${g.min} ~ ${g.max} P`}
+              </span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">${g.desc}</p>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  openModal('levelGuideModal');
+}
+
 function renderUI() {
   checkReadOnlyGuard();
   const student = getCurrentStudent();
@@ -184,7 +248,8 @@ function renderUI() {
   }
 
   if (headerTitleBadge && student) {
-    headerTitleBadge.innerText = student.equippedTitle || calculateLevelTitle(student.totalPoints || 0);
+    const titleText = student.equippedTitle || calculateLevelTitle(student.totalPoints || 0);
+    headerTitleBadge.innerHTML = `<span>${titleText}</span><i class="fa-solid fa-circle-info text-[9px] opacity-90"></i>`;
   }
 
   if (userLevelTitle) userLevelTitle.innerText = calculateLevelTitle(student ? student.totalPoints : 0);
@@ -680,10 +745,14 @@ function renderMissionsView() {
       </div>
 
       <div class="flex items-center space-x-1.5 shrink-0 relative z-10">
-        <!-- 큼직하고 직관적인 설명 보기 버튼 -->
-        <button onclick="openMissionDetailModal('${mission.id}')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-900 font-extrabold text-[11px] sm:text-xs border border-emerald-300 shadow-2xs flex items-center space-x-1 transition-all active:scale-95 hover:shadow-xs" title="미션 설명 및 수행 팁 보기">
-          <span class="text-sm">💡</span>
-          <span class="font-black">설명 보기</span>
+        <!-- 설명 보기 / 선생님 미션 수정 버튼 -->
+        <button onclick="openMissionDetailModal('${mission.id}')" class="px-2.5 sm:px-3 py-1.5 rounded-xl ${
+          isAdmin 
+            ? 'bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-950 border border-indigo-300' 
+            : 'bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 text-emerald-900 border border-emerald-300'
+        } font-extrabold text-[11px] sm:text-xs shadow-2xs flex items-center space-x-1 transition-all active:scale-95 hover:shadow-xs" title="${isAdmin ? '선생님 모드: 미션 제목, 배점, 설명 등 수정하기' : '미션 설명 및 수행 팁 보기'}">
+          <span class="text-sm">${isAdmin ? '✏️' : '💡'}</span>
+          <span class="font-black">${isAdmin ? '미션 수정' : '설명 보기'}</span>
         </button>
 
         ${isAdmin ? `

@@ -201,13 +201,16 @@
           <div class="flex flex-col justify-center flex-1 min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-1.5">
               <h1 id="headerName" class="font-black text-slate-800 text-base sm:text-lg leading-tight name-skin-none">김탁구</h1>
-              <span id="headerTitleBadge" class="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-xs whitespace-nowrap">🌱 탁구 입문자</span>
+              <button type="button" id="headerTitleBadge" onclick="event.stopPropagation(); openLevelGuideModal()" title="점수별 등급 안내표 보기" class="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-xs whitespace-nowrap hover:scale-105 active:scale-95 transition-transform flex items-center space-x-1 cursor-pointer">
+                <span>🌱 탁구 입문자</span>
+                <i class="fa-solid fa-circle-info text-[9px] opacity-90"></i>
+              </button>
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
               <span id="headerClass" class="bg-emerald-100/90 text-emerald-900 font-extrabold text-[11px] px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap border border-emerald-200">1학년 1반 1번</span>
-              <button type="button" onclick="openLevelGuideModal()" class="text-[11px] text-emerald-700 font-extrabold leading-tight hover:underline flex items-center space-x-1">
+              <button type="button" onclick="event.stopPropagation(); openLevelGuideModal()" class="text-[11px] text-emerald-800 font-extrabold leading-tight hover:underline flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs transition-all cursor-pointer" title="점수별 등급 안내표 보기">
                 <span id="userLevelTitle">🌱 탁구 입문자</span>
-                <i class="fa-solid fa-circle-info text-[10px]"></i>
+                <i class="fa-solid fa-circle-info text-[10px] text-emerald-600"></i>
               </button>
             </div>
           </div>
@@ -594,49 +597,26 @@
 
   <!-- MODAL: Level Guide Modal -->
   <div id="levelGuideModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop max-h-[85vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop max-h-[88vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
         <h3 class="text-base font-black text-slate-800 flex items-center space-x-2">
-          <span>🏆 탁구 등급 안내표</span>
+          <span>🏆 탁구 점수별 등급 안내표</span>
         </h3>
         <button onclick="closeModal('levelGuideModal')" class="text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <div class="space-y-2.5 text-xs">
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-slate-800">🌱 탁구 입문자 (0 ~ 49 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">기본 자세 및 라켓 잡는 법 익히기 단계</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-emerald-700">🏓 핑퐁 아마추어 (50 ~ 99 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">기본 랠리 10회 이상 지속 가능</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-amber-600">⭐ 스핀 루키 (100 ~ 199 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">정확한 서브 및 백핸드 리턴 완성</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-sky-600">⚡ 드라이브 스페셜리스트 (200 ~ 349 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">회전 공 공격 및 풋워크 습득</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-orange-600">🔥 스매시 마스터 (350 ~ 499 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">강력한 스매싱 결정을 내리는 에이스</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-indigo-600">🛡️ 철벽 커트 에이스 (500 ~ 749 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">다양한 회전 커트와 방어 수비 달인</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-purple-600">👑 핑퐁 챔피언 (750 ~ 999 P)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">학급 토너먼트 상위권의 실력자</p>
-        </div>
-        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
-          <p class="font-bold text-rose-600">🌟 탁구의 신 (1,000 P 이상)</p>
-          <p class="text-[10px] text-slate-500 mt-0.5">탁구 기술과 매너를 모두 정복한 전설</p>
-        </div>
+      <!-- User Current Points & Next Level Summary -->
+      <div id="levelGuideUserSummary"></div>
+
+      <!-- Dynamic Level List -->
+      <div id="levelGuideListContainer" class="space-y-2 text-xs"></div>
+
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('levelGuideModal')" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-colors">
+          닫기
+        </button>
       </div>
     </div>
   </div>
@@ -873,19 +853,22 @@
     </div>
   </div>
 
-  <!-- MODAL: Mission Detail & Description Modal -->
+  <!-- MODAL: Mission Detail & Teacher Mission Editor Modal -->
   <div id="missionDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop max-h-[90vh] flex flex-col">
       <!-- Modal Header -->
       <div class="flex justify-between items-start mb-3.5 pb-2.5 border-b border-slate-100 shrink-0">
         <div class="min-w-0 pr-2">
-          <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
+          <div id="detailMissionStudentHeaderBadges" class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
             <span id="detailMissionWeekBadge" class="bg-emerald-800 text-white text-[11px] font-black px-2.5 py-0.5 rounded-lg shadow-2xs">1주차</span>
             <span id="detailMissionCategoryBadge" class="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-lg">개인 챌린지</span>
             <span id="detailMissionDifficultyBadge" class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-lg">보통</span>
             <span id="detailMissionPointsBadge" class="bg-amber-100 text-amber-900 text-[11px] font-black px-2.5 py-0.5 rounded-lg border border-amber-200 shadow-2xs">+20 P</span>
           </div>
-          <h3 id="detailMissionTitle" class="text-base sm:text-lg font-black text-slate-900 leading-snug">미션 제목</h3>
+          <div id="detailMissionTeacherHeaderBadge" class="hidden flex items-center space-x-1.5 mb-1">
+            <span class="bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs">👑 선생님 모드 - 미션 수정</span>
+          </div>
+          <h3 id="detailMissionTitle" class="text-base sm:text-lg font-black text-slate-900 leading-snug">미션 상세</h3>
         </div>
         <button onclick="closeModal('missionDetailModal')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors shrink-0">
           <i class="fa-solid fa-xmark text-xl"></i>
@@ -894,45 +877,97 @@
 
       <!-- Modal Body (Scrollable) -->
       <div class="flex-1 overflow-y-auto space-y-3.5 pr-1 text-left">
-        <!-- Status Banner -->
-        <div id="detailMissionStatusBanner" class="p-3 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between shadow-2xs">
-          <span id="detailMissionStatusText">미완료</span>
-          <span id="detailMissionStatusIcon" class="text-lg">✨</span>
-        </div>
+        
+        <!-- 1. TEACHER EDIT FORM (Visible only in Teacher Mode) -->
+        <div id="detailMissionTeacherEditForm" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1">미션 제목 ✏️</label>
+            <input type="text" id="editMissionTitleInput" placeholder="미션 제목을 입력하세요" class="w-full px-3.5 py-2.5 rounded-2xl border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none text-xs sm:text-sm font-bold shadow-2xs">
+          </div>
 
-        <!-- Description Section -->
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <label class="text-xs sm:text-sm font-black text-slate-800 flex items-center space-x-1.5">
-              <span class="text-base">💡</span>
-              <span>미션 가이드 및 수행 요령</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">주차 선택</label>
+              <select id="editMissionWeekSelect" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="1">1주차</option>
+                <option value="2">2주차</option>
+                <option value="3">3주차</option>
+                <option value="4">4주차</option>
+                <option value="5">5주차</option>
+                <option value="6">6주차</option>
+                <option value="7">7주차</option>
+                <option value="8">8주차</option>
+                <option value="9">9주차</option>
+                <option value="10">10주차</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">유형 구분</label>
+              <select id="editMissionCategorySelect" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="personal">개인 챌린지 👤</option>
+                <option value="team">팀 챌린지 👥</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">난이도</label>
+              <select id="editMissionDifficultySelect" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="쉬움">쉬움 🌱</option>
+                <option value="보통">보통 ⚡</option>
+                <option value="어려움">어려움 🔥</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">획득 포인트 (P)</label>
+              <input type="number" id="editMissionPointsInput" min="5" max="200" step="5" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-black text-slate-700 mb-1 flex items-center justify-between">
+              <span>미션 가이드 및 수행 팁 💡</span>
+              <span class="text-[10px] text-indigo-600 font-normal">부원들에게 표시되는 상세 설명</span>
             </label>
-            <!-- Teacher Only Edit Toggle Button (Large & Visible) -->
-            <button id="detailDescEditBtn" onclick="toggleMissionDescEdit(true)" class="hidden text-xs font-black text-indigo-700 hover:text-white bg-indigo-100 hover:bg-indigo-600 border border-indigo-200 hover:border-indigo-600 px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs active:scale-95">
-              <i class="fa-solid fa-pen-to-square text-xs"></i>
-              <span>설명 수정하기 ✏️</span>
+            <textarea id="editMissionDescTextarea" rows="4" placeholder="학생들이 수행할 때 참고할 자세한 설명 및 팁을 입력하세요." class="w-full p-3.5 rounded-2xl border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none text-xs sm:text-sm font-medium leading-relaxed resize-none shadow-2xs"></textarea>
+          </div>
+
+          <div class="pt-2 flex space-x-2">
+            <button onclick="saveFullMissionEditFromModal()" class="flex-1 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center space-x-1.5 active:scale-95 transition-all">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>미션 수정사항 저장 완료 💾</span>
+            </button>
+            <button onclick="deleteMissionFromDetailModal()" class="px-3.5 py-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-extrabold text-xs transition-colors" title="미션 삭제">
+              <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
+        </div>
 
-          <!-- Student Read-Only View -->
-          <div id="detailDescReadView" class="p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 border border-emerald-200/90 rounded-2xl text-xs sm:text-sm text-slate-800 leading-relaxed min-h-[90px] whitespace-pre-wrap font-medium shadow-inner">
-            설명 내용이 여기에 표시됩니다.
+        <!-- 2. STUDENT READ VIEW (Visible in Student Mode) -->
+        <div id="detailMissionStudentView" class="space-y-3.5">
+          <!-- Status Banner -->
+          <div id="detailMissionStatusBanner" class="p-3 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between shadow-2xs">
+            <span id="detailMissionStatusText">미완료</span>
+            <span id="detailMissionStatusIcon" class="text-lg">✨</span>
           </div>
 
-          <!-- Teacher Edit Form (Hidden by default) -->
-          <div id="detailDescEditView" class="hidden space-y-2.5">
-            <textarea id="detailDescEditTextarea" rows="4" placeholder="미션 설명 및 수행 요령을 상세히 입력하세요." class="w-full p-3.5 rounded-2xl border-2 border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm font-medium leading-relaxed resize-none shadow-xs"></textarea>
-            <div class="flex justify-end space-x-2">
-              <button onclick="toggleMissionDescEdit(false)" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors">
-                취소
-              </button>
-              <button onclick="saveMissionDescFromModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center space-x-1.5 active:scale-95 transition-all">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>수정 완료 (저장) 💾</span>
-              </button>
+          <!-- Description Section -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-xs sm:text-sm font-black text-slate-800 flex items-center space-x-1.5">
+                <span class="text-base">💡</span>
+                <span>미션 가이드 및 수행 요령</span>
+              </label>
+            </div>
+
+            <!-- Student Read-Only View -->
+            <div id="detailDescReadView" class="p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 border border-emerald-200/90 rounded-2xl text-xs sm:text-sm text-slate-800 leading-relaxed min-h-[90px] whitespace-pre-wrap font-medium shadow-inner">
+              설명 내용이 여기에 표시됩니다.
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- Modal Footer -->

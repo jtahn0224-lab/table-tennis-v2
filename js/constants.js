@@ -203,3 +203,14 @@ const DEFAULT_REWARDS = [
   { id: 'r3', title: '토너먼트 대진표 선택권 🏆', points: 100, icon: '🥇' },
   { id: 'r4', title: '시원한 음료 교환권 🥤', points: 40, icon: '🥤' }
 ];
+
+const GRADE_LEVEL_GUIDE = [
+  { level: 1, title: '🌱 탁구 입문자', min: 0, max: 49, desc: '기본 자세 및 라켓 잡는 법 익히기 단계', color: 'text-slate-700', border: 'border-slate-300' },
+  { level: 2, title: '🏓 핑퐁 아마추어', min: 50, max: 99, desc: '기본 랠리 10회 이상 지속 가능', color: 'text-emerald-700', border: 'border-emerald-300' },
+  { level: 3, title: '⭐ 스핀 루키', min: 100, max: 199, desc: '정확한 서브 및 백핸드 리턴 완성', color: 'text-amber-600', border: 'border-amber-300' },
+  { level: 4, title: '⚡ 드라이브 스페셜리스트', min: 200, max: 349, desc: '회전 공 공격 및 풋워크 습득', color: 'text-sky-600', border: 'border-sky-300' },
+  { level: 5, title: '🔥 스매시 마스터', min: 350, max: 499, desc: '강력한 스매싱 결정을 내리는 에이스', color: 'text-orange-600', border: 'border-orange-300' },
+  { level: 6, title: '🛡️ 철벽 커트 에이스', min: 500, max: 749, desc: '다양한 회전 커트와 방어 수비 달인', color: 'text-indigo-600', border: 'border-indigo-300' },
+  { level: 7, title: '👑 핑퐁 챔피언', min: 750, max: 999, desc: '학급 토너먼트 상위권의 실력자', color: 'text-purple-600', border: 'border-purple-300' },
+  { level: 8, title: '🌟 탁구의 신', min: 1000, max: Infinity, desc: '탁구 기술과 매너를 모두 정복한 전설', color: 'text-rose-600', border: 'border-rose-300' }
+];
