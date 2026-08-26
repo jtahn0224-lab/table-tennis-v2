@@ -181,6 +181,70 @@ body {
   border: 1.5px solid #fb7185 !important;
   box-shadow: 0 0 12px rgba(244, 63, 94, 0.3) !important;
 }
+.card-skin-aurora {
+  background: linear-gradient(135deg, #064e3b 0%, #0f172a 40%, #581c87 100%) !important;
+  color: #a7f3d0 !important;
+  border: 1.5px solid #34d399 !important;
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.4) !important;
+}
+.card-skin-matrix {
+  background: linear-gradient(135deg, #022c22 0%, #051510 100%) !important;
+  background-image: radial-gradient(#22c55e 1px, transparent 1px) !important;
+  background-size: 10px 10px !important;
+  color: #86efac !important;
+  border: 1.5px solid #22c55e !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.35) !important;
+}
+.card-skin-lava {
+  background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 40%, #1c1917 100%) !important;
+  color: #fed7aa !important;
+  border: 1.5px solid #f97316 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.45) !important;
+}
+.card-skin-ocean {
+  background: linear-gradient(135deg, #082f49 0%, #0c4a6e 50%, #134e4a 100%) !important;
+  color: #e0f2fe !important;
+  border: 1.5px solid #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
+}
+.card-skin-cherry {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%) !important;
+  color: #831843 !important;
+  border: 1.5px solid #f472b6 !important;
+  box-shadow: 0 0 12px rgba(244, 114, 182, 0.3) !important;
+}
+.card-skin-hologram {
+  background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 25%, #dbeafe 50%, #fce7f3 75%, #ccfbf1 100%) !important;
+  color: #312e81 !important;
+  border: 2px solid #818cf8 !important;
+  box-shadow: 0 0 16px rgba(129, 140, 248, 0.5) !important;
+}
+.card-skin-carbon {
+  background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #09090b 100%) !important;
+  background-image: repeating-linear-gradient(45deg, #27272a 0, #27272a 1px, transparent 0, transparent 50%) !important;
+  background-size: 8px 8px !important;
+  color: #f4f4f5 !important;
+  border: 1.5px solid #71717a !important;
+  box-shadow: 0 0 12px rgba(113, 113, 122, 0.3) !important;
+}
+.card-skin-emerald-palace {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%) !important;
+  color: #fef08a !important;
+  border: 2px solid #fbbf24 !important;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.35) !important;
+}
+.card-skin-vaporwave {
+  background: linear-gradient(135deg, #3b0764 0%, #701a75 50%, #be185d 100%) !important;
+  color: #fdf4ff !important;
+  border: 1.5px solid #e879f9 !important;
+  box-shadow: 0 0 15px rgba(232, 121, 249, 0.4) !important;
+}
+.card-skin-dragon {
+  background: linear-gradient(135deg, #030712 0%, #1e1b4b 50%, #172554 100%) !important;
+  color: #fef08a !important;
+  border: 2px solid #eab308 !important;
+  box-shadow: 0 0 18px rgba(234, 179, 8, 0.4) !important;
+}
 
 ::-webkit-scrollbar {
   width: 6px;

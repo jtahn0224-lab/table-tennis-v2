@@ -63,7 +63,17 @@ const ALL_CARD_SKINS = [
   { id: 'card-skin-galaxy', name: '🌌 우주 갤럭시 카드', points: 500, class: 'card-skin-galaxy', desc: '은하수와 별빛이 쏟아지는 우주 아크릴 카드' },
   { id: 'card-skin-cyber', name: '👾 사이버펑크 그리드', points: 400, class: 'card-skin-cyber', desc: '미래형 홀로그램 도트 그리드 스킨' },
   { id: 'card-skin-gold', name: '🏆 황금 전설 카드', points: 700, class: 'card-skin-gold', desc: '금빛 가루와 골드 폰트의 전설적인 챔피언 카드' },
-  { id: 'card-skin-sunset', name: '🌅 석양 선셋 카드', points: 300, class: 'card-skin-sunset', desc: '따뜻한 로즈-오렌지 그라데이션 석양 카드' }
+  { id: 'card-skin-sunset', name: '🌅 석양 선셋 카드', points: 300, class: 'card-skin-sunset', desc: '따뜻한 로즈-오렌지 그라데이션 석양 카드' },
+  { id: 'card-skin-aurora', name: '🌌 신비한 오로라', points: 450, class: 'card-skin-aurora', desc: '북극의 밤하늘을 수놓는 환상적인 초록-보라 오로라' },
+  { id: 'card-skin-matrix', name: '💻 매트릭스 디지털', points: 350, class: 'card-skin-matrix', desc: '사이버 네오 그린의 디지털 코드 스트림 카드' },
+  { id: 'card-skin-lava', name: '🌋 용암 마그마 버스트', points: 550, class: 'card-skin-lava', desc: '이글거리는 붉은 용암과 다크 흑요석 질감 카드' },
+  { id: 'card-skin-ocean', name: '🌊 심해 아쿠아 블루', points: 350, class: 'card-skin-ocean', desc: '청량하고 시원한 푸른 파도와 심해의 에메랄드 광채' },
+  { id: 'card-skin-cherry', name: '🌸 벚꽃 블라썸', points: 300, class: 'card-skin-cherry', desc: '봄바람에 흩날리는 부드러운 핑크빛 벚꽃 카드' },
+  { id: 'card-skin-hologram', name: '💿 프리즘 홀로그램', points: 600, class: 'card-skin-hologram', desc: '각도에 따라 7가지 무지갯빛 반사광이 감도는 아크릴 카드' },
+  { id: 'card-skin-carbon', name: '🏎️ 다크 카본 파이버', points: 400, class: 'card-skin-carbon', desc: '고급 스포츠카 느낌의 세련된 무광 다크 카본 격자' },
+  { id: 'card-skin-emerald-palace', name: '🏰 에메랄드 궁전', points: 500, class: 'card-skin-emerald-palace', desc: '기품 있는 비취 보석빛과 황금 몰딩의 황실 카드' },
+  { id: 'card-skin-vaporwave', name: '🌆 80s 레트로 웨이브', points: 450, class: 'card-skin-vaporwave', desc: '감성적인 핑크-바이올렛 네온과 레트로 노을 카드' },
+  { id: 'card-skin-dragon', name: '🐉 흑룡의 비늘', points: 650, class: 'card-skin-dragon', desc: '전설의 흑룡 비늘과 황금 스파크가 깃든 위엄 있는 카드' }
 ];
 
 /* UNLOCKABLE VICTORY / MISSION CEREMONIES */
@@ -71,7 +81,17 @@ const ALL_CEREMONIES = [
   { id: 'ceremony-default', name: '🎉 기본 폭죽 세레머니', points: 0, desc: '다채로운 컬러 폭죽 팡파르' },
   { id: 'ceremony-crowns', name: '👑 황금 왕관 샤워', points: 300, desc: '황금 왕관과 트로피 빛깔 폭죽이 가득 터지는 이펙트' },
   { id: 'ceremony-rockets', name: '🚀 연쇄 로켓 폭발', points: 450, desc: '화면 양쪽에서 연속으로 발사되는 로켓 세레머니' },
-  { id: 'ceremony-pingpong', name: '🏓 핑퐁 스매시 파열', points: 500, desc: '강력한 스매시와 함께 탁구공 파티클이 퍼지는 축하' }
+  { id: 'ceremony-pingpong', name: '🏓 핑퐁 스매시 파열', points: 500, desc: '강력한 스매시와 함께 탁구공 파티클이 퍼지는 축하' },
+  { id: 'ceremony-sakura', name: '🌸 벚꽃 잎비 눈보라', points: 350, desc: '화면 가득 부드럽게 흩날리는 핑크빛 벚꽃잎 샤워' },
+  { id: 'ceremony-stars', name: '⭐ 은하수 슈팅스타', points: 400, desc: '하늘에서 쏟아져 내리는 찬란한 황금 별빛 유성우' },
+  { id: 'ceremony-fireworks', name: '🎆 그랜드 불꽃축제', points: 500, desc: '밤하늘을 수놓는 대규모 연속 팡파르 불꽃쇼' },
+  { id: 'ceremony-hearts', name: '💖 러블리 하트 샤워', points: 300, desc: '사랑스러운 하트와 반짝이는 핑크 파티클 폭포' },
+  { id: 'ceremony-rainbow', name: '🌈 무지개 아치 축포', points: 450, desc: '양쪽에서 7색 무지개 포물선을 그리며 터지는 축포' },
+  { id: 'ceremony-gold-coins', name: '💰 황금 코인 대폭발', points: 550, desc: '승리의 황금 주화와 골드 칩이 팡팡 솟구치는 축제' },
+  { id: 'ceremony-flame-burst', name: '🔥 화염 버스트 팡파르', points: 400, desc: '열정적인 붉은 불꽃과 오렌지 쇼크웨이브 세레머니' },
+  { id: 'ceremony-laser-snow', name: '❄️ 다이아몬드 스노우', points: 350, desc: '영롱하게 반짝이는 은빛 다이아몬드 얼음 결정 눈꽃' },
+  { id: 'ceremony-confetti-canon', name: '🎊 슈퍼 메가 캐논', points: 600, desc: '좌·우·중앙 3방향에서 한 번에 뿜어져 나오는 초대형 축포' },
+  { id: 'ceremony-lightning-storm', name: '⚡ 사이버 볼트 스파크', points: 500, desc: '청백색 네온 번개 스파크와 전자기 파티클이 교차하는 축하' }
 ];
 
 /* 10-WEEK TABLE TENNIS CURRICULUM DEFAULT MISSIONS */
