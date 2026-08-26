@@ -697,9 +697,9 @@ function renderMissionsView() {
           : 'border border-slate-200 bg-white hover:border-emerald-300'
     }">
       
-      <!-- High-Visibility Stamp Effect for Completed Missions (Centered in Card) -->
+      <!-- High-Visibility Stamp Effect for Completed Missions (Frontmost Layer & Centered) -->
       ${isDone ? `
-        <div class="absolute left-1/2 top-1/2 z-0 opacity-90 pointer-events-none stamp-effect border-2 border-rose-600 text-rose-600 rounded-xl px-3 py-1 text-[11px] sm:text-xs font-black tracking-widest bg-white/95 shadow-md flex items-center space-x-1.5 whitespace-nowrap">
+        <div class="absolute left-1/2 top-1/2 z-30 opacity-95 pointer-events-none stamp-effect border-2 border-rose-600 text-rose-600 rounded-2xl px-3.5 py-1 text-[11px] sm:text-xs font-black tracking-widest bg-white/95 shadow-md flex items-center space-x-1.5 whitespace-nowrap">
           <span class="text-sm">💮</span>
           <span>선생님 승인 완료</span>
         </div>
