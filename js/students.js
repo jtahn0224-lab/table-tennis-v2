@@ -142,12 +142,11 @@ function openGroupGeneratorModal() {
   if (scopeSelect) {
     const classes = new Set();
     state.students.forEach(s => {
-      if (s.grade && s.classNum) {
-        classes.add(`${s.grade}학년 ${s.classNum}반`);
-      }
+      const key = getStudentGroupKey(s);
+      classes.add(key);
     });
     let opts = `<option value="all">전체 부원 (${state.students.length}명)</option>`;
-    Array.from(classes).sort().forEach(c => {
+    Array.from(classes).sort(compareGroupKeys).forEach(c => {
       opts += `<option value="${c}">🏫 ${c}</option>`;
     });
     scopeSelect.innerHTML = opts;
@@ -163,12 +162,7 @@ function generateRandomGroups() {
   if (scope === 'all') {
     targetStudents = [...state.students];
   } else {
-    targetStudents = state.students.filter(s => {
-      if (s.grade && s.classNum) {
-        return `${s.grade}학년 ${s.classNum}반` === scope;
-      }
-      return false;
-    });
+    targetStudents = state.students.filter(s => getStudentGroupKey(s) === scope);
   }
 
   if (targetStudents.length === 0) {

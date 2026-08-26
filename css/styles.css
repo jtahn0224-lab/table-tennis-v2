@@ -31,9 +31,9 @@ body {
 }
 
 @keyframes stamp-animation {
-  0% { transform: scale(2.5) rotate(-18deg); opacity: 0; }
-  50% { transform: scale(1) rotate(-18deg); opacity: 1; }
-  100% { transform: scale(1) rotate(-12deg); opacity: 0.95; }
+  0% { transform: translate(-50%, -50%) scale(2.5) rotate(-18deg); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1) rotate(-18deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(-12deg); opacity: 0.92; }
 }
 .stamp-effect {
   animation: stamp-animation 0.3s ease-out forwards;

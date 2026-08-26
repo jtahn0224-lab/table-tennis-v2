@@ -111,27 +111,31 @@ function setupRealtimeListeners() {
     if (val) {
       const loaded = Object.values(val);
       if (loaded.length > 0) {
-        state.students = loaded.map(s => ({
-          ...s,
-          skills: s.skills || { forehand: 3, backhand: 3, serve: 3, manner: 5 },
-          missions: s.missions || getInitialMissionsForNewStudent(),
-          unlockedAvatars: s.unlockedAvatars || ['🏓', '🥇', '🏆', '⚡', '🔥', s.avatar],
-          equippedFrame: s.equippedFrame || 'frame-none',
-          unlockedFrames: s.unlockedFrames || ['frame-none'],
-          equippedTitle: s.equippedTitle || calculateLevelTitle(s.totalPoints || 0),
-          unlockedTitles: s.unlockedTitles || [calculateLevelTitle(s.totalPoints || 0)],
-          equippedAura: s.equippedAura || 'aura-none',
-          unlockedAuras: s.unlockedAuras || ['aura-none'],
-          equippedNameSkin: s.equippedNameSkin || 'name-skin-none',
-          unlockedNameSkins: s.unlockedNameSkins || ['name-skin-none'],
-          equippedCardSkin: s.equippedCardSkin || 'card-skin-none',
-          unlockedCardSkins: s.unlockedCardSkins || ['card-skin-none'],
-          equippedCeremony: s.equippedCeremony || 'ceremony-default',
-          unlockedCeremonies: s.unlockedCeremonies || ['ceremony-default'],
-          history: s.history || [],
-          redeemedRewards: s.redeemedRewards || []
-        }));
+        state.students = loaded.map(rawS => {
+          const s = typeof normalizeStudentGradeClass === 'function' ? normalizeStudentGradeClass(rawS) : rawS;
+          return {
+            ...s,
+            skills: s.skills || { forehand: 3, backhand: 3, serve: 3, manner: 5 },
+            missions: s.missions || getInitialMissionsForNewStudent(),
+            unlockedAvatars: s.unlockedAvatars || ['🏓', '🥇', '🏆', '⚡', '🔥', s.avatar],
+            equippedFrame: s.equippedFrame || 'frame-none',
+            unlockedFrames: s.unlockedFrames || ['frame-none'],
+            equippedTitle: s.equippedTitle || calculateLevelTitle(s.totalPoints || 0),
+            unlockedTitles: s.unlockedTitles || [calculateLevelTitle(s.totalPoints || 0)],
+            equippedAura: s.equippedAura || 'aura-none',
+            unlockedAuras: s.unlockedAuras || ['aura-none'],
+            equippedNameSkin: s.equippedNameSkin || 'name-skin-none',
+            unlockedNameSkins: s.unlockedNameSkins || ['name-skin-none'],
+            equippedCardSkin: s.equippedCardSkin || 'card-skin-none',
+            unlockedCardSkins: s.unlockedCardSkins || ['card-skin-none'],
+            equippedCeremony: s.equippedCeremony || 'ceremony-default',
+            unlockedCeremonies: s.unlockedCeremonies || ['ceremony-default'],
+            history: s.history || [],
+            redeemedRewards: s.redeemedRewards || []
+          };
+        });
         if (typeof renderUI === 'function') renderUI();
+        if (typeof renderQuickRosterChips === 'function') renderQuickRosterChips();
       }
     }
   });

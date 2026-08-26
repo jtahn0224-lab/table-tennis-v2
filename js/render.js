@@ -31,15 +31,15 @@ function switchMainTab(tabName) {
 
 function switchTab(c) {
   activeTab = c;
-  const pBtn = document.getElementById('personalTabBtn');
-  const tBtn = document.getElementById('teamTabBtn');
+  const pBtn = document.getElementById('tabPersonalBtn') || document.getElementById('personalTabBtn');
+  const tBtn = document.getElementById('tabTeamBtn') || document.getElementById('teamTabBtn');
   if (pBtn && tBtn) {
     if (c === 'personal') {
-      pBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1";
-      tBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
+      pBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm bg-white text-emerald-800";
+      tBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 text-slate-500 hover:text-slate-700";
     } else {
-      tBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1";
-      pBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
+      tBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm bg-white text-emerald-800";
+      pBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 text-slate-500 hover:text-slate-700";
     }
   }
   renderUI();
@@ -73,9 +73,32 @@ function switchRankingView(m) {
   renderMatchesView();
 }
 
-function toggleClassAccordion(groupKey) {
-  collapsedClasses[groupKey] = !collapsedClasses[groupKey];
+function toggleTopGroupAccordion(topKey) {
+  expandedTopGroups[topKey] = !expandedTopGroups[topKey];
   renderStudentDirectory();
+}
+
+function toggleSubGroupAccordion(subKey) {
+  expandedSubGroups[subKey] = !expandedSubGroups[subKey];
+  renderStudentDirectory();
+}
+
+function toggleRankingTopGroup(topKey) {
+  expandedRankingTopGroups[topKey] = !expandedRankingTopGroups[topKey];
+  renderMatchesView();
+}
+
+function toggleRankingSubGroup(subKey) {
+  expandedRankingSubGroups[subKey] = !expandedRankingSubGroups[subKey];
+  renderMatchesView();
+}
+
+function toggleClassAccordion(groupKey) {
+  toggleTopGroupAccordion(groupKey);
+}
+
+function toggleRankingClassAccordion(groupKey) {
+  toggleRankingTopGroup(groupKey);
 }
 
 function renderUI() {
@@ -256,6 +279,55 @@ function renderUI() {
   renderStatsView();
 }
 
+function renderStudentCardsList(list, isAdmin, showClassBadge = false) {
+  return list.map(s => {
+    const cardSkinClass = s.equippedCardSkin || 'card-skin-none';
+    const nameSkinClass = s.equippedNameSkin || 'name-skin-none';
+    const auraClass = s.equippedAura || 'aura-none';
+    const frameClass = s.equippedFrame || 'frame-none';
+
+    const studentNumLabel = showClassBadge
+      ? (s.classNum ? `${s.classNum}반 ${s.number ? s.number + '번 ' : ''}` : (s.number ? `${s.number}번 ` : ''))
+      : (s.number ? `${s.number}번 ` : '');
+
+    return `
+      <div onclick="switchActiveStudent('${s.id}')" class="flex justify-between items-center p-2 rounded-xl cursor-pointer text-xs transition-all ${cardSkinClass} ${
+        s.id === state.activeStudentId ? 'ring-2 ring-emerald-500 shadow-md' : 'hover:opacity-95'
+      }">
+        <div class="flex items-center space-x-2.5 min-w-0 pr-1">
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 bg-emerald-50/80 ${frameClass} ${auraClass} shadow-2xs">
+            ${s.avatar || '🏓'}
+          </div>
+          <div class="min-w-0 flex flex-col justify-center">
+            <div class="flex items-center space-x-1 truncate">
+              <p class="truncate font-extrabold text-xs leading-tight ${nameSkinClass}">
+                ${studentNumLabel}${escapeHtml(s.name)}${s.id === loggedInStudentId ? ' (나)' : ''}
+              </p>
+            </div>
+            <div>
+              <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-md text-[9px] font-black truncate border ${
+                s.id === state.activeStudentId 
+                  ? 'bg-emerald-800/90 text-amber-300 border-emerald-500/40' 
+                  : 'bg-amber-100/90 text-amber-900 border-amber-200'
+              }">
+                ${s.equippedTitle || calculateLevelTitle(s.totalPoints || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <span class="font-extrabold ${s.id === state.activeStudentId ? 'text-amber-300' : 'text-emerald-700'}">${s.totalPoints || 0} P</span>
+          ${isAdmin ? `
+            <button onclick="event.stopPropagation(); deleteStudent('${s.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-all text-xs" title="부원 삭제">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderStudentDirectory() {
   const container = document.getElementById('groupedStudentList');
   if (!container) return;
@@ -273,111 +345,143 @@ function renderStudentDirectory() {
     return;
   }
 
-  const groups = {};
-  filtered.forEach(s => {
-    let key = '기타 / 학년 미지정';
-    if (s.grade && s.classNum) key = `${s.grade}학년 ${s.classNum}반`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(s);
-  });
-
+  const tree = buildHierarchicalGroups(filtered);
   const isAdmin = state.role === 'admin';
   let html = '';
 
-  Object.keys(groups).sort().forEach(groupKey => {
-    const list = groups[groupKey];
-    
-    list.sort((a, b) => {
-      const numA = parseInt(a.number) || 999;
-      const numB = parseInt(b.number) || 999;
-      if (numA !== numB) return numA - numB;
-      return a.name.localeCompare(b.name, 'ko');
-    });
+  Object.keys(tree).sort(compareGroupKeys).forEach(topKey => {
+    const groupNode = tree[topKey];
 
-    const totalClassPoints = list.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
-    const avgPoints = list.length > 0 ? Math.round(totalClassPoints / list.length) : 0;
-    
-    let topStudent = list[0];
-    list.forEach(s => {
-      if ((s.totalPoints || 0) > (topStudent.totalPoints || 0)) topStudent = s;
-    });
+    if (groupNode.isDirect) {
+      // 1학년 1반 (단독 학급)
+      const list = groupNode.students;
+      list.sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999) || a.name.localeCompare(b.name, 'ko'));
 
-    let totalClassMissions = 0;
-    let totalClassCompleted = 0;
-    list.forEach(s => {
-      if (s.missions) {
-        totalClassMissions += s.missions.length;
-        totalClassCompleted += s.missions.filter(m => m.completed).length;
-      }
-    });
-    const classAvgCompletion = totalClassMissions > 0 ? Math.round((totalClassCompleted / totalClassMissions) * 100) : 0;
+      const totalClassPoints = list.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+      const avgPoints = list.length > 0 ? Math.round(totalClassPoints / list.length) : 0;
+      let topStudent = list[0];
+      list.forEach(s => {
+        if ((s.totalPoints || 0) > (topStudent.totalPoints || 0)) topStudent = s;
+      });
+      let totalClassMissions = 0;
+      let totalClassCompleted = 0;
+      list.forEach(s => {
+        if (s.missions) {
+          totalClassMissions += s.missions.length;
+          totalClassCompleted += s.missions.filter(m => m.completed).length;
+        }
+      });
+      const classAvgCompletion = totalClassMissions > 0 ? Math.round((totalClassCompleted / totalClassMissions) * 100) : 0;
+      const isExpanded = !!expandedTopGroups[topKey];
 
-    const isCollapsed = !!collapsedClasses[groupKey];
-
-    html += `
-      <div class="bg-white/80 rounded-2xl border border-emerald-100 overflow-hidden shadow-xs">
-        <div onclick="toggleClassAccordion('${escapeHtml(groupKey)}')" class="px-3 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 text-xs font-bold text-emerald-950 flex justify-between items-center cursor-pointer select-none hover:bg-emerald-100 transition-all border-b border-emerald-100">
-          <div class="flex items-center space-x-1.5 min-w-0">
-            <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'} text-emerald-600 text-[10px]"></i>
-            <span class="truncate font-extrabold">${escapeHtml(groupKey)}</span>
-          </div>
-          <div class="flex items-center space-x-1.5 shrink-0">
-            <span class="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-black">${list.length}명</span>
-          </div>
-        </div>
-
-        <div class="px-3 py-1.5 bg-slate-50/90 text-[10px] border-b border-slate-100 grid grid-cols-3 gap-1 text-slate-600 font-semibold text-center">
-          <div>평균: <span class="font-extrabold text-emerald-700">${avgPoints}P</span></div>
-          <div class="truncate">👑 1위: <span class="font-extrabold text-slate-800">${escapeHtml(topStudent ? topStudent.name : '')}</span></div>
-          <div>달성: <span class="font-extrabold text-teal-700">${classAvgCompletion}%</span></div>
-        </div>
-
-        <div class="${isCollapsed ? 'hidden' : 'p-1.5 space-y-1.5'}">
-          ${list.map(s => {
-            const cardSkinClass = s.equippedCardSkin || 'card-skin-none';
-            const nameSkinClass = s.equippedNameSkin || 'name-skin-none';
-            const auraClass = s.equippedAura || 'aura-none';
-            const frameClass = s.equippedFrame || 'frame-none';
-
-            return `
-            <div onclick="switchActiveStudent('${s.id}')" class="flex justify-between items-center p-2 rounded-xl cursor-pointer text-xs transition-all ${cardSkinClass} ${
-              s.id === state.activeStudentId ? 'ring-2 ring-emerald-500 shadow-md' : 'hover:opacity-95'
-            }">
-              <div class="flex items-center space-x-2.5 min-w-0 pr-1">
-                <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 bg-emerald-50/80 ${frameClass} ${auraClass} shadow-2xs">
-                  ${s.avatar || '🏓'}
-                </div>
-                <div class="min-w-0 flex flex-col justify-center">
-                  <div class="flex items-center space-x-1 truncate">
-                    <p class="truncate font-extrabold text-xs leading-tight ${nameSkinClass}">
-                      ${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}${s.id === loggedInStudentId ? ' (나)' : ''}
-                    </p>
-                  </div>
-                  <div>
-                    <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded-md text-[9px] font-black truncate border ${
-                      s.id === state.activeStudentId 
-                        ? 'bg-emerald-800/90 text-amber-300 border-emerald-500/40' 
-                        : 'bg-amber-100/90 text-amber-900 border-amber-200'
-                    }">
-                      ${s.equippedTitle || calculateLevelTitle(s.totalPoints || 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center space-x-1.5 shrink-0">
-                <span class="font-extrabold ${s.id === state.activeStudentId ? 'text-amber-300' : 'text-emerald-700'}">${s.totalPoints || 0} P</span>
-                ${isAdmin ? `
-                  <button onclick="event.stopPropagation(); deleteStudent('${s.id}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-all text-xs" title="부원 삭제">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                ` : ''}
-              </div>
+      html += `
+        <div class="bg-white/90 rounded-2xl border border-emerald-200 overflow-hidden shadow-xs">
+          <div onclick="toggleTopGroupAccordion('${escapeHtml(topKey)}')" class="px-3 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 text-xs font-bold text-emerald-950 flex justify-between items-center cursor-pointer select-none hover:bg-emerald-100 transition-all border-b border-emerald-100">
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <i class="fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-emerald-600 text-[10px] transition-transform"></i>
+              <span class="truncate font-extrabold">🏫 ${escapeHtml(topKey)}</span>
             </div>
-          `;
-          }).join('')}
+            <div class="flex items-center space-x-1.5 shrink-0">
+              <span class="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-black">${list.length}명</span>
+            </div>
+          </div>
+
+          <div class="px-3 py-1.5 bg-slate-50/90 text-[10px] border-b border-slate-100 grid grid-cols-3 gap-1 text-slate-600 font-semibold text-center">
+            <div>평균: <span class="font-extrabold text-emerald-700">${avgPoints}P</span></div>
+            <div class="truncate">👑 1위: <span class="font-extrabold text-slate-800">${escapeHtml(topStudent ? topStudent.name : '')}</span></div>
+            <div>달성: <span class="font-extrabold text-teal-700">${classAvgCompletion}%</span></div>
+          </div>
+
+          <div class="${isExpanded ? 'p-1.5 space-y-1.5' : 'hidden'}">
+            ${renderStudentCardsList(list, isAdmin, false)}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      // 2학년, 3학년 통합 대그룹 (안에 2학년 1반, 2반... 서브 아코디언 포함)
+      const allGradeStudents = groupNode.students;
+      const totalGradePoints = allGradeStudents.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+      const avgGradePoints = allGradeStudents.length > 0 ? Math.round(totalGradePoints / allGradeStudents.length) : 0;
+      let topGradeStudent = allGradeStudents[0];
+      allGradeStudents.forEach(s => {
+        if ((s.totalPoints || 0) > (topGradeStudent.totalPoints || 0)) topGradeStudent = s;
+      });
+
+      const isTopExpanded = !!expandedTopGroups[topKey];
+      const subKeys = Object.keys(groupNode.subGroups).sort(compareSubGroupKeys);
+
+      html += `
+        <div class="bg-white/95 rounded-2xl border-2 border-indigo-200 overflow-hidden shadow-xs">
+          <!-- 1단계: 학년 통합 대그룹 헤더 -->
+          <div onclick="toggleTopGroupAccordion('${escapeHtml(topKey)}')" class="px-3.5 py-2.5 bg-gradient-to-r from-indigo-50 via-slate-50 to-teal-50 text-xs font-black text-indigo-950 flex justify-between items-center cursor-pointer select-none hover:bg-indigo-100 transition-all border-b border-indigo-100">
+            <div class="flex items-center space-x-2 min-w-0">
+              <i class="fa-solid ${isTopExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-indigo-600 text-[11px] transition-transform"></i>
+              <span class="truncate font-black text-xs">🏛️ ${escapeHtml(topKey)} 전체</span>
+              <span class="text-[9px] bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded-md font-extrabold">${subKeys.length}개 반</span>
+            </div>
+            <div class="flex items-center space-x-1.5 shrink-0">
+              <span class="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black shadow-2xs">총 ${allGradeStudents.length}명</span>
+            </div>
+          </div>
+
+          <div class="px-3 py-1.5 bg-indigo-50/60 text-[10px] border-b border-indigo-100/80 flex justify-between items-center text-slate-700 font-semibold">
+            <div>학년 평균: <span class="font-extrabold text-indigo-700">${avgGradePoints}P</span></div>
+            <div class="truncate">👑 학년 1위: <span class="font-extrabold text-slate-900">${escapeHtml(topGradeStudent ? topGradeStudent.name : '')}</span></div>
+          </div>
+
+          <!-- 2단계: 학년 내부 각 반(2학년 1반, 2반...) 서브 아코디언들 -->
+          <div class="${isTopExpanded ? 'p-2 space-y-2 bg-slate-50/60' : 'hidden'}">
+            ${subKeys.map(subKey => {
+              const subObj = groupNode.subGroups[subKey];
+              const subList = subObj.students;
+              subList.sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999) || a.name.localeCompare(b.name, 'ko'));
+
+              const totalSubPoints = subList.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+              const avgSubPoints = subList.length > 0 ? Math.round(totalSubPoints / subList.length) : 0;
+              let topSubStudent = subList[0];
+              subList.forEach(s => {
+                if ((s.totalPoints || 0) > (topSubStudent.totalPoints || 0)) topSubStudent = s;
+              });
+
+              let totalSubMissions = 0;
+              let totalSubCompleted = 0;
+              subList.forEach(s => {
+                if (s.missions) {
+                  totalSubMissions += s.missions.length;
+                  totalSubCompleted += s.missions.filter(m => m.completed).length;
+                }
+              });
+              const subAvgCompletion = totalSubMissions > 0 ? Math.round((totalSubCompleted / totalSubMissions) * 100) : 0;
+              const isSubExpanded = !!expandedSubGroups[subKey];
+
+              return `
+                <div class="bg-white rounded-xl border border-emerald-200 overflow-hidden shadow-2xs">
+                  <div onclick="toggleSubGroupAccordion('${escapeHtml(subKey)}')" class="px-3 py-1.5 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 text-[11px] font-extrabold text-emerald-950 flex justify-between items-center cursor-pointer select-none hover:bg-emerald-100 transition-all border-b border-emerald-100">
+                    <div class="flex items-center space-x-1.5 min-w-0">
+                      <i class="fa-solid ${isSubExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-emerald-600 text-[9px] transition-transform"></i>
+                      <span class="truncate">🏫 ${escapeHtml(subKey)}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 shrink-0">
+                      <span class="text-[9px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded-full font-bold">${subList.length}명</span>
+                    </div>
+                  </div>
+
+                  <div class="px-2.5 py-1 bg-slate-50/80 text-[9px] border-b border-slate-100 grid grid-cols-3 gap-1 text-slate-600 text-center font-medium">
+                    <div>평균: <span class="font-bold text-emerald-700">${avgSubPoints}P</span></div>
+                    <div class="truncate">1위: <span class="font-bold text-slate-800">${escapeHtml(topSubStudent ? topSubStudent.name : '')}</span></div>
+                    <div>달성: <span class="font-bold text-teal-700">${subAvgCompletion}%</span></div>
+                  </div>
+
+                  <div class="${isSubExpanded ? 'p-1.5 space-y-1.5' : 'hidden'}">
+                    ${renderStudentCardsList(subList, isAdmin, true)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
   });
 
   container.innerHTML = html;
@@ -389,27 +493,28 @@ function renderClassIndividualProgress() {
   if (!container) return;
 
   const activeStudent = getCurrentStudent();
-  let activeGradeClass = '기타 / 학년 미지정';
-  if (activeStudent && activeStudent.grade && activeStudent.classNum) {
-    activeGradeClass = `${activeStudent.grade}학년 ${activeStudent.classNum}반`;
-  }
+  const activeGroupKey = getStudentGroupKey(activeStudent);
 
-  const classStudents = state.students.filter(s => {
-    if (s.grade && s.classNum) {
-      return `${s.grade}학년 ${s.classNum}반` === activeGradeClass;
-    }
-    return activeGradeClass === '기타 / 학년 미지정';
+  const classStudents = state.students.filter(s => getStudentGroupKey(s) === activeGroupKey);
+
+  classStudents.sort((a, b) => {
+    const classA = parseInt(a.classNum) || 999;
+    const classB = parseInt(b.classNum) || 999;
+    if (classA !== classB) return classA - classB;
+    const numA = parseInt(a.number) || 999;
+    const numB = parseInt(b.number) || 999;
+    if (numA !== numB) return numA - numB;
+    return a.name.localeCompare(b.name, 'ko');
   });
 
-  classStudents.sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999));
-
   if (classStudents.length === 0) {
-    container.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-2">소속 학급에 부원이 없습니다.</p>`;
+    container.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-2">소속 학급/학년에 부원이 없습니다.</p>`;
     return;
   }
 
   let html = `<div class="text-[11px] font-bold text-emerald-800 mb-1 px-1 flex items-center justify-between">
-                <span>📍 ${escapeHtml(activeGradeClass)} 부원 현황</span>
+                <span>📍 ${escapeHtml(activeGroupKey)} 부원 현황</span>
+                <span class="text-[10px] text-slate-400 font-normal">총 ${classStudents.length}명</span>
               </div>`;
 
   classStudents.forEach(s => {
@@ -424,6 +529,10 @@ function renderClassIndividualProgress() {
     const auraClass = s.equippedAura || 'aura-none';
     const frameClass = s.equippedFrame || 'frame-none';
 
+    const studentNumLabel = activeGroupKey === '1학년 1반'
+      ? (s.number ? `${s.number}번 ` : '')
+      : (s.classNum ? `${s.classNum}반 ${s.number ? s.number + '번 ' : ''}` : (s.number ? `${s.number}번 ` : ''));
+
     html += `
       <div onclick="switchActiveStudent('${s.id}')" class="p-2.5 rounded-2xl transition-all cursor-pointer ${cardSkinClass} ${
         isActive ? 'ring-2 ring-emerald-500 shadow-md' : 'hover:opacity-95'
@@ -433,7 +542,7 @@ function renderClassIndividualProgress() {
             <div class="w-7 h-7 rounded-xl flex items-center justify-center text-xs shrink-0 bg-emerald-50/80 ${frameClass} ${auraClass} shadow-2xs">
               ${s.avatar || '🏓'}
             </div>
-            <span class="font-extrabold text-xs truncate ${nameSkinClass}">${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}</span>
+            <span class="font-extrabold text-xs truncate ${nameSkinClass}">${studentNumLabel}${escapeHtml(s.name)}</span>
             <span class="text-[9px] bg-amber-100 text-amber-900 font-black px-1.5 py-0.2 rounded-md shrink-0 border border-amber-200">
               ${s.equippedTitle || calculateLevelTitle(s.totalPoints || 0)}
             </span>
@@ -484,6 +593,18 @@ function renderMissionsView() {
   if (pBadge) pBadge.innerText = personalCount;
   if (tBadge) tBadge.innerText = teamCount;
 
+  const pBtn = document.getElementById('tabPersonalBtn') || document.getElementById('personalTabBtn');
+  const tBtn = document.getElementById('tabTeamBtn') || document.getElementById('teamTabBtn');
+  if (pBtn && tBtn) {
+    if (activeTab === 'personal') {
+      pBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm bg-white text-emerald-800";
+      tBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 text-slate-500 hover:text-slate-700";
+    } else {
+      tBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm bg-white text-emerald-800";
+      pBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 text-slate-500 hover:text-slate-700";
+    }
+  }
+
   const listContainer = document.getElementById('missionList');
   if (!listContainer) return;
 
@@ -511,10 +632,10 @@ function renderMissionsView() {
           : 'border border-slate-200 bg-white hover:border-emerald-300'
     }">
       
-      <!-- High-Visibility Stamp Effect for Completed Missions -->
+      <!-- High-Visibility Stamp Effect for Completed Missions (Centered in Card) -->
       ${isDone ? `
-        <div class="absolute right-12 bottom-1 z-0 opacity-90 pointer-events-none stamp-effect border-2 border-rose-600 text-rose-600 rounded-xl px-2.5 py-0.5 text-[11px] font-black tracking-widest bg-white/90 shadow-sm flex items-center space-x-1">
-          <span>💮</span>
+        <div class="absolute left-1/2 top-1/2 z-0 opacity-90 pointer-events-none stamp-effect border-2 border-rose-600 text-rose-600 rounded-xl px-3 py-1 text-[11px] sm:text-xs font-black tracking-widest bg-white/95 shadow-md flex items-center space-x-1.5 whitespace-nowrap">
+          <span class="text-sm">💮</span>
           <span>선생님 승인 완료</span>
         </div>
       ` : ''}
@@ -591,6 +712,47 @@ function renderMissionsView() {
   }).join('');
 }
 
+function renderRankingRows(list, showClassBadge = false) {
+  if (rankingViewMode === 'list') {
+    return `<div class="space-y-1.5">` + list.map((s, idx) => {
+      const tot = (s.wins || 0) + (s.losses || 0);
+      const winRate = tot > 0 ? Math.round((s.wins / tot) * 100) : 0;
+      const studentLabel = showClassBadge
+        ? (s.classNum ? `${s.classNum}반 ${s.number ? s.number + '번 ' : ''}${escapeHtml(s.name)}` : (s.number ? `${s.number}번 ${escapeHtml(s.name)}` : escapeHtml(s.name)))
+        : (s.number ? `${s.number}번 ${escapeHtml(s.name)}` : escapeHtml(s.name));
+
+      return `
+        <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100 text-xs">
+          <span class="font-bold text-slate-800 ${s.equippedNameSkin || 'name-skin-none'}">#${idx + 1} ${s.avatar || '🏓'} ${studentLabel}</span>
+          <span class="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">
+            ${s.wins || 0}승 ${s.losses || 0}패 (${winRate}%)
+          </span>
+        </div>
+      `;
+    }).join('') + `</div>`;
+  } else {
+    return `<div class="space-y-2 pt-1">` + list.map((s, idx) => {
+      const tot = (s.wins || 0) + (s.losses || 0);
+      const winRate = tot > 0 ? Math.round((s.wins / tot) * 100) : 0;
+      const studentLabel = showClassBadge
+        ? (s.classNum ? `${s.classNum}반 ${s.number ? s.number + '번 ' : ''}${escapeHtml(s.name)}` : (s.number ? `${s.number}번 ${escapeHtml(s.name)}` : escapeHtml(s.name)))
+        : (s.number ? `${s.number}번 ${escapeHtml(s.name)}` : escapeHtml(s.name));
+
+      return `
+        <div>
+          <div class="flex justify-between text-[11px] font-bold mb-0.5">
+            <span class="text-slate-800 ${s.equippedNameSkin || 'name-skin-none'}">#${idx + 1} ${s.avatar || '🏓'} ${studentLabel}</span>
+            <span class="text-emerald-700 font-black">${winRate}% (${s.wins || 0}승 ${s.losses || 0}패)</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" style="width: ${Math.max(5, winRate)}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('') + `</div>`;
+  }
+}
+
 function renderMatchesView() {
   const container = document.getElementById('classLeaderboardContainer');
   const historyList = document.getElementById('matchHistoryList');
@@ -607,70 +769,136 @@ function renderMatchesView() {
     if (viewListBtn) viewListBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-black transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
   }
 
-  const groups = {};
-  state.students.forEach(s => {
-    let key = '기타 / 학년 미지정';
-    if (s.grade && s.classNum) key = `${s.grade}학년 ${s.classNum}반`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push({ ...s });
-  });
-
+  const tree = buildHierarchicalGroups(state.students);
   let html = '';
-  Object.keys(groups).sort().forEach(groupKey => {
-    const list = groups[groupKey];
-    list.sort((a, b) => {
-      const totA = (a.wins || 0) + (a.losses || 0);
-      const totB = (b.wins || 0) + (b.losses || 0);
-      const rateA = totA > 0 ? (a.wins / totA) : 0;
-      const rateB = totB > 0 ? (b.wins / totB) : 0;
-      return rateB - rateA;
-    });
 
-    html += `
-      <div class="bg-white/80 rounded-2xl border border-emerald-200 p-3.5 shadow-xs">
-        <h4 class="font-black text-xs text-emerald-950 mb-2.5 pb-1 border-b border-emerald-100 flex justify-between">
-          <span>🏫 ${escapeHtml(groupKey)}</span>
-          <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">${list.length}명</span>
-        </h4>
-    `;
+  Object.keys(tree).sort(compareGroupKeys).forEach(topKey => {
+    const groupNode = tree[topKey];
 
-    if (rankingViewMode === 'list') {
-      html += `<div class="space-y-1.5">`;
-      list.forEach((s, idx) => {
-        const tot = (s.wins || 0) + (s.losses || 0);
-        const winRate = tot > 0 ? Math.round((s.wins / tot) * 100) : 0;
-        html += `
-          <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100 text-xs">
-            <span class="font-bold text-slate-800 ${s.equippedNameSkin || 'name-skin-none'}">#${idx + 1} ${s.avatar || '🏓'} ${escapeHtml(s.name)}</span>
-            <span class="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">
-              ${s.wins || 0}승 ${s.losses || 0}패 (${winRate}%)
-            </span>
-          </div>
-        `;
+    if (groupNode.isDirect) {
+      // 1학년 1반 (단독 랭킹 아코디언)
+      const list = [...groupNode.students];
+      list.sort((a, b) => {
+        const totA = (a.wins || 0) + (a.losses || 0);
+        const totB = (b.wins || 0) + (b.losses || 0);
+        const rateA = totA > 0 ? (a.wins / totA) : 0;
+        const rateB = totB > 0 ? (b.wins / totB) : 0;
+        if (rateA !== rateB) return rateB - rateA;
+        return (b.wins || 0) - (a.wins || 0);
       });
-      html += `</div>`;
+
+      const isExpanded = !!expandedRankingTopGroups[topKey];
+      const topStudent = list[0];
+      const topTot = topStudent ? (topStudent.wins || 0) + (topStudent.losses || 0) : 0;
+      const topWinRate = topTot > 0 ? Math.round((topStudent.wins / topTot) * 100) : 0;
+
+      html += `
+        <div class="bg-white/90 rounded-2xl border border-emerald-200 overflow-hidden shadow-xs">
+          <div onclick="toggleRankingTopGroup('${escapeHtml(topKey)}')" class="px-3.5 py-2.5 bg-gradient-to-r from-emerald-50 to-teal-50 text-xs font-black text-emerald-950 flex justify-between items-center cursor-pointer select-none hover:bg-emerald-100 transition-all border-b border-emerald-100">
+            <div class="flex items-center space-x-2 min-w-0">
+              <i class="fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-emerald-600 text-[11px] transition-transform"></i>
+              <span class="truncate">🏫 ${escapeHtml(topKey)}</span>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              ${topStudent ? `
+                <span class="text-[10px] text-amber-900 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-lg font-bold">
+                  👑 1위: ${escapeHtml(topStudent.name)} (${topWinRate}%)
+                </span>
+              ` : ''}
+              <span class="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-black">${list.length}명</span>
+            </div>
+          </div>
+
+          <div class="${isExpanded ? 'p-3' : 'hidden'}">
+            ${renderRankingRows(list, false)}
+          </div>
+        </div>
+      `;
     } else {
-      html += `<div class="space-y-2 pt-1">`;
-      list.forEach((s, idx) => {
-        const tot = (s.wins || 0) + (s.losses || 0);
-        const winRate = tot > 0 ? Math.round((s.wins / tot) * 100) : 0;
-        html += `
-          <div>
-            <div class="flex justify-between text-[11px] font-bold mb-0.5">
-              <span class="text-slate-800 ${s.equippedNameSkin || 'name-skin-none'}">#${idx + 1} ${s.avatar || '🏓'} ${escapeHtml(s.name)}</span>
-              <span class="text-emerald-700 font-black">${winRate}% (${s.wins || 0}승 ${s.losses || 0}패)</span>
+      // 2학년, 3학년 통합 랭킹 대그룹 (안에 2학년 1반, 2반... 서브 학급 랭킹 포함)
+      const allGradeStudents = [...groupNode.students];
+      allGradeStudents.sort((a, b) => {
+        const totA = (a.wins || 0) + (a.losses || 0);
+        const totB = (b.wins || 0) + (b.losses || 0);
+        const rateA = totA > 0 ? (a.wins / totA) : 0;
+        const rateB = totB > 0 ? (b.wins / totB) : 0;
+        if (rateA !== rateB) return rateB - rateA;
+        return (b.wins || 0) - (a.wins || 0);
+      });
+
+      const topGradeStudent = allGradeStudents[0];
+      const topGradeTot = topGradeStudent ? (topGradeStudent.wins || 0) + (topGradeStudent.losses || 0) : 0;
+      const topGradeWinRate = topGradeTot > 0 ? Math.round((topGradeStudent.wins / topGradeTot) * 100) : 0;
+      const isTopExpanded = !!expandedRankingTopGroups[topKey];
+      const subKeys = Object.keys(groupNode.subGroups).sort(compareSubGroupKeys);
+
+      html += `
+        <div class="bg-white/95 rounded-2xl border-2 border-indigo-200 overflow-hidden shadow-xs">
+          <!-- 1단계: 학년 전체 랭킹 헤더 -->
+          <div onclick="toggleRankingTopGroup('${escapeHtml(topKey)}')" class="px-3.5 py-2.5 bg-gradient-to-r from-indigo-50 via-slate-50 to-teal-50 text-xs font-black text-indigo-950 flex justify-between items-center cursor-pointer select-none hover:bg-indigo-100 transition-all border-b border-indigo-100">
+            <div class="flex items-center space-x-2 min-w-0">
+              <i class="fa-solid ${isTopExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-indigo-600 text-[11px] transition-transform"></i>
+              <span class="truncate font-black text-xs">🏛️ ${escapeHtml(topKey)} 랭킹</span>
+              <span class="text-[9px] bg-indigo-100 text-indigo-800 px-1.5 py-0.2 rounded-md font-extrabold">${subKeys.length}개 반</span>
             </div>
-            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-              <div class="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" style="width: ${Math.max(5, winRate)}%"></div>
+            <div class="flex items-center space-x-2 shrink-0">
+              ${topGradeStudent ? `
+                <span class="text-[10px] text-indigo-950 bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg font-black">
+                  👑 학년 1위: ${escapeHtml(topGradeStudent.name)} (${topGradeWinRate}%)
+                </span>
+              ` : ''}
+              <span class="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black shadow-2xs">총 ${allGradeStudents.length}명</span>
             </div>
           </div>
-        `;
-      });
-      html += `</div>`;
-    }
 
-    html += `</div>`;
+          <!-- 2단계: 학년 내 각 반(2학년 1반, 2반...) 서브 랭킹 아코디언들 -->
+          <div class="${isTopExpanded ? 'p-2.5 space-y-2 bg-slate-50/60' : 'hidden'}">
+            ${subKeys.map(subKey => {
+              const subObj = groupNode.subGroups[subKey];
+              const subList = [...subObj.students];
+              subList.sort((a, b) => {
+                const totA = (a.wins || 0) + (a.losses || 0);
+                const totB = (b.wins || 0) + (b.losses || 0);
+                const rateA = totA > 0 ? (a.wins / totA) : 0;
+                const rateB = totB > 0 ? (b.wins / totB) : 0;
+                if (rateA !== rateB) return rateB - rateA;
+                return (b.wins || 0) - (a.wins || 0);
+              });
+
+              const topSubStudent = subList[0];
+              const topSubTot = topSubStudent ? (topSubStudent.wins || 0) + (topSubStudent.losses || 0) : 0;
+              const topSubWinRate = topSubTot > 0 ? Math.round((topSubStudent.wins / topSubTot) * 100) : 0;
+              const isSubExpanded = !!expandedRankingSubGroups[subKey];
+
+              return `
+                <div class="bg-white rounded-xl border border-emerald-200 overflow-hidden shadow-2xs">
+                  <div onclick="toggleRankingSubGroup('${escapeHtml(subKey)}')" class="px-3 py-2 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 text-[11px] font-extrabold text-emerald-950 flex justify-between items-center cursor-pointer select-none hover:bg-emerald-100 transition-all border-b border-emerald-100">
+                    <div class="flex items-center space-x-1.5 min-w-0">
+                      <i class="fa-solid ${isSubExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-emerald-600 text-[9px] transition-transform"></i>
+                      <span class="truncate font-black">🏫 ${escapeHtml(subKey)}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 shrink-0">
+                      ${topSubStudent ? `
+                        <span class="text-[9px] text-amber-900 bg-amber-100 px-1.5 py-0.2 rounded-md font-bold">
+                          1위: ${escapeHtml(topSubStudent.name)} (${topSubWinRate}%)
+                        </span>
+                      ` : ''}
+                      <span class="text-[9px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded-full font-bold">${subList.length}명</span>
+                    </div>
+                  </div>
+
+                  <div class="${isSubExpanded ? 'p-2.5' : 'hidden'}">
+                    ${renderRankingRows(subList, false)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
   });
+
   container.innerHTML = html;
 
   if (historyList) {

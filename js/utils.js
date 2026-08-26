@@ -16,6 +16,132 @@ function formatClassBadge(student) {
   return student.className || '';
 }
 
+function normalizeStudentGradeClass(s) {
+  if (!s) return s;
+
+  let grade = s.grade !== undefined && s.grade !== null ? String(s.grade).trim() : '';
+  let classNum = s.classNum !== undefined && s.classNum !== null ? String(s.classNum).trim() : '';
+  let number = s.number !== undefined && s.number !== null ? String(s.number).trim() : '';
+
+  const cn = (s.className || '').trim();
+  if ((!grade || !classNum) && cn) {
+    const matchKorean = cn.match(/(\d+)학년\s*(\d+)반(?:\s*(\d+)번)?/);
+    if (matchKorean) {
+      if (!grade) grade = matchKorean[1];
+      if (!classNum) classNum = matchKorean[2];
+      if (!number && matchKorean[3]) number = matchKorean[3];
+    } else {
+      const matchHyphen = cn.match(/(\d+)\s*[-_]\s*(\d+)(?:\s*[-_]\s*(\d+))?/);
+      if (matchHyphen) {
+        if (!grade) grade = matchHyphen[1];
+        if (!classNum) classNum = matchHyphen[2];
+        if (!number && matchHyphen[3]) number = matchHyphen[3];
+      }
+    }
+  }
+
+  if (grade) grade = grade.replace(/[^0-9]/g, '');
+  if (classNum) classNum = classNum.replace(/[^0-9]/g, '');
+  if (number) number = number.replace(/[^0-9]/g, '');
+
+  s.grade = grade;
+  s.classNum = classNum;
+  s.number = number;
+  return s;
+}
+
+function getStudentGroupKey(student) {
+  if (!student) return '기타 / 학년 미지정';
+  const s = normalizeStudentGradeClass(student);
+  const grade = s.grade ? String(s.grade).trim() : '';
+  const classNum = s.classNum ? String(s.classNum).trim() : '';
+
+  if (grade === '1' && (classNum === '1' || !classNum)) {
+    return '1학년 1반';
+  } else if (grade === '2') {
+    return '2학년';
+  } else if (grade === '3') {
+    return '3학년';
+  } else if (grade === '1') {
+    return classNum ? `1학년 ${classNum}반` : '1학년';
+  } else if (grade) {
+    return `${grade}학년`;
+  }
+  return '기타 / 학년 미지정';
+}
+
+function compareGroupKeys(a, b) {
+  const getOrder = (k) => {
+    if (k === '1학년 1반') return 1;
+    if (k.startsWith('1학년')) return 2;
+    if (k === '2학년') return 3;
+    if (k === '3학년') return 4;
+    if (k.endsWith('학년')) return 5;
+    return 99;
+  };
+  const orderA = getOrder(a);
+  const orderB = getOrder(b);
+  if (orderA !== orderB) return orderA - orderB;
+  return a.localeCompare(b, 'ko');
+}
+
+function compareSubGroupKeys(a, b) {
+  const numA = parseInt(a.replace(/[^0-9]/g, '')) || 999;
+  const numB = parseInt(b.replace(/[^0-9]/g, '')) || 999;
+  if (numA !== numB) return numA - numB;
+  return a.localeCompare(b, 'ko');
+}
+
+function buildHierarchicalGroups(studentsList) {
+  const tree = {};
+
+  studentsList.forEach(rawStudent => {
+    const s = normalizeStudentGradeClass(rawStudent);
+    const grade = s.grade ? String(s.grade).trim() : '';
+    const classNum = s.classNum ? String(s.classNum).trim() : '';
+
+    if (grade === '1' && (classNum === '1' || !classNum)) {
+      const topKey = '1학년 1반';
+      if (!tree[topKey]) {
+        tree[topKey] = { isDirect: true, name: topKey, students: [] };
+      }
+      tree[topKey].students.push(s);
+    } else if (grade === '2' || grade === '3') {
+      const topKey = `${grade}학년`;
+      const subKey = classNum ? `${grade}학년 ${classNum}반` : `${grade}학년 1반`;
+
+      if (!tree[topKey]) {
+        tree[topKey] = { isDirect: false, name: topKey, subGroups: {}, students: [] };
+      }
+      tree[topKey].students.push(s);
+
+      if (!tree[topKey].subGroups[subKey]) {
+        tree[topKey].subGroups[subKey] = { name: subKey, classNum: classNum || '1', students: [] };
+      }
+      tree[topKey].subGroups[subKey].students.push(s);
+    } else if (grade === '1') {
+      const topKey = '1학년 기타';
+      const subKey = classNum ? `1학년 ${classNum}반` : `1학년 2반`;
+      if (!tree[topKey]) {
+        tree[topKey] = { isDirect: false, name: topKey, subGroups: {}, students: [] };
+      }
+      tree[topKey].students.push(s);
+      if (!tree[topKey].subGroups[subKey]) {
+        tree[topKey].subGroups[subKey] = { name: subKey, classNum: classNum, students: [] };
+      }
+      tree[topKey].subGroups[subKey].students.push(s);
+    } else {
+      const topKey = '기타 / 학년 미지정';
+      if (!tree[topKey]) {
+        tree[topKey] = { isDirect: true, name: topKey, students: [] };
+      }
+      tree[topKey].students.push(s);
+    }
+  });
+
+  return tree;
+}
+
 function openModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('hidden');
