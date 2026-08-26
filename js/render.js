@@ -1,8 +1,7 @@
-import { state, session, getCurrentStudent, checkReadOnlyGuard, calculateLevelTitle } from './state.js';
-import { escapeHtml, formatClassBadge } from './utils.js';
+/* UI RENDERER & TAB CONTROLLERS */
 
-export function switchMainTab(tabName) {
-  session.currentMainTab = tabName;
+function switchMainTab(tabName) {
+  currentMainTab = tabName;
 
   const viewIds = ['viewMissions', 'viewMatches', 'viewRewards', 'viewStats'];
   const btnIds = ['mainNavMissionsBtn', 'mainNavMatchesBtn', 'mainNavRewardsBtn', 'mainNavStatsBtn'];
@@ -30,17 +29,28 @@ export function switchMainTab(tabName) {
   renderUI();
 }
 
-export function switchTab(category) {
-  session.activeTab = category;
+function switchTab(c) {
+  activeTab = c;
+  const pBtn = document.getElementById('personalTabBtn');
+  const tBtn = document.getElementById('teamTabBtn');
+  if (pBtn && tBtn) {
+    if (c === 'personal') {
+      pBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1";
+      tBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
+    } else {
+      tBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1";
+      pBtn.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
+    }
+  }
   renderUI();
 }
 
-export function selectWeekFilter(week) {
-  session.selectedWeek = week;
+function selectWeekFilter(week) {
+  selectedWeek = week;
   for (let i = 1; i <= 10; i++) {
     const btn = document.getElementById(`weekBtn_${i}`);
     if (btn) {
-      if (session.selectedWeek === i) {
+      if (selectedWeek === i) {
         btn.className = "px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-emerald-600 text-white shadow-xs font-bold";
       } else {
         btn.className = "px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50 font-bold";
@@ -49,7 +59,7 @@ export function selectWeekFilter(week) {
   }
   const allBtn = document.getElementById('weekBtn_all');
   if (allBtn) {
-    if (session.selectedWeek === 'all') {
+    if (selectedWeek === 'all') {
       allBtn.className = "px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-emerald-600 text-white shadow-xs font-bold";
     } else {
       allBtn.className = "px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50 font-bold";
@@ -58,17 +68,17 @@ export function selectWeekFilter(week) {
   renderUI();
 }
 
-export function switchRankingView(mode) {
-  session.rankingViewMode = mode;
+function switchRankingView(m) {
+  rankingViewMode = m;
   renderMatchesView();
 }
 
-export function toggleClassAccordion(groupKey) {
-  session.collapsedClasses[groupKey] = !session.collapsedClasses[groupKey];
+function toggleClassAccordion(groupKey) {
+  collapsedClasses[groupKey] = !collapsedClasses[groupKey];
   renderStudentDirectory();
 }
 
-export function renderUI() {
+function renderUI() {
   checkReadOnlyGuard();
   const student = getCurrentStudent();
   const isAdmin = state.role === 'admin';
@@ -89,8 +99,8 @@ export function renderUI() {
   if (modeSwitchBtn) {
     if (isAdmin) {
       modeSwitchBtn.classList.remove('hidden');
-      const modeText = document.getElementById('modeSwitchBtnText');
-      if (modeText) modeText.innerText = "부원 모드로 전환";
+      const textEl = document.getElementById('modeSwitchBtnText');
+      if (textEl) textEl.innerText = "부원 모드로 전환";
     } else {
       modeSwitchBtn.classList.add('hidden');
     }
@@ -246,11 +256,12 @@ export function renderUI() {
   renderStatsView();
 }
 
-export function renderStudentDirectory() {
+function renderStudentDirectory() {
   const container = document.getElementById('groupedStudentList');
   if (!container) return;
 
-  const query = (document.getElementById('directorySearchInput')?.value || '').toLowerCase().trim();
+  const searchInput = document.getElementById('directorySearchInput');
+  const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
   const filtered = state.students.filter(s => s.name.toLowerCase().includes(query));
 
   const totalBadge = document.getElementById('directoryTotalBadge');
@@ -301,7 +312,7 @@ export function renderStudentDirectory() {
     });
     const classAvgCompletion = totalClassMissions > 0 ? Math.round((totalClassCompleted / totalClassMissions) * 100) : 0;
 
-    const isCollapsed = !!session.collapsedClasses[groupKey];
+    const isCollapsed = !!collapsedClasses[groupKey];
 
     html += `
       <div class="bg-white/80 rounded-2xl border border-emerald-100 overflow-hidden shadow-xs">
@@ -317,7 +328,7 @@ export function renderStudentDirectory() {
 
         <div class="px-3 py-1.5 bg-slate-50/90 text-[10px] border-b border-slate-100 grid grid-cols-3 gap-1 text-slate-600 font-semibold text-center">
           <div>평균: <span class="font-extrabold text-emerald-700">${avgPoints}P</span></div>
-          <div class="truncate">👑 1위: <span class="font-extrabold text-slate-800">${escapeHtml(topStudent?.name)}</span></div>
+          <div class="truncate">👑 1위: <span class="font-extrabold text-slate-800">${escapeHtml(topStudent ? topStudent.name : '')}</span></div>
           <div>달성: <span class="font-extrabold text-teal-700">${classAvgCompletion}%</span></div>
         </div>
 
@@ -339,7 +350,7 @@ export function renderStudentDirectory() {
                 <div class="min-w-0 flex flex-col justify-center">
                   <div class="flex items-center space-x-1 truncate">
                     <p class="truncate font-extrabold text-xs leading-tight ${nameSkinClass}">
-                      ${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}${s.id === session.loggedInStudentId ? ' (나)' : ''}
+                      ${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}${s.id === loggedInStudentId ? ' (나)' : ''}
                     </p>
                   </div>
                   <div>
@@ -373,7 +384,7 @@ export function renderStudentDirectory() {
   renderClassIndividualProgress();
 }
 
-export function renderClassIndividualProgress() {
+function renderClassIndividualProgress() {
   const container = document.getElementById('classIndividualProgressContainer');
   if (!container) return;
 
@@ -439,18 +450,20 @@ export function renderClassIndividualProgress() {
   container.innerHTML = html;
 }
 
-export function renderMissionsView() {
+function renderMissionsView() {
   const student = getCurrentStudent();
   const missions = student ? (student.missions || []) : [];
   const isAdmin = state.role === 'admin';
 
-  const searchVal = (document.getElementById('missionSearchInput')?.value || '').toLowerCase().trim();
-  const statusFilter = document.getElementById('missionFilterStatus')?.value || 'all';
+  const searchInput = document.getElementById('missionSearchInput');
+  const searchVal = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  const filterSelect = document.getElementById('missionFilterStatus');
+  const statusFilter = filterSelect ? filterSelect.value : 'all';
 
-  let filtered = missions.filter(m => (m.category || 'personal') === session.activeTab);
+  let filtered = missions.filter(m => (m.category || 'personal') === activeTab);
 
-  if (session.selectedWeek !== 'all') {
-    filtered = filtered.filter(m => (m.week || 1) === session.selectedWeek);
+  if (selectedWeek !== 'all') {
+    filtered = filtered.filter(m => (m.week || 1) === selectedWeek);
   }
 
   if (searchVal) {
@@ -463,8 +476,8 @@ export function renderMissionsView() {
     filtered = filtered.filter(m => m.completed);
   }
 
-  const personalCount = missions.filter(m => (m.category || 'personal') === 'personal' && (session.selectedWeek === 'all' || (m.week || 1) === session.selectedWeek)).length;
-  const teamCount = missions.filter(m => m.category === 'team' && (session.selectedWeek === 'all' || (m.week || 1) === session.selectedWeek)).length;
+  const personalCount = missions.filter(m => (m.category || 'personal') === 'personal' && (selectedWeek === 'all' || (m.week || 1) === selectedWeek)).length;
+  const teamCount = missions.filter(m => m.category === 'team' && (selectedWeek === 'all' || (m.week || 1) === selectedWeek)).length;
 
   const pBadge = document.getElementById('personalBadge');
   const tBadge = document.getElementById('teamBadge');
@@ -507,7 +520,7 @@ export function renderMissionsView() {
       ` : ''}
 
       <div class="flex items-center space-x-3 flex-1 min-w-0 pr-2 relative z-10">
-        <button onclick="handleMissionCheck('${mission.id}')" ${session.isReadOnly ? 'disabled' : ''} class="w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-transform active:scale-95 shadow-xs ${
+        <button onclick="handleMissionCheck('${mission.id}')" ${isReadOnly ? 'disabled' : ''} class="w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-transform active:scale-95 shadow-xs ${
           isDone 
             ? 'bg-emerald-600 border-emerald-600 text-white' 
             : isPending 
@@ -570,7 +583,7 @@ export function renderMissionsView() {
   }).join('');
 }
 
-export function renderMatchesView() {
+function renderMatchesView() {
   const container = document.getElementById('classLeaderboardContainer');
   const historyList = document.getElementById('matchHistoryList');
   if (!container) return;
@@ -578,7 +591,7 @@ export function renderMatchesView() {
   const viewListBtn = document.getElementById('rankingViewListBtn');
   const viewGraphBtn = document.getElementById('rankingViewGraphBtn');
 
-  if (session.rankingViewMode === 'list') {
+  if (rankingViewMode === 'list') {
     if (viewListBtn) viewListBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-black transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1";
     if (viewGraphBtn) viewGraphBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-black transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1";
   } else {
@@ -613,7 +626,7 @@ export function renderMatchesView() {
         </h4>
     `;
 
-    if (session.rankingViewMode === 'list') {
+    if (rankingViewMode === 'list') {
       html += `<div class="space-y-1.5">`;
       list.forEach((s, idx) => {
         const tot = (s.wins || 0) + (s.losses || 0);
@@ -673,7 +686,7 @@ export function renderMatchesView() {
   }
 }
 
-export function renderRewardsList() {
+function renderRewardsList() {
   const container = document.getElementById('rewardsList');
   if (!container) return;
   const student = getCurrentStudent();
@@ -690,7 +703,7 @@ export function renderRewardsList() {
           <p class="text-amber-500 font-extrabold">${r.points} P 필요</p>
         </div>
         <div class="flex items-center space-x-1">
-          <button onclick="redeemReward('${r.id}')" ${pts < r.points || session.isReadOnly ? 'disabled' : ''} class="bg-amber-400 hover:bg-amber-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold px-3 py-1.5 rounded-xl shadow-xs">
+          <button onclick="redeemReward('${r.id}')" ${pts < r.points || isReadOnly ? 'disabled' : ''} class="bg-amber-400 hover:bg-amber-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold px-3 py-1.5 rounded-xl shadow-xs">
             교환하기 🎟️
           </button>
           ${isAdmin ? `
@@ -718,7 +731,7 @@ export function renderRewardsList() {
               <p class="text-[9px] text-slate-400">${coupon.date}</p>
             </div>
           </div>
-          <button onclick="useCoupon(${idx})" ${session.isReadOnly ? 'disabled' : ''} class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">
+          <button onclick="useCoupon(${idx})" ${isReadOnly ? 'disabled' : ''} class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">
             사용 완료
           </button>
         </div>
@@ -727,7 +740,7 @@ export function renderRewardsList() {
   }
 }
 
-export function renderStatsView() {
+function renderStatsView() {
   const student = getCurrentStudent();
   if (!student) return;
 
@@ -746,23 +759,25 @@ export function renderStatsView() {
   if (statTotalEarnedPointsEl) statTotalEarnedPointsEl.innerText = `${earned} P`;
 
   if (student.skills) {
-    const fR = document.getElementById('skillForehandRange');
-    const fV = document.getElementById('skillForehandVal');
-    const bR = document.getElementById('skillBackhandRange');
-    const bV = document.getElementById('skillBackhandVal');
-    const sR = document.getElementById('skillServeRange');
-    const sV = document.getElementById('skillServeVal');
-    const mR = document.getElementById('skillMannerRange');
-    const mV = document.getElementById('skillMannerVal');
+    const fhRange = document.getElementById('skillForehandRange');
+    const fhVal = document.getElementById('skillForehandVal');
+    if (fhRange) fhRange.value = student.skills.forehand || 3;
+    if (fhVal) fhVal.innerText = `${student.skills.forehand || 3}점`;
 
-    if (fR) fR.value = student.skills.forehand || 3;
-    if (fV) fV.innerText = `${student.skills.forehand || 3}점`;
-    if (bR) bR.value = student.skills.backhand || 3;
-    if (bV) bV.innerText = `${student.skills.backhand || 3}점`;
-    if (sR) sR.value = student.skills.serve || 3;
-    if (sV) sV.innerText = `${student.skills.serve || 3}점`;
-    if (mR) mR.value = student.skills.manner || 5;
-    if (mV) mV.innerText = `${student.skills.manner || 5}점`;
+    const bhRange = document.getElementById('skillBackhandRange');
+    const bhVal = document.getElementById('skillBackhandVal');
+    if (bhRange) bhRange.value = student.skills.backhand || 3;
+    if (bhVal) bhVal.innerText = `${student.skills.backhand || 3}점`;
+
+    const svRange = document.getElementById('skillServeRange');
+    const svVal = document.getElementById('skillServeVal');
+    if (svRange) svRange.value = student.skills.serve || 3;
+    if (svVal) svVal.innerText = `${student.skills.serve || 3}점`;
+
+    const mnRange = document.getElementById('skillMannerRange');
+    const mnVal = document.getElementById('skillMannerVal');
+    if (mnRange) mnRange.value = student.skills.manner || 5;
+    if (mnVal) mnVal.innerText = `${student.skills.manner || 5}점`;
   }
 
   const historyList = document.getElementById('historyLogList');

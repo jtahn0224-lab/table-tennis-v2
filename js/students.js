@@ -1,33 +1,30 @@
-import { state, session, getCurrentStudent, checkReadOnlyGuard, getInitialMissionsForNewStudent } from './state.js';
-import { openModal, closeModal, showToast, showCustomConfirm, playSuccessSound, escapeHtml, formatClassBadge } from './utils.js';
-import { saveStudentToRTDB, deleteStudentFromRTDB, saveSettingsToRTDB } from './db.js';
-import { renderUI } from './render.js';
+/* STUDENT ROSTER, SETTINGS, SKILL EVALUATION & RANDOM GROUP GENERATOR */
 
-export function saveSkillEvaluation() {
+function saveSkillEvaluation() {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
 
   student.skills = {
-    forehand: parseInt(document.getElementById('skillForehandRange')?.value || 3),
-    backhand: parseInt(document.getElementById('skillBackhandRange')?.value || 3),
-    serve: parseInt(document.getElementById('skillServeRange')?.value || 3),
-    manner: parseInt(document.getElementById('skillMannerRange')?.value || 5)
+    forehand: parseInt(document.getElementById('skillForehandRange').value),
+    backhand: parseInt(document.getElementById('skillBackhandRange').value),
+    serve: parseInt(document.getElementById('skillServeRange').value),
+    manner: parseInt(document.getElementById('skillMannerRange').value)
   };
 
   saveStudentToRTDB(student);
   showToast('기술 자평 점수가 저장되었습니다!', '✨');
 }
 
-export function openAddStudentModal() {
+function openAddStudentModal() {
   openModal('addStudentModal');
 }
 
-export function saveNewStudent() {
-  const name = document.getElementById('addStudentNameInput')?.value.trim();
-  const grade = document.getElementById('addStudentGradeInput')?.value || '';
-  const classNum = document.getElementById('addStudentClassInput')?.value || '';
-  const number = document.getElementById('addStudentNumberInput')?.value || '';
+function saveNewStudent() {
+  const name = document.getElementById('addStudentNameInput').value.trim();
+  const grade = document.getElementById('addStudentGradeInput').value || '';
+  const classNum = document.getElementById('addStudentClassInput').value || '';
+  const number = document.getElementById('addStudentNumberInput').value || '';
 
   if (!name) {
     showToast('학생 이름을 입력하세요!', '⚠️');
@@ -74,7 +71,7 @@ export function saveNewStudent() {
   closeModal('addStudentModal');
 }
 
-export function deleteStudent(studentId) {
+function deleteStudent(studentId) {
   if (state.role !== 'admin') {
     showToast('선생님 모드에서만 부원을 삭제할 수 있습니다.', '🔒');
     return;
@@ -96,20 +93,19 @@ export function deleteStudent(studentId) {
   });
 }
 
-export function applyPointAdjustment() {
-  const val = parseInt(document.getElementById('adjustPointInput')?.value);
+function applyPointAdjustment() {
+  const val = parseInt(document.getElementById('adjustPointInput').value);
   if (!isNaN(val)) {
     const student = getCurrentStudent();
-    if (!student) return;
-
     student.totalPoints = Math.max(0, (student.totalPoints || 0) + val);
     
     const reason = document.getElementById('adjustPointReasonInput')?.value.trim() || '';
     if (!student.history) student.history = [];
+    const dateStr = new Date().toLocaleDateString('ko-KR') + ' ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     student.history.unshift({
       title: reason ? `[선생님 직권] ${reason}` : (val > 0 ? '[선생님 칭찬 포인트]' : '[선생님 포인트 차감]'),
       points: val,
-      date: new Date().toLocaleDateString('ko-KR') + ' ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      date: dateStr
     });
 
     saveStudentToRTDB(student);
@@ -118,17 +114,17 @@ export function applyPointAdjustment() {
   }
 }
 
-export function openSettingsModal() {
+function openSettingsModal() {
   openModal('settingsModal');
 }
 
-export function toggleTeacherMode(val) {
+function toggleTeacherMode(val) {
   state.teacherMode = val;
   saveSettingsToRTDB({ passcode: state.passcode, teacherMode: state.teacherMode });
   renderUI();
 }
 
-export function updatePasscode() {
+function updatePasscode() {
   const input = document.getElementById('newPasscodeInput');
   const val = input ? input.value.trim() : '';
   if (val.length >= 4) {
@@ -141,7 +137,7 @@ export function updatePasscode() {
   }
 }
 
-export function openGroupGeneratorModal() {
+function openGroupGeneratorModal() {
   const scopeSelect = document.getElementById('groupScopeSelect');
   if (scopeSelect) {
     const classes = new Set();
@@ -159,7 +155,7 @@ export function openGroupGeneratorModal() {
   openModal('groupGeneratorModal');
 }
 
-export function generateRandomGroups() {
+function generateRandomGroups() {
   const scope = document.getElementById('groupScopeSelect')?.value;
   const groupSize = parseInt(document.getElementById('groupSizeSelect')?.value) || 4;
 
@@ -224,17 +220,17 @@ export function generateRandomGroups() {
   });
 
   container.innerHTML = html;
-  session.lastGeneratedGroupsText = textCopy;
+  lastGeneratedGroupsText = textCopy;
 
   if (copyBtn) copyBtn.classList.remove('hidden');
   playSuccessSound();
   showToast(`${groups.length}개 조가 생성되었습니다!`, '🎲');
 }
 
-export function copyGroupResults() {
-  if (!session.lastGeneratedGroupsText) return;
+function copyGroupResults() {
+  if (!lastGeneratedGroupsText) return;
   const textArea = document.createElement('textarea');
-  textArea.value = session.lastGeneratedGroupsText;
+  textArea.value = lastGeneratedGroupsText;
   document.body.appendChild(textArea);
   textArea.select();
   try {

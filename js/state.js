@@ -1,6 +1,5 @@
-import { DEFAULT_MISSIONS, DEFAULT_REWARDS, DEFAULT_PASSCODE } from './constants.js';
-
-export let state = {
+/* GLOBAL STATE AND VARIABLES */
+let state = {
   role: 'student',
   activeStudentId: 'std_1',
   students: [
@@ -40,49 +39,50 @@ export let state = {
   passcode: DEFAULT_PASSCODE
 };
 
-export const session = {
-  loggedInStudentId: null,
-  isReadOnly: false,
-  currentMainTab: 'missions',
-  activeTab: 'personal',
-  selectedWeek: 'all',
-  profileCustomTab: 'avatar',
-  rankingViewMode: 'list',
-  collapsedClasses: {},
-  selectedRewardIcon: '🏓',
-  pendingMissionContext: null,
-  audioCtx: null,
-  confirmActionCallback: null,
-  sbState: {
-    score1: 0,
-    score2: 0,
-    p1Id: null,
-    p2Id: null,
-    server: 1
-  },
-  lastGeneratedGroupsText: ''
+let loggedInStudentId = null;
+let isReadOnly = false;
+
+let currentMainTab = 'missions';
+let activeTab = 'personal';
+let selectedWeek = 'all';
+let profileCustomTab = 'avatar';
+let rankingViewMode = 'list';
+let collapsedClasses = {};
+let selectedRewardIcon = '🏓';
+let pendingMissionContext = null;
+let audioCtx = null;
+let confirmActionCallback = null;
+
+let sbState = {
+  score1: 0,
+  score2: 0,
+  p1Id: null,
+  p2Id: null,
+  server: 1
 };
 
-export function getCurrentStudent() {
+let lastGeneratedGroupsText = '';
+
+function getCurrentStudent() {
   return state.students.find(s => s.id === state.activeStudentId) || state.students[0];
 }
 
-export function checkReadOnlyGuard() {
+function checkReadOnlyGuard() {
   if (state.role === 'admin') {
-    session.isReadOnly = false;
+    isReadOnly = false;
   } else {
-    session.isReadOnly = session.loggedInStudentId !== null && state.activeStudentId !== session.loggedInStudentId;
+    isReadOnly = loggedInStudentId !== null && state.activeStudentId !== loggedInStudentId;
   }
 
   const notice = document.getElementById('readOnlyNoticeBanner');
   if (notice) {
-    if (session.isReadOnly) notice.classList.remove('hidden');
+    if (isReadOnly) notice.classList.remove('hidden');
     else notice.classList.add('hidden');
   }
-  return session.isReadOnly;
+  return isReadOnly;
 }
 
-export function calculateLevelTitle(points) {
+function calculateLevelTitle(points) {
   const p = points || 0;
   if (p >= 1000) return '🌟 탁구의 신';
   if (p >= 750) return '👑 핑퐁 챔피언';
@@ -94,7 +94,7 @@ export function calculateLevelTitle(points) {
   return '🌱 탁구 입문자';
 }
 
-export function getInitialMissionsForNewStudent() {
+function getInitialMissionsForNewStudent() {
   const missionMap = new Map();
   DEFAULT_MISSIONS.forEach(m => missionMap.set(m.title, JSON.parse(JSON.stringify(m))));
 

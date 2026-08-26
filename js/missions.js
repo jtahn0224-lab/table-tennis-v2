@@ -1,9 +1,6 @@
-import { state, session, getCurrentStudent, checkReadOnlyGuard } from './state.js';
-import { openModal, closeModal, showToast, showCustomConfirm, playSuccessSound, triggerConfetti } from './utils.js';
-import { saveStudentToRTDB } from './db.js';
-import { renderUI } from './render.js';
+/* MISSIONS & STAMP APPROVAL LOGIC */
 
-export function toggleMissionCompletion(student, mission) {
+function toggleMissionCompletion(student, mission) {
   mission.completed = !mission.completed;
   mission.pending = false;
 
@@ -30,10 +27,9 @@ export function toggleMissionCompletion(student, mission) {
   renderUI();
 }
 
-export function handleMissionCheck(id) {
+function handleMissionCheck(id) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
-  if (!student || !student.missions) return;
   const mission = student.missions.find(m => m.id === id);
   if (!mission) return;
 
@@ -52,11 +48,9 @@ export function handleMissionCheck(id) {
         renderUI();
         showToast('선생님에게 승인 요청이 전송되었습니다!', '🚀');
       } else {
-        session.pendingMissionContext = { studentId: student.id, missionId: id };
-        const passInput = document.getElementById('passcodeInput');
-        if (passInput) passInput.value = '';
-        const errEl = document.getElementById('verifyErrorMsg');
-        if (errEl) errEl.classList.add('hidden');
+        pendingMissionContext = { studentId: student.id, missionId: id };
+        document.getElementById('passcodeInput').value = '';
+        document.getElementById('verifyErrorMsg').classList.add('hidden');
         openModal('verifyModal');
       }
     } else {
@@ -65,18 +59,18 @@ export function handleMissionCheck(id) {
   }
 }
 
-export function approvePendingMission(studentId, missionId) {
+function approvePendingMission(studentId, missionId) {
   const student = state.students.find(s => s.id === studentId);
-  if (!student || !student.missions) return;
+  if (!student) return;
   const mission = student.missions.find(m => m.id === missionId);
   if (mission) {
     toggleMissionCompletion(student, mission);
   }
 }
 
-export function rejectPendingMission(studentId, missionId) {
+function rejectPendingMission(studentId, missionId) {
   const student = state.students.find(s => s.id === studentId);
-  if (!student || !student.missions) return;
+  if (!student) return;
   const mission = student.missions.find(m => m.id === missionId);
   if (mission) {
     mission.pending = false;
@@ -86,7 +80,7 @@ export function rejectPendingMission(studentId, missionId) {
   }
 }
 
-export function approveAllPendingMissions() {
+function approveAllPendingMissions() {
   let approvedCount = 0;
   state.students.forEach(student => {
     if (student.missions && Array.isArray(student.missions)) {
@@ -121,21 +115,18 @@ export function approveAllPendingMissions() {
   }
 }
 
-export function openAddMissionModal() {
-  const editIdEl = document.getElementById('editingMissionId');
-  const titleHeaderEl = document.getElementById('addMissionModalTitle');
-  const titleInputEl = document.getElementById('missionTitleInput');
-  if (editIdEl) editIdEl.value = '';
-  if (titleHeaderEl) titleHeaderEl.innerText = '✨ 새 탁구 미션 추가';
-  if (titleInputEl) titleInputEl.value = '';
+function openAddMissionModal() {
+  document.getElementById('editingMissionId').value = '';
+  document.getElementById('addMissionModalTitle').innerText = '✨ 새 탁구 미션 추가';
+  document.getElementById('missionTitleInput').value = '';
   openModal('addMissionModal');
 }
 
-export function handleAddMission(event) {
+function handleAddMission(event) {
   if (event) event.preventDefault();
-  const editingId = document.getElementById('editingMissionId')?.value;
-  const title = document.getElementById('missionTitleInput')?.value.trim();
-  const week = parseInt(document.getElementById('missionWeekInput')?.value) || 1;
+  const editingId = document.getElementById('editingMissionId').value;
+  const title = document.getElementById('missionTitleInput').value.trim();
+  const week = parseInt(document.getElementById('missionWeekInput').value) || 1;
   if (!title) return;
 
   const targetRadio = document.querySelector('input[name="missionTarget"]:checked');
@@ -199,11 +190,10 @@ export function handleAddMission(event) {
 
   renderUI();
   closeModal('addMissionModal');
-  const titleInput = document.getElementById('missionTitleInput');
-  if (titleInput) titleInput.value = '';
+  document.getElementById('missionTitleInput').value = '';
 }
 
-export function moveMission(missionId, direction) {
+function moveMission(missionId, direction) {
   if (state.role !== 'admin') {
     showToast('선생님 모드에서만 순서를 변경할 수 있습니다.', '🔒');
     return;
@@ -215,9 +205,9 @@ export function moveMission(missionId, direction) {
   const searchVal = (document.getElementById('missionSearchInput')?.value || '').toLowerCase().trim();
   const statusFilter = document.getElementById('missionFilterStatus')?.value || 'all';
 
-  let filtered = student.missions.filter(m => (m.category || 'personal') === session.activeTab);
-  if (session.selectedWeek !== 'all') {
-    filtered = filtered.filter(m => (m.week || 1) === session.selectedWeek);
+  let filtered = student.missions.filter(m => (m.category || 'personal') === activeTab);
+  if (selectedWeek !== 'all') {
+    filtered = filtered.filter(m => (m.week || 1) === selectedWeek);
   }
   if (searchVal) {
     filtered = filtered.filter(m => m.title.toLowerCase().includes(searchVal));
@@ -255,7 +245,7 @@ export function moveMission(missionId, direction) {
   showToast('미션 순서가 변경되었습니다.', '↕️');
 }
 
-export function deleteMission(missionId) {
+function deleteMission(missionId) {
   const currentStudent = getCurrentStudent();
   const targetMission = currentStudent ? currentStudent.missions.find(m => m.id === missionId) : null;
   const targetTitle = targetMission ? targetMission.title : null;

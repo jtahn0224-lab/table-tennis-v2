@@ -1,9 +1,6 @@
-import { state, session, getCurrentStudent } from './state.js';
-import { openModal, closeModal, showToast, showCustomConfirm, playSuccessSound, triggerConfetti, escapeHtml, formatClassBadge } from './utils.js';
-import { saveStudentToRTDB, saveMatchToRTDB, deleteMatchFromRTDB } from './db.js';
-import { renderUI } from './render.js';
+/* MATCH RECORDS & LIVE REFEREE SCOREBOARD */
 
-export function openScoreboardModal() {
+function openScoreboardModal() {
   const p1Select = document.getElementById('sbPlayer1Select');
   if (!p1Select) return;
   p1Select.innerHTML = state.students.map(s => 
@@ -14,7 +11,7 @@ export function openScoreboardModal() {
   openModal('scoreboardModal');
 }
 
-export function updateScoreboardPlayer2() {
+function updateScoreboardPlayer2() {
   const p1Id = document.getElementById('sbPlayer1Select')?.value;
   const p2Select = document.getElementById('sbPlayer2Select');
   if (!p1Id || !p2Select) return;
@@ -28,17 +25,17 @@ export function updateScoreboardPlayer2() {
   ).join('');
 }
 
-export function updateScore(playerNum, delta) {
-  if (playerNum === 1) session.sbState.score1 = Math.max(0, session.sbState.score1 + delta);
-  if (playerNum === 2) session.sbState.score2 = Math.max(0, session.sbState.score2 + delta);
+function updateScore(playerNum, delta) {
+  if (playerNum === 1) sbState.score1 = Math.max(0, sbState.score1 + delta);
+  if (playerNum === 2) sbState.score2 = Math.max(0, sbState.score2 + delta);
 
   const score1El = document.getElementById('sbScore1Text');
   const score2El = document.getElementById('sbScore2Text');
-  if (score1El) score1El.innerText = session.sbState.score1;
-  if (score2El) score2El.innerText = session.sbState.score2;
+  if (score1El) score1El.innerText = sbState.score1;
+  if (score2El) score2El.innerText = sbState.score2;
 
-  const total = session.sbState.score1 + session.sbState.score2;
-  const isDeuce = session.sbState.score1 >= 10 && session.sbState.score2 >= 10;
+  const total = sbState.score1 + sbState.score2;
+  const isDeuce = sbState.score1 >= 10 && sbState.score2 >= 10;
   
   let server = 1;
   if (isDeuce) {
@@ -53,21 +50,21 @@ export function updateScore(playerNum, delta) {
   if (p2Badge) p2Badge.style.opacity = server === 2 ? '1' : '0';
 }
 
-export function resetScoreboard() {
-  session.sbState.score1 = 0;
-  session.sbState.score2 = 0;
+function resetScoreboard() {
+  sbState.score1 = 0;
+  sbState.score2 = 0;
   updateScore(1, 0);
 }
 
-export function endScoreboardMatch() {
+function endScoreboardMatch() {
   const p1Select = document.getElementById('sbPlayer1Select');
   const p2Select = document.getElementById('sbPlayer2Select');
   if (!p1Select || !p2Select) return;
 
   const p1Id = p1Select.value;
   const p2Id = p2Select.value;
-  const s1 = session.sbState.score1;
-  const s2 = session.sbState.score2;
+  const s1 = sbState.score1;
+  const s2 = sbState.score2;
 
   if (!p1Id || !p2Id || p1Id === p2Id) {
     showToast('선수를 올바르게 선택해 주세요!', '⚠️');
@@ -130,7 +127,7 @@ export function endScoreboardMatch() {
   showToast(`경기 결과 저장 완료! (${winner.name} 승리 +10P)`, '🏆');
 }
 
-export function openMatchRecordModal() {
+function openMatchRecordModal() {
   if (state.role !== 'admin') {
     showToast('선생님 모드에서만 경기 결과를 기록할 수 있습니다.', '🔒');
     return;
@@ -147,7 +144,7 @@ export function openMatchRecordModal() {
   openModal('matchRecordModal');
 }
 
-export function updatePlayer2Options() {
+function updatePlayer2Options() {
   const p1Id = document.getElementById('matchPlayer1Select')?.value;
   const p2Select = document.getElementById('matchPlayer2Select');
   if (!p1Id || !p2Select) return;
@@ -174,7 +171,7 @@ export function updatePlayer2Options() {
   }
 }
 
-export function deleteTimelineLog(index) {
+function deleteTimelineLog(index) {
   if (state.role !== 'admin') {
     showToast('선생님 모드에서만 활동 기록을 삭제할 수 있습니다.', '🔒');
     return;
@@ -192,17 +189,17 @@ export function deleteTimelineLog(index) {
   });
 }
 
-export function handleRecordMatch(event) {
+function handleRecordMatch(event) {
   if (event) event.preventDefault();
   if (state.role !== 'admin') {
     showToast('선생님 모드에서만 기록 가능합니다.', '🔒');
     return;
   }
 
-  const p1Id = document.getElementById('matchPlayer1Select')?.value;
-  const p2Id = document.getElementById('matchPlayer2Select')?.value;
-  const s1 = parseInt(document.getElementById('matchScore1')?.value) || 0;
-  const s2 = parseInt(document.getElementById('matchScore2')?.value) || 0;
+  const p1Id = document.getElementById('matchPlayer1Select').value;
+  const p2Id = document.getElementById('matchPlayer2Select').value;
+  const s1 = parseInt(document.getElementById('matchScore1').value) || 0;
+  const s2 = parseInt(document.getElementById('matchScore2').value) || 0;
 
   if (!p1Id || !p2Id || p1Id === p2Id) {
     showToast('서로 다른 두 부원을 선택해 주세요!', '⚠️');
@@ -265,7 +262,7 @@ export function handleRecordMatch(event) {
   showToast(`경기 결과 저장 완료! (${winner.name} 승리 +10P)`, '🏆');
 }
 
-export function deleteMatchRecord(matchId) {
+function deleteMatchRecord(matchId) {
   const match = state.matchHistory.find(m => m.id === matchId);
   if (!match) return;
 

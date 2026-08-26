@@ -1,71 +1,112 @@
-import { db, appId, firebaseUser, ref, set, onValue, remove } from './firebase.js';
-import { state, calculateLevelTitle, getInitialMissionsForNewStudent } from './state.js';
+/* REALTIME DATABASE & FIREBASE DATA LAYER */
 
-export async function saveStudentToRTDB(student) {
-  if (!firebaseUser || !student || !student.id) return;
+const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'pingpong_challenge_default';
+const appId = rawAppId.replace(/[.#$\[\]]/g, '_');
+
+let firebaseUser = null;
+let db = null;
+let auth = null;
+
+function initFirebaseApp() {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDL8FfQqIsBbjRoERiKncCWYvu70q_gSLc",
+    authDomain: "tabletennis-1e702.firebaseapp.com",
+    databaseURL: "https://tabletennis-1e702-default-rtdb.firebaseio.com",
+    projectId: "tabletennis-1e702",
+    storageBucket: "tabletennis-1e702.firebasestorage.app",
+    messagingSenderId: "970232813868",
+    appId: "1:970232813868:web:5c0be16f8b396a5d70f489",
+    measurementId: "G-D7RD6QR52T"
+  };
+
   try {
-    const studentRef = ref(db, `artifacts/${appId}/public/data/students/${student.id}`);
-    await set(studentRef, JSON.parse(JSON.stringify(student)));
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.database();
+    auth = firebase.auth();
+
+    auth.signInAnonymously().then((cred) => {
+      firebaseUser = cred.user;
+      console.log("Firebase Anonymous Auth Success:", firebaseUser.uid);
+      const statusEl = document.getElementById('rtDbStatusText');
+      if (statusEl) statusEl.innerText = "리얼타임 DB 연결 완료 🔥";
+      setupRealtimeListeners();
+    }).catch((err) => {
+      console.error("Firebase Auth Error:", err);
+      const statusEl = document.getElementById('rtDbStatusText');
+      if (statusEl) statusEl.innerText = "DB 연결 오류 발생 ⚠️";
+    });
+  } catch (e) {
+    console.error("Firebase Init Error:", e);
+  }
+}
+
+async function saveStudentToRTDB(student) {
+  if (!db || !student || !student.id) return;
+  try {
+    const studentRef = db.ref(`artifacts/${appId}/public/data/students/${student.id}`);
+    await studentRef.set(JSON.parse(JSON.stringify(student)));
   } catch (err) {
     console.error("Failed to save student to RTDB:", err);
   }
 }
 
-export async function deleteStudentFromRTDB(studentId) {
-  if (!firebaseUser || !studentId) return;
+async function deleteStudentFromRTDB(studentId) {
+  if (!db || !studentId) return;
   try {
-    const studentRef = ref(db, `artifacts/${appId}/public/data/students/${studentId}`);
-    await remove(studentRef);
+    const studentRef = db.ref(`artifacts/${appId}/public/data/students/${studentId}`);
+    await studentRef.remove();
   } catch (err) {
     console.error("Failed to delete student from RTDB:", err);
   }
 }
 
-export async function saveMatchToRTDB(match) {
-  if (!firebaseUser || !match || !match.id) return;
+async function saveMatchToRTDB(match) {
+  if (!db || !match || !match.id) return;
   try {
-    const matchRef = ref(db, `artifacts/${appId}/public/data/matches/${match.id}`);
-    await set(matchRef, JSON.parse(JSON.stringify(match)));
+    const matchRef = db.ref(`artifacts/${appId}/public/data/matches/${match.id}`);
+    await matchRef.set(JSON.parse(JSON.stringify(match)));
   } catch (err) {
     console.error("Failed to save match to RTDB:", err);
   }
 }
 
-export async function deleteMatchFromRTDB(matchId) {
-  if (!firebaseUser || !matchId) return;
+async function deleteMatchFromRTDB(matchId) {
+  if (!db || !matchId) return;
   try {
-    const matchRef = ref(db, `artifacts/${appId}/public/data/matches/${matchId}`);
-    await remove(matchRef);
+    const matchRef = db.ref(`artifacts/${appId}/public/data/matches/${matchId}`);
+    await matchRef.remove();
   } catch (err) {
     console.error("Failed to delete match from RTDB:", err);
   }
 }
 
-export async function saveRewardsToRTDB(rewards) {
-  if (!firebaseUser || !rewards) return;
+async function saveRewardsToRTDB(rewards) {
+  if (!db || !rewards) return;
   try {
-    const rewardsRef = ref(db, `artifacts/${appId}/public/data/rewards`);
-    await set(rewardsRef, JSON.parse(JSON.stringify(rewards)));
+    const rewardsRef = db.ref(`artifacts/${appId}/public/data/rewards`);
+    await rewardsRef.set(JSON.parse(JSON.stringify(rewards)));
   } catch (err) {
     console.error("Failed to save rewards to RTDB:", err);
   }
 }
 
-export async function saveSettingsToRTDB(settings) {
-  if (!firebaseUser || !settings) return;
+async function saveSettingsToRTDB(settings) {
+  if (!db || !settings) return;
   try {
-    const settingsRef = ref(db, `artifacts/${appId}/public/data/settings`);
-    await set(settingsRef, JSON.parse(JSON.stringify(settings)));
+    const settingsRef = db.ref(`artifacts/${appId}/public/data/settings`);
+    await settingsRef.set(JSON.parse(JSON.stringify(settings)));
   } catch (err) {
     console.error("Failed to save settings to RTDB:", err);
   }
 }
 
-export function setupRealtimeListeners(renderCallbacks = {}) {
-  const { onStudentsUpdate, onMatchesUpdate, onRewardsUpdate, onSettingsUpdate } = renderCallbacks;
+function setupRealtimeListeners() {
+  if (!db) return;
 
-  const studentsRef = ref(db, `artifacts/${appId}/public/data/students`);
-  onValue(studentsRef, (snapshot) => {
+  const studentsRef = db.ref(`artifacts/${appId}/public/data/students`);
+  studentsRef.on('value', (snapshot) => {
     const val = snapshot.val();
     if (val) {
       const loaded = Object.values(val);
@@ -90,33 +131,34 @@ export function setupRealtimeListeners(renderCallbacks = {}) {
           history: s.history || [],
           redeemedRewards: s.redeemedRewards || []
         }));
-        if (typeof onStudentsUpdate === 'function') onStudentsUpdate();
+        if (typeof renderUI === 'function') renderUI();
       }
     }
   });
 
-  const matchesRef = ref(db, `artifacts/${appId}/public/data/matches`);
-  onValue(matchesRef, (snapshot) => {
+  const matchesRef = db.ref(`artifacts/${appId}/public/data/matches`);
+  matchesRef.on('value', (snapshot) => {
     const val = snapshot.val();
     if (val) {
       state.matchHistory = Object.values(val).sort((a, b) => b.id.localeCompare(a.id));
+      if (typeof renderMatchesView === 'function') renderMatchesView();
     } else {
       state.matchHistory = [];
+      if (typeof renderMatchesView === 'function') renderMatchesView();
     }
-    if (typeof onMatchesUpdate === 'function') onMatchesUpdate();
   });
 
-  const rewardsRef = ref(db, `artifacts/${appId}/public/data/rewards`);
-  onValue(rewardsRef, (snapshot) => {
+  const rewardsRef = db.ref(`artifacts/${appId}/public/data/rewards`);
+  rewardsRef.on('value', (snapshot) => {
     const val = snapshot.val();
     if (val) {
       state.rewards = Object.values(val);
-      if (typeof onRewardsUpdate === 'function') onRewardsUpdate();
+      if (typeof renderRewardsList === 'function') renderRewardsList();
     }
   });
 
-  const settingsRef = ref(db, `artifacts/${appId}/public/data/settings`);
-  onValue(settingsRef, (snapshot) => {
+  const settingsRef = db.ref(`artifacts/${appId}/public/data/settings`);
+  settingsRef.on('value', (snapshot) => {
     const val = snapshot.val();
     if (val) {
       if (val.passcode) state.passcode = val.passcode;
@@ -125,7 +167,6 @@ export function setupRealtimeListeners(renderCallbacks = {}) {
         const toggle = document.getElementById('teacherModeToggle');
         if (toggle) toggle.checked = state.teacherMode;
       }
-      if (typeof onSettingsUpdate === 'function') onSettingsUpdate();
     }
   });
 }

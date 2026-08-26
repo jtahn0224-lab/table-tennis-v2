@@ -1,15 +1,11 @@
-import { state, session, getInitialMissionsForNewStudent } from './state.js';
-import { openModal, closeModal, showToast, showCustomConfirm, escapeHtml, formatClassBadge } from './utils.js';
-import { saveStudentToRTDB } from './db.js';
-import { renderUI } from './render.js';
-import { toggleMissionCompletion } from './missions.js';
+/* AUTHENTICATION & ROLE SWITCHING (STUDENT & TEACHER MODES) */
 
-export function showLoginGate() {
+function showLoginGate() {
   renderQuickRosterChips();
   openModal('loginGateScreen');
 }
 
-export function renderQuickRosterChips() {
+function renderQuickRosterChips() {
   const container = document.getElementById('loginQuickRosterChips');
   if (!container) return;
 
@@ -20,10 +16,10 @@ export function renderQuickRosterChips() {
   `).join('');
 }
 
-export function quickLoginStudent(studentId) {
+function quickLoginStudent(studentId) {
   const student = state.students.find(s => s.id === studentId);
   if (student) {
-    session.loggedInStudentId = student.id;
+    loggedInStudentId = student.id;
     state.activeStudentId = student.id;
     state.role = 'student';
     closeModal('loginGateScreen');
@@ -32,22 +28,17 @@ export function quickLoginStudent(studentId) {
   }
 }
 
-export function toggleRoleModalFromLogin() {
+function toggleRoleModalFromLogin() {
   closeModal('loginGateScreen');
   openModal('roleAuthModal');
 }
 
-export function handleStudentLogin(e) {
+function handleStudentLogin(e) {
   if (e) e.preventDefault();
-  const gradeInput = document.getElementById('loginGradeInput');
-  const classInput = document.getElementById('loginClassInput');
-  const numberInput = document.getElementById('loginNumberInput');
-  const nameInput = document.getElementById('loginNameInput');
-
-  const grade = gradeInput ? gradeInput.value.trim() : '';
-  const classNum = classInput ? classInput.value.trim() : '';
-  const number = numberInput ? numberInput.value.trim() : '';
-  const rawName = nameInput ? nameInput.value.trim() : '';
+  const grade = document.getElementById('loginGradeInput').value.trim();
+  const classNum = document.getElementById('loginClassInput').value.trim();
+  const number = document.getElementById('loginNumberInput').value.trim();
+  const rawName = document.getElementById('loginNameInput').value.trim();
   const name = rawName.replaceAll(' ', '');
 
   if (!rawName) {
@@ -72,7 +63,7 @@ export function handleStudentLogin(e) {
   }
 
   if (existing) {
-    session.loggedInStudentId = existing.id;
+    loggedInStudentId = existing.id;
     state.activeStudentId = existing.id;
     state.role = 'student';
     closeModal('loginGateScreen');
@@ -111,7 +102,7 @@ export function handleStudentLogin(e) {
         redeemedRewards: []
       };
       state.students.push(newStudent);
-      session.loggedInStudentId = newId;
+      loggedInStudentId = newId;
       state.activeStudentId = newId;
       state.role = 'student';
       saveStudentToRTDB(newStudent);
@@ -122,37 +113,41 @@ export function handleStudentLogin(e) {
   }
 }
 
-export function handleLogout() {
-  session.loggedInStudentId = null;
+function handleLogout() {
+  loggedInStudentId = null;
   state.role = 'student';
   showLoginGate();
   showToast('로그아웃 되었습니다.', '👋');
 }
 
-export function switchToSelfAccount() {
-  if (session.loggedInStudentId) {
-    state.activeStudentId = session.loggedInStudentId;
+function switchToSelfAccount() {
+  if (loggedInStudentId) {
+    state.activeStudentId = loggedInStudentId;
     renderUI();
     showToast('내 계정으로 돌아왔습니다.', '👤');
   }
 }
 
-export function switchActiveStudent(studentId) {
+function switchActiveStudent(studentId) {
   state.activeStudentId = studentId;
   renderUI();
 }
 
-export function toggleRoleModal() {
+function toggleRoleModal() {
   if (state.role === 'admin') {
     state.role = 'student';
     renderUI();
     showToast('부원 모드로 전환되었습니다.');
   } else {
+    const errorMsg = document.getElementById('roleAuthErrorMsg');
+    if (errorMsg) errorMsg.classList.add('hidden');
+    const input = document.getElementById('adminRolePasscodeInput');
+    if (input) input.value = '';
     openModal('roleAuthModal');
   }
 }
 
-export function verifyAndSwitchToAdmin() {
+function verifyAndSwitchToAdmin() {
   const input = document.getElementById('adminRolePasscodeInput');
   if (input && input.value === state.passcode) {
     state.role = 'admin';
@@ -161,27 +156,27 @@ export function verifyAndSwitchToAdmin() {
     renderUI();
     showToast('선생님 관리자 모드로 접속되었습니다.', '🎓');
   } else {
-    const errorEl = document.getElementById('roleAuthErrorMsg');
-    if (errorEl) errorEl.classList.remove('hidden');
+    const errorMsg = document.getElementById('roleAuthErrorMsg');
+    if (errorMsg) errorMsg.classList.remove('hidden');
   }
 }
 
-export function confirmTeacherPasscode() {
-  const input = document.getElementById('passcodeInput')?.value;
-  if (input === state.passcode) {
+function confirmTeacherPasscode() {
+  const input = document.getElementById('passcodeInput');
+  if (input && input.value === state.passcode) {
     closeModal('verifyModal');
-    if (session.pendingMissionContext) {
-      const student = state.students.find(s => s.id === session.pendingMissionContext.studentId);
+    if (pendingMissionContext) {
+      const student = state.students.find(s => s.id === pendingMissionContext.studentId);
       if (student) {
-        const mission = student.missions.find(m => m.id === session.pendingMissionContext.missionId);
+        const mission = student.missions.find(m => m.id === pendingMissionContext.missionId);
         if (mission && !mission.completed) {
           toggleMissionCompletion(student, mission);
         }
       }
-      session.pendingMissionContext = null;
+      pendingMissionContext = null;
     }
   } else {
-    const errorEl = document.getElementById('verifyErrorMsg');
-    if (errorEl) errorEl.classList.remove('hidden');
+    const errorMsg = document.getElementById('verifyErrorMsg');
+    if (errorMsg) errorMsg.classList.remove('hidden');
   }
 }

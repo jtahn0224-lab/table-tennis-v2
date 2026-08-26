@@ -1,10 +1,6 @@
-import { state, session, getCurrentStudent, checkReadOnlyGuard, calculateLevelTitle } from './state.js';
-import { BASIC_AVATARS, ALL_AVATARS, ALL_FRAMES, ALL_TITLES, ALL_AURAS, ALL_NAME_SKINS, ALL_CARD_SKINS, ALL_CEREMONIES } from './constants.js';
-import { openModal, showToast, showCustomConfirm, playSuccessSound, triggerConfetti } from './utils.js';
-import { saveStudentToRTDB } from './db.js';
-import { renderUI } from './render.js';
+/* PROFILE CUSTOMIZATION (AVATARS, FRAMES, TITLES, AURAS, SKINS, CEREMONIES) */
 
-export function openAvatarModal() {
+function openAvatarModal() {
   if (checkReadOnlyGuard()) {
     showToast('타 부원의 프로필은 변경할 수 없습니다.', '🔒');
     return;
@@ -13,8 +9,8 @@ export function openAvatarModal() {
   openModal('avatarSelectModal');
 }
 
-export function switchProfileCustomTab(tab) {
-  session.profileCustomTab = tab;
+function switchProfileCustomTab(tab) {
+  profileCustomTab = tab;
 
   const secAvatar = document.getElementById('profileSectionAvatar');
   const secFrame = document.getElementById('profileSectionFrame');
@@ -61,7 +57,7 @@ export function switchProfileCustomTab(tab) {
   }
 }
 
-export function renderAvatarGrid() {
+function renderAvatarGrid() {
   const container = document.getElementById('avatarGridContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -95,7 +91,7 @@ export function renderAvatarGrid() {
   }).join('');
 }
 
-export function changeStudentAvatar(newAvatar) {
+function changeStudentAvatar(newAvatar) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -151,7 +147,7 @@ export function changeStudentAvatar(newAvatar) {
   }
 }
 
-export function renderFramesList() {
+function renderFramesList() {
   const container = document.getElementById('framesListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -193,7 +189,7 @@ export function renderFramesList() {
   }).join('');
 }
 
-export function equipFrame(frameId) {
+function equipFrame(frameId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -206,7 +202,7 @@ export function equipFrame(frameId) {
   showToast('프로필 테두리가 장착되었습니다!', '🖼️');
 }
 
-export function unlockFrame(frameId, cost) {
+function unlockFrame(frameId, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -241,7 +237,7 @@ export function unlockFrame(frameId, cost) {
   });
 }
 
-export function renderTitlesList() {
+function renderTitlesList() {
   const container = document.getElementById('titlesListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -280,7 +276,7 @@ export function renderTitlesList() {
   }).join('');
 }
 
-export function equipTitle(titleText) {
+function equipTitle(titleText) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -293,7 +289,7 @@ export function equipTitle(titleText) {
   showToast(`'${titleText}' 칭호가 장착되었습니다!`, '🏷️');
 }
 
-export function unlockTitle(titleId, titleText, cost) {
+function unlockTitle(titleId, titleText, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -327,7 +323,7 @@ export function unlockTitle(titleId, titleText, cost) {
   });
 }
 
-export function renderAurasList() {
+function renderAurasList() {
   const container = document.getElementById('aurasListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -369,7 +365,7 @@ export function renderAurasList() {
   }).join('');
 }
 
-export function equipAura(auraId) {
+function equipAura(auraId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -382,7 +378,7 @@ export function equipAura(auraId) {
   showToast('오라 이펙트가 장착되었습니다!', '🔮');
 }
 
-export function unlockAura(auraId, cost) {
+function unlockAura(auraId, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -417,7 +413,7 @@ export function unlockAura(auraId, cost) {
   });
 }
 
-export function renderNameSkinsList() {
+function renderNameSkinsList() {
   const container = document.getElementById('nameSkinsListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -454,7 +450,7 @@ export function renderNameSkinsList() {
   }).join('');
 }
 
-export function equipNameSkin(skinId) {
+function equipNameSkin(skinId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -467,7 +463,7 @@ export function equipNameSkin(skinId) {
   showToast('네임 스킨이 장착되었습니다!', '🌈');
 }
 
-export function unlockNameSkin(skinId, cost) {
+function unlockNameSkin(skinId, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -502,7 +498,7 @@ export function unlockNameSkin(skinId, cost) {
   });
 }
 
-export function renderCardSkinsList() {
+function renderCardSkinsList() {
   const container = document.getElementById('cardSkinsListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -539,7 +535,7 @@ export function renderCardSkinsList() {
   }).join('');
 }
 
-export function equipCardSkin(cardSkinId) {
+function equipCardSkin(cardSkinId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -552,7 +548,7 @@ export function equipCardSkin(cardSkinId) {
   showToast('카드 배경 스킨이 장착되었습니다!', '🎴');
 }
 
-export function unlockCardSkin(cardSkinId, cost) {
+function unlockCardSkin(cardSkinId, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -587,7 +583,7 @@ export function unlockCardSkin(cardSkinId, cost) {
   });
 }
 
-export function renderCeremoniesList() {
+function renderCeremoniesList() {
   const container = document.getElementById('ceremoniesListContainer');
   if (!container) return;
   const student = getCurrentStudent();
@@ -627,7 +623,7 @@ export function renderCeremoniesList() {
   }).join('');
 }
 
-export function equipCeremony(ceremonyId) {
+function equipCeremony(ceremonyId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;
@@ -641,7 +637,7 @@ export function equipCeremony(ceremonyId) {
   showToast('세레머니 이펙트가 장착되었습니다!', '🎉');
 }
 
-export function unlockCeremony(ceremonyId, cost) {
+function unlockCeremony(ceremonyId, cost) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student) return;

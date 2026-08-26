@@ -1,9 +1,6 @@
-import { state, session, getCurrentStudent, checkReadOnlyGuard } from './state.js';
-import { openModal, closeModal, showToast, showCustomConfirm, playSuccessSound, triggerConfetti } from './utils.js';
-import { saveStudentToRTDB, saveRewardsToRTDB } from './db.js';
-import { renderUI } from './render.js';
+/* REWARD SHOP & COUPON REDEMPTION */
 
-export function redeemReward(rewardId) {
+function redeemReward(rewardId) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   const reward = state.rewards.find(r => r.id === rewardId);
@@ -40,7 +37,7 @@ export function redeemReward(rewardId) {
   });
 }
 
-export function useCoupon(index) {
+function useCoupon(index) {
   if (checkReadOnlyGuard()) return;
   const student = getCurrentStudent();
   if (!student || !student.redeemedRewards || !student.redeemedRewards[index]) return;
@@ -54,14 +51,14 @@ export function useCoupon(index) {
   });
 }
 
-export function openAddRewardModal() {
+function openAddRewardModal() {
   openModal('addRewardModal');
 }
 
-export function handleAddReward(e) {
+function handleAddReward(e) {
   if (e) e.preventDefault();
-  const title = document.getElementById('rewardTitleInput')?.value.trim();
-  const points = parseInt(document.getElementById('rewardPointsInput')?.value);
+  const title = document.getElementById('rewardTitleInput').value.trim();
+  const points = parseInt(document.getElementById('rewardPointsInput').value);
 
   if (!title || !points) return;
 
@@ -69,7 +66,7 @@ export function handleAddReward(e) {
     id: 'r_' + Date.now(),
     title: title,
     points: points,
-    icon: session.selectedRewardIcon || '🎁'
+    icon: selectedRewardIcon || '🎁'
   };
 
   state.rewards.push(newReward);
@@ -77,20 +74,19 @@ export function handleAddReward(e) {
 
   renderUI();
   closeModal('addRewardModal');
-  const titleInput = document.getElementById('rewardTitleInput');
-  if (titleInput) titleInput.value = '';
+  document.getElementById('rewardTitleInput').value = '';
   showToast('새 보상이 등록되었습니다!', '🎁');
 }
 
-export function deleteReward(rewardId) {
+function deleteReward(rewardId) {
   state.rewards = state.rewards.filter(r => r.id !== rewardId);
   saveRewardsToRTDB(state.rewards);
   renderUI();
   showToast('보상이 삭제되었습니다.', '🗑️');
 }
 
-export function selectRewardIcon(icon) {
-  session.selectedRewardIcon = icon;
+function selectRewardIcon(icon) {
+  selectedRewardIcon = icon;
   document.querySelectorAll('.reward-icon-opt').forEach(btn => {
     if (btn.innerText.includes(icon)) btn.classList.add('border-emerald-500', 'bg-emerald-100');
     else btn.classList.remove('border-emerald-500', 'bg-emerald-100');
