@@ -45,8 +45,34 @@ function calculateDefaultServer() {
 function applyServerBadge(server) {
   const p1Badge = document.getElementById('sbP1ServeBadge');
   const p2Badge = document.getElementById('sbP2ServeBadge');
-  if (p1Badge) p1Badge.style.opacity = server === 1 ? '1' : '0';
-  if (p2Badge) p2Badge.style.opacity = server === 2 ? '1' : '0';
+
+  if (p1Badge) {
+    if (server === 1) {
+      p1Badge.style.opacity = '1';
+      p1Badge.style.visibility = 'visible';
+      p1Badge.style.pointerEvents = 'auto';
+      p1Badge.classList.add('animate-pulse');
+    } else {
+      p1Badge.style.opacity = '0';
+      p1Badge.style.visibility = 'hidden';
+      p1Badge.style.pointerEvents = 'none';
+      p1Badge.classList.remove('animate-pulse');
+    }
+  }
+
+  if (p2Badge) {
+    if (server === 2) {
+      p2Badge.style.opacity = '1';
+      p2Badge.style.visibility = 'visible';
+      p2Badge.style.pointerEvents = 'auto';
+      p2Badge.classList.add('animate-pulse');
+    } else {
+      p2Badge.style.opacity = '0';
+      p2Badge.style.visibility = 'hidden';
+      p2Badge.style.pointerEvents = 'none';
+      p2Badge.classList.remove('animate-pulse');
+    }
+  }
 }
 
 function updateScore(playerNum, delta) {
