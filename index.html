@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>스핀 & 스매시! 중학교 탁구 미션 챌린지</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="p-2 sm:p-4 md:p-6 flex justify-center items-center min-h-screen">
+
+  <!-- LOGIN GATE SCREEN -->
+  <div id="loginGateScreen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-pop text-center max-h-[90vh] overflow-y-auto">
+      
+      <div class="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-900 border border-emerald-300 font-black text-xs px-3 py-1 rounded-full mb-3 shadow-xs">
+        <span>🏫</span>
+        <span>양주중학교 체육수업</span>
+      </div>
+
+      <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-600 text-white rounded-3xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-emerald-500/30">
+        🏓
+      </div>
+      <h2 class="text-2xl font-black text-slate-800">스핀 & 스매시!</h2>
+      <p class="text-xs text-slate-500 font-bold mt-1 mb-5">중학교 탁구 미션 챌린지 로그인</p>
+
+      <form onsubmit="handleStudentLogin(event)" class="space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">학번 (학년 / 반 / 번호)</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="relative flex items-center">
+              <input type="number" id="loginGradeInput" min="1" max="6" placeholder="1" required class="w-full pl-3 pr-7 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-bold text-slate-800 text-sm text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">학년</span>
+            </div>
+            <div class="relative flex items-center">
+              <input type="number" id="loginClassInput" min="1" max="30" placeholder="1" required class="w-full pl-3 pr-5 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-bold text-slate-800 text-sm text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">반</span>
+            </div>
+            <div class="relative flex items-center">
+              <input type="number" id="loginNumberInput" min="1" max="50" placeholder="1" required class="w-full pl-3 pr-5 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-bold text-slate-800 text-sm text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">번</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">학생 이름</label>
+          <input type="text" id="loginNameInput" placeholder="예: 김탁구" required class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-bold text-slate-800 text-sm">
+        </div>
+
+        <button type="submit" class="w-full mt-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/30 active:scale-95 transition-all text-sm flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>학생 로그인 / 접속</span>
+        </button>
+      </form>
+
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <button onclick="toggleRoleModalFromLogin()" class="w-full bg-slate-800 hover:bg-slate-900 text-amber-300 font-extrabold py-3 rounded-2xl text-xs transition-all flex items-center justify-center space-x-2 shadow-md">
+          <i class="fa-solid fa-user-shield text-amber-400"></i>
+          <span>🎓 선생님(관리자) 로그인</span>
+        </button>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 text-left">
+        <p class="text-[11px] font-bold text-slate-400 mb-2">등록된 부원 빠른 입장:</p>
+        <div id="loginQuickRosterChips" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+          <!-- Dynamic Quick Login Chips -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="w-full max-w-6xl flex flex-col lg:flex-row gap-5 items-start justify-center my-auto">
+
+    <!-- MOBILE TOP BAR -->
+    <div class="w-full lg:hidden flex justify-between items-center bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl text-white border border-slate-700 mb-1">
+      <button onclick="toggleMobileRosterDrawer()" class="flex items-center space-x-2 text-xs font-bold bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
+        <i class="fa-solid fa-users text-emerald-400"></i>
+        <span>부원 명단 열기</span>
+      </button>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="openLevelGuideModal()" class="text-xs bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-xl font-bold border border-emerald-500/30">
+          🏆 등급표
+        </button>
+        <button onclick="handleLogout()" class="text-xs bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 px-2.5 py-1 rounded-xl font-bold border border-rose-500/30">
+          로그아웃
+        </button>
+      </div>
+    </div>
+
+    <!-- LEFT PANEL: Student Directory -->
+    <aside id="studentDirectoryPanel" class="fixed inset-y-0 left-0 z-40 w-80 bg-white/95 lg:bg-white/90 backdrop-blur-xl p-5 flex flex-col shrink-0 transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out lg:rounded-3xl glass-card order-2 lg:order-1 shadow-2xl lg:shadow-none min-h-[88vh] max-h-[92vh]">
+      
+      <!-- School Tag Header -->
+      <div class="mb-2 pb-2 border-b border-emerald-100 flex items-center justify-between">
+        <div class="flex items-center space-x-1.5 text-xs font-black text-emerald-800">
+          <span>🏫</span>
+          <span>양주중학교 체육수업</span>
+        </div>
+        <span id="roleBadgeTag" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white">부원 모드</span>
+      </div>
+
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-extrabold text-slate-800 text-sm flex items-center space-x-2">
+          <span class="text-base">🏓</span>
+          <span>탁구 부원 명단</span>
+        </h3>
+        <div class="flex items-center space-x-1">
+          <span id="directoryTotalBadge" class="bg-emerald-100 text-emerald-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full">0명</span>
+          <button onclick="toggleMobileRosterDrawer()" class="lg:hidden text-slate-400 p-1 hover:text-slate-600">
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="relative my-2">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+        <input type="text" id="directorySearchInput" oninput="renderStudentDirectory()" placeholder="부원 이름 검색..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+
+      <p class="text-[11px] text-slate-500 mb-2">학급 헤더를 클릭하면 해당 반 부원 목록을 펼치거나 접을 수 있습니다.</p>
+
+      <!-- Extended Grouped Roster Area -->
+      <div id="groupedStudentList" class="space-y-3 flex-1 overflow-y-auto pr-1 min-h-[300px]">
+        <!-- Dynamic grouped student list -->
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-slate-200">
+        <div class="flex justify-between items-center mb-1.5">
+          <h4 class="font-extrabold text-slate-800 text-xs flex items-center space-x-1">
+            <i class="fa-solid fa-chart-line text-emerald-600"></i>
+            <span>학급 내 부원 미션 달성 현황</span>
+          </h4>
+        </div>
+        <div id="classIndividualProgressContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+          <!-- Dynamic Individual Progress Bar Cards -->
+        </div>
+      </div>
+
+      <!-- Add Student Button (Teacher Mode Only) -->
+      <button id="sidebarAddStudentBtn" onclick="openAddStudentModal()" class="hidden mt-3 w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-2.5 rounded-2xl text-xs border border-emerald-200 transition-all flex items-center justify-center space-x-1.5 shadow-xs">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>+ 신규 부원 추가 등록 (선생님)</span>
+      </button>
+    </aside>
+
+    <div id="appContainer" class="w-full lg:flex-1 max-w-2xl min-h-[88vh] glass-card rounded-3xl p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden order-1 lg:order-2">
+      
+      <!-- Top Branding Bar -->
+      <div class="mb-3 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-900 to-slate-900 text-white flex items-center justify-between shadow-md border border-emerald-700/50">
+        <div class="flex items-center space-x-2 min-w-0">
+          <span class="text-base shrink-0">🏫</span>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-emerald-300 leading-none">양주중학교 체육수업</p>
+            <p class="text-xs font-black text-white leading-tight truncate">스핀 & 스매시! 탁구 미션 챌린지</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-2 shrink-0">
+          <button id="modeSwitchBtn" onclick="toggleRoleModal()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 px-2.5 py-1 rounded-xl text-[10px] font-black transition-all shadow-xs">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i>
+            <span id="modeSwitchBtnText">부원 모드로 전환</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Read-Only Notice Banner -->
+      <div id="readOnlyNoticeBanner" class="hidden mb-3 p-2.5 bg-amber-500/10 border border-amber-300 text-amber-900 rounded-2xl text-xs font-bold flex items-center justify-between">
+        <div class="flex items-center space-x-1.5 truncate">
+          <span>👁️</span>
+          <span>타 부원 정보 열람 중 (수정 불가)</span>
+        </div>
+        <button onclick="switchToSelfAccount()" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-xl shadow-xs shrink-0">
+          내 계정으로 돌아가기
+        </button>
+      </div>
+
+      <!-- Header with Profile Info -->
+      <header id="mainProfileHeader" class="mb-4 p-3.5 rounded-2xl shadow-xs flex items-center justify-between gap-3 transition-all card-skin-none">
+        <div onclick="openAvatarModal()" title="프로필 캐릭터 / 테두리 / 오라 / 스킨 꾸미기" class="flex items-center space-x-3 sm:space-x-4 cursor-pointer flex-1 min-w-0 group">
+          <div id="headerAvatar" class="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl shadow-inner shrink-0 relative transition-all frame-emerald aura-none">
+            <span id="headerAvatarIcon">🏓</span>
+            <span class="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full w-5 sm:w-6 h-5 sm:h-6 text-[10px] sm:text-xs flex items-center justify-center border-2 border-white shadow-xs group-hover:scale-110 transition-transform">✏️</span>
+          </div>
+          <div class="flex flex-col justify-center flex-1 min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <h1 id="headerName" class="font-black text-slate-800 text-base sm:text-lg leading-tight name-skin-none">김탁구</h1>
+              <span id="headerTitleBadge" class="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-xs whitespace-nowrap">🌱 탁구 입문자</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span id="headerClass" class="bg-emerald-100/90 text-emerald-900 font-extrabold text-[11px] px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap border border-emerald-200">1학년 1반 1번</span>
+              <button type="button" onclick="openLevelGuideModal()" class="text-[11px] text-emerald-700 font-extrabold leading-tight hover:underline flex items-center space-x-1">
+                <span id="userLevelTitle">🌱 탁구 입문자</span>
+                <i class="fa-solid fa-circle-info text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <button onclick="handleLogout()" class="hidden sm:flex h-9 px-3 bg-slate-100/80 text-slate-600 rounded-2xl items-center justify-center font-bold text-xs hover:bg-slate-200 border border-slate-200 transition-all">
+            로그아웃
+          </button>
+
+          <button id="settingsBtn" onclick="openSettingsModal()" class="w-9 h-9 sm:w-10 sm:h-10 bg-white/90 rounded-2xl flex items-center justify-center text-slate-600 hover:text-emerald-600 hover:bg-slate-50 shadow-xs border border-slate-200 transition-all">
+            <i class="fa-solid fa-gear text-base"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Points & Progress Widget -->
+      <section id="progressWidget" class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg mb-4 relative overflow-hidden transition-all duration-300">
+        <div class="flex justify-between items-end mb-3">
+          <div>
+            <p id="widgetSubTitle" class="text-xs font-medium text-emerald-100 uppercase tracking-wider mb-0.5">탁구 미션 종합 달성률</p>
+            <div class="flex items-baseline space-x-2">
+              <h2 id="progressPercent" class="text-3xl font-black tracking-tight">0%</h2>
+              <span id="completedCountText" class="text-xs text-emerald-200">(0/0 완료)</span>
+            </div>
+          </div>
+
+          <div class="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-2xl flex items-center space-x-1.5 border border-white/30 cursor-pointer hover:bg-white/30 transition-all" onclick="switchMainTab('rewards')" title="보상 상점 바로가기">
+            <span class="text-lg">⭐</span>
+            <span id="totalPoints" class="font-extrabold text-amber-300 text-base">0 P</span>
+          </div>
+        </div>
+
+        <div class="w-full bg-black/20 rounded-full h-3.5 p-0.5 overflow-hidden">
+          <div id="progressBar" class="bg-gradient-to-r from-amber-300 to-amber-400 h-full rounded-full transition-all duration-500 ease-out w-0 shadow-sm"></div>
+        </div>
+      </section>
+
+      <!-- Pending Approval Box (Teacher Mode Only) -->
+      <div id="adminApprovalSection" class="hidden mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+          <h4 class="text-xs font-extrabold text-amber-900 flex items-center space-x-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+            <span>선생님 미션 승인 대기</span>
+          </h4>
+          <div class="flex items-center space-x-1">
+            <button onclick="approveAllPendingMissions()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-xs transition-all">
+              전체 승인
+            </button>
+            <span id="pendingCountBadge" class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">0건</span>
+          </div>
+        </div>
+        <div id="pendingList" class="space-y-2 max-h-36 overflow-y-auto">
+          <!-- Dynamic pending items -->
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <div class="grid grid-cols-4 bg-slate-200/80 p-1 rounded-2xl mb-3 border border-slate-300/50 shadow-inner gap-0.5">
+        <button id="mainNavMissionsBtn" onclick="switchMainTab('missions')" class="py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all duration-200 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1 bg-white text-emerald-800 shadow-sm">
+          <i class="fa-solid fa-bullseye text-sm"></i>
+          <span>탁구 미션</span>
+        </button>
+        <button id="mainNavMatchesBtn" onclick="switchMainTab('matches')" class="py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all duration-200 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1 text-slate-600 hover:text-slate-800">
+          <i class="fa-solid fa-trophy text-sm"></i>
+          <span>경기·랭킹</span>
+        </button>
+        <button id="mainNavRewardsBtn" onclick="switchMainTab('rewards')" class="py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all duration-200 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1 text-slate-600 hover:text-slate-800">
+          <i class="fa-solid fa-gift text-sm"></i>
+          <span>보상 쿠폰</span>
+        </button>
+        <button id="mainNavStatsBtn" onclick="switchMainTab('stats')" class="py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all duration-200 flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1 text-slate-600 hover:text-slate-800">
+          <i class="fa-solid fa-chart-pie text-sm"></i>
+          <span>활동 기록</span>
+        </button>
+      </div>
+
+      <!-- VIEW 1: Missions View -->
+      <main id="viewMissions" class="flex-1 flex flex-col min-h-0 mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="font-extrabold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
+            <span id="missionSectionTitle">🎯 주차별 탁구 커리큘럼 미션</span>
+          </h3>
+        </div>
+
+        <!-- 10-Week Selector Bar -->
+        <div class="mb-3">
+          <p class="text-[11px] font-bold text-slate-500 mb-1">주차 선택 (1주차 ~ 10주차):</p>
+          <div class="flex space-x-1.5 overflow-x-auto pb-1 text-xs font-bold no-scrollbar">
+            <button onclick="selectWeekFilter('all')" id="weekBtn_all" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-emerald-600 text-white shadow-xs">
+              전체 주차
+            </button>
+            <button onclick="selectWeekFilter(1)" id="weekBtn_1" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">1주차</button>
+            <button onclick="selectWeekFilter(2)" id="weekBtn_2" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">2주차</button>
+            <button onclick="selectWeekFilter(3)" id="weekBtn_3" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">3주차</button>
+            <button onclick="selectWeekFilter(4)" id="weekBtn_4" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">4주차</button>
+            <button onclick="selectWeekFilter(5)" id="weekBtn_5" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">5주차</button>
+            <button onclick="selectWeekFilter(6)" id="weekBtn_6" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">6주차</button>
+            <button onclick="selectWeekFilter(7)" id="weekBtn_7" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">7주차</button>
+            <button onclick="selectWeekFilter(8)" id="weekBtn_8" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">8주차</button>
+            <button onclick="selectWeekFilter(9)" id="weekBtn_9" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">9주차</button>
+            <button onclick="selectWeekFilter(10)" id="weekBtn_10" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-emerald-50">10주차</button>
+          </div>
+        </div>
+
+        <div class="flex bg-slate-100/90 p-1 rounded-2xl mb-3 border border-slate-200/60 shadow-inner">
+          <button id="tabPersonalBtn" onclick="switchTab('personal')" class="flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm bg-white text-emerald-800">
+            <i class="fa-solid fa-user"></i>
+            <span>개인 챌린지</span>
+            <span id="personalBadge" class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.2 rounded-full ml-1">0</span>
+          </button>
+          <button id="tabTeamBtn" onclick="switchTab('team')" class="flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 flex items-center justify-center space-x-1 text-slate-500 hover:text-slate-700">
+            <i class="fa-solid fa-users"></i>
+            <span>팀 챌린지</span>
+            <span id="teamBadge" class="bg-slate-200 text-slate-600 text-[10px] px-1.5 py-0.2 rounded-full ml-1">0</span>
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-2 mb-3">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+            <input type="text" id="missionSearchInput" oninput="renderUI()" placeholder="미션 검색..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          </div>
+          <select id="missionFilterStatus" onchange="renderUI()" class="bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <option value="all">전체 상태</option>
+            <option value="active">진행 중</option>
+            <option value="completed">완료됨</option>
+          </select>
+        </div>
+
+        <div id="missionList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[200px]">
+          <!-- Dynamic Mission Cards -->
+        </div>
+      </main>
+
+      <!-- VIEW 2: Matches & Leaderboard -->
+      <main id="viewMatches" class="hidden flex-1 flex-col min-h-0 mb-4 overflow-y-auto pr-1">
+        <div class="flex flex-wrap gap-2 justify-between items-center mb-3">
+          <h3 class="font-extrabold text-slate-800 text-sm sm:text-base flex items-center space-x-1.5">
+            <span>🏓 학급별 경기 & 랭킹</span>
+          </h3>
+          <div class="flex items-center space-x-1.5">
+            <button onclick="openGroupGeneratorModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
+              <i class="fa-solid fa-shuffle"></i>
+              <span>🎲 조 편성</span>
+            </button>
+            <button onclick="openScoreboardModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
+              <i class="fa-solid fa-play"></i>
+              <span>경기 전광판</span>
+            </button>
+            <button id="addMatchBtn" onclick="openMatchRecordModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
+              <i class="fa-solid fa-plus"></i>
+              <span>기록</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex bg-slate-100 p-1 rounded-2xl mb-3 border border-slate-200/80">
+          <button id="rankingViewListBtn" onclick="switchRankingView('list')" class="flex-1 py-1.5 rounded-xl text-xs font-black transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-list-ol"></i>
+            <span>리스트 보기</span>
+          </button>
+          <button id="rankingViewGraphBtn" onclick="switchRankingView('graph')" class="flex-1 py-1.5 rounded-xl text-xs font-black transition-all text-slate-500 hover:text-slate-800 flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>그래프 보기</span>
+          </button>
+        </div>
+
+        <div id="classLeaderboardContainer" class="space-y-4 mb-4">
+          <!-- Dynamic Leaderboard Cards -->
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+          <h4 class="text-xs font-extrabold text-slate-700 mb-2 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i class="fa-solid fa-table-tennis-paddle-ball text-emerald-600"></i>
+              <span>최근 경기 기록 타임라인</span>
+            </span>
+          </h4>
+          <div id="matchHistoryList" class="space-y-2 max-h-36 overflow-y-auto">
+            <!-- Dynamic match history logs -->
+          </div>
+        </div>
+      </main>
+
+      <!-- VIEW 3: Rewards Shop -->
+      <main id="viewRewards" class="hidden flex-1 flex-col min-h-0 mb-4 overflow-y-auto pr-1">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-extrabold text-slate-800 text-sm sm:text-base flex items-center space-x-1.5">
+            <span>🎁 탁구 보상 상점 & 쿠폰</span>
+          </h3>
+          <button id="addRewardBtn" onclick="openAddRewardModal()" class="hidden bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold text-xs px-2.5 py-1 rounded-xl transition-all flex items-center space-x-1">
+            <i class="fa-solid fa-plus"></i>
+            <span>보상 추가</span>
+          </button>
+        </div>
+
+        <div id="rewardsList" class="space-y-2.5 mb-5">
+          <!-- Dynamic Rewards -->
+        </div>
+
+        <div class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80">
+          <h4 class="text-xs font-extrabold text-amber-900 mb-2 flex items-center space-x-1.5">
+            <i class="fa-solid fa-ticket text-amber-600"></i>
+            <span>보관 중인 보상 쿠폰함</span>
+          </h4>
+          <div id="redeemedCouponsList" class="space-y-2 max-h-36 overflow-y-auto">
+            <!-- Dynamic Active Coupons -->
+          </div>
+        </div>
+      </main>
+
+      <!-- VIEW 4: Student Stats & Self-Evaluation -->
+      <main id="viewStats" class="hidden flex-1 flex-col min-h-0 mb-4 overflow-y-auto pr-1">
+        <h3 class="font-extrabold text-slate-800 text-sm sm:text-base mb-3 flex items-center space-x-1.5">
+          <span>📊 나의 탁구 활동 기록 & 자평</span>
+        </h3>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-3 rounded-2xl border border-emerald-100 text-center">
+            <p class="text-[11px] font-bold text-slate-500">완료한 미션</p>
+            <p id="statCompletedCount" class="text-2xl font-black text-emerald-700 mt-0.5">0개</p>
+          </div>
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-2xl border border-amber-100 text-center">
+            <p class="text-[11px] font-bold text-slate-500">누적 획득 포인트</p>
+            <p id="statTotalEarnedPoints" class="text-2xl font-black text-amber-600 mt-0.5">0 P</p>
+          </div>
+        </div>
+
+        <!-- Skill Self-Evaluation Section -->
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 mb-4 shadow-xs">
+          <h4 class="text-xs font-extrabold text-slate-800 mb-3 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i class="fa-solid fa-sliders text-emerald-600"></i>
+              <span>탁구 기술 자평 (5점 만점)</span>
+            </span>
+            <button onclick="saveSkillEvaluation()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-xl text-[10px] shadow-xs">
+              자평 저장
+            </button>
+          </h4>
+          <div class="space-y-2 text-xs">
+            <div>
+              <div class="flex justify-between font-bold text-slate-700 mb-0.5">
+                <span>포핸드 (Forehand)</span>
+                <span id="skillForehandVal" class="text-emerald-600 font-black">3점</span>
+              </div>
+              <input type="range" id="skillForehandRange" min="1" max="5" value="3" oninput="document.getElementById('skillForehandVal').innerText = this.value + '점'" class="w-full accent-emerald-600">
+            </div>
+            <div>
+              <div class="flex justify-between font-bold text-slate-700 mb-0.5">
+                <span>백핸드 (Backhand)</span>
+                <span id="skillBackhandVal" class="text-emerald-600 font-black">3점</span>
+              </div>
+              <input type="range" id="skillBackhandRange" min="1" max="5" value="3" oninput="document.getElementById('skillBackhandVal').innerText = this.value + '점'" class="w-full accent-emerald-600">
+            </div>
+            <div>
+              <div class="flex justify-between font-bold text-slate-700 mb-0.5">
+                <span>서브 (Serve)</span>
+                <span id="skillServeVal" class="text-emerald-600 font-black">3점</span>
+              </div>
+              <input type="range" id="skillServeRange" min="1" max="5" value="3" oninput="document.getElementById('skillServeVal').innerText = this.value + '점'" class="w-full accent-emerald-600">
+            </div>
+            <div>
+              <div class="flex justify-between font-bold text-slate-700 mb-0.5">
+                <span>매너 & 태도 (Manner)</span>
+                <span id="skillMannerVal" class="text-emerald-600 font-black">5점</span>
+              </div>
+              <input type="range" id="skillMannerRange" min="1" max="5" value="5" oninput="document.getElementById('skillMannerVal').innerText = this.value + '점'" class="w-full accent-emerald-600">
+            </div>
+          </div>
+        </div>
+
+        <div id="adminPointAdjustBox" class="hidden mb-4 p-3.5 bg-slate-800 text-white rounded-2xl border border-slate-700 shadow-sm">
+          <p class="text-xs font-bold text-emerald-400 mb-2 flex items-center justify-between">
+            <span>⭐ 포인트 수동 부여 / 차감</span>
+            <span class="text-[10px] text-slate-300">선생님 전용</span>
+          </p>
+          <div class="space-y-2">
+            <input type="text" id="adjustPointReasonInput" placeholder="사유 입력 (예: 심판활동 우수)" class="w-full px-3 py-1.5 rounded-xl border border-slate-600 bg-slate-900 text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-400">
+            <div class="flex space-x-2">
+              <input type="number" id="adjustPointInput" placeholder="포인트 (+10 또는 -5)" class="flex-1 px-3 py-1.5 rounded-xl border border-slate-600 bg-slate-900 text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-400">
+              <button onclick="applyPointAdjustment()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0">
+                적용
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+          <h4 class="text-xs font-extrabold text-slate-700 mb-2.5 flex items-center space-x-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+            <span>최근 활동 타임라인</span>
+          </h4>
+          <div id="historyLogList" class="space-y-2 max-h-48 overflow-y-auto text-xs">
+            <!-- Dynamic History -->
+          </div>
+        </div>
+      </main>
+
+      <footer class="pt-2">
+        <button id="addMissionBtn" onclick="openAddMissionModal()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-emerald-600/25 active:scale-95 transition-all flex items-center justify-center space-x-2 text-sm sm:text-base">
+          <i class="fa-solid fa-plus-circle text-lg"></i>
+          <span>새 탁구 미션 만들기 (선생님)</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL: Comprehensive Profile Customization Modal -->
+  <div id="avatarSelectModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop text-center max-h-[92vh] flex flex-col">
+      <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-100 shrink-0">
+        <h3 class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
+          <span>✨ 프로필 오라, 스킨 & 꾸미기 상점</span>
+        </h3>
+        <button onclick="closeModal('avatarSelectModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Customization Tabs -->
+      <div class="flex space-x-1.5 bg-slate-100 p-1.5 rounded-2xl mb-3 overflow-x-auto text-xs font-bold shrink-0 no-scrollbar">
+        <button id="profileTabAvatarBtn" onclick="switchProfileCustomTab('avatar')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all bg-white text-emerald-800 shadow-xs">🎨 캐릭터 (100종)</button>
+        <button id="profileTabFrameBtn" onclick="switchProfileCustomTab('frame')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🖼️ 테두리</button>
+        <button id="profileTabTitleBtn" onclick="switchProfileCustomTab('title')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🏷️ 한정판 칭호</button>
+        <button id="profileTabAuraBtn" onclick="switchProfileCustomTab('aura')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🔮 오라 이펙트</button>
+        <button id="profileTabNameSkinBtn" onclick="switchProfileCustomTab('nameSkin')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🌈 네임 스킨</button>
+        <button id="profileTabCardSkinBtn" onclick="switchProfileCustomTab('cardSkin')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🎴 카드 배경</button>
+        <button id="profileTabCeremonyBtn" onclick="switchProfileCustomTab('ceremony')" class="px-3 py-1.5 rounded-xl whitespace-nowrap transition-all text-slate-600 hover:text-slate-800">🎉 세레머니</button>
+      </div>
+
+      <!-- Section 1: Avatars Grid -->
+      <div id="profileSectionAvatar" class="flex-1 flex flex-col min-h-0">
+        <div class="p-2.5 bg-emerald-50 rounded-2xl border border-emerald-100 text-left mb-2 shrink-0">
+          <p class="text-[11px] font-bold text-emerald-900 flex items-center space-x-1">
+            <span>💡</span>
+            <span>기본 캐릭터(5종)는 무료입니다! 프리미엄 해금: 10 P</span>
+          </p>
+        </div>
+        <div id="avatarGridContainer" class="grid grid-cols-5 sm:grid-cols-6 gap-2 overflow-y-auto p-1 flex-1 min-h-0 pr-1">
+          <!-- Dynamic Avatars Grid -->
+        </div>
+      </div>
+
+      <!-- Section 2: Frames List -->
+      <div id="profileSectionFrame" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <div id="framesListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Section 3: Titles List -->
+      <div id="profileSectionTitle" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <div id="titlesListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Section 4: Auras List -->
+      <div id="profileSectionAura" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <p class="text-xs text-slate-500 font-bold mb-1">프로필 뒤에서 화려하게 타오르고 반짝이는 오라 이펙트를 장착하세요!</p>
+        <div id="aurasListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Section 5: Name Skins List -->
+      <div id="profileSectionNameSkin" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <p class="text-xs text-slate-500 font-bold mb-1">내 이름을 영롱한 무지개빛, 금빛, 네온 광채로 다채롭게 뽐내보세요!</p>
+        <div id="nameSkinsListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Section 6: Card Background Skins List -->
+      <div id="profileSectionCardSkin" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <p class="text-xs text-slate-500 font-bold mb-1">부원 명단에서 내 정보 카드를 은하수, 사이버, 황금 카드로 꾸며보세요!</p>
+        <div id="cardSkinsListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Section 7: Ceremonies List -->
+      <div id="profileSectionCeremony" class="hidden flex-1 flex-col min-h-0 overflow-y-auto space-y-2 pr-1 text-left">
+        <p class="text-xs text-slate-500 font-bold mb-1">미션을 완수하거나 경기에서 승리할 때 화면 가득 터지는 세레머니 이펙트!</p>
+        <div id="ceremoniesListContainer" class="space-y-2"></div>
+      </div>
+
+      <button onclick="closeModal('avatarSelectModal')" class="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all shrink-0">
+        닫기
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: Level Guide Modal -->
+  <div id="levelGuideModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+        <h3 class="text-base font-black text-slate-800 flex items-center space-x-2">
+          <span>🏆 탁구 등급 안내표</span>
+        </h3>
+        <button onclick="closeModal('levelGuideModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-slate-800">🌱 탁구 입문자 (0 ~ 49 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">기본 자세 및 라켓 잡는 법 익히기 단계</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-emerald-700">🏓 핑퐁 아마추어 (50 ~ 99 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">기본 랠리 10회 이상 지속 가능</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-amber-600">⭐ 스핀 루키 (100 ~ 199 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">정확한 서브 및 백핸드 리턴 완성</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-sky-600">⚡ 드라이브 스페셜리스트 (200 ~ 349 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">회전 공 공격 및 풋워크 습득</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-orange-600">🔥 스매시 마스터 (350 ~ 499 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">강력한 스매싱 결정을 내리는 에이스</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-indigo-600">🛡️ 철벽 커트 에이스 (500 ~ 749 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">다양한 회전 커트와 방어 수비 달인</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-purple-600">👑 핑퐁 챔피언 (750 ~ 999 P)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">학급 토너먼트 상위권의 실력자</p>
+        </div>
+        <div class="p-2.5 rounded-2xl border bg-slate-50 border-slate-200">
+          <p class="font-bold text-rose-600">🌟 탁구의 신 (1,000 P 이상)</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">탁구 기술과 매너를 모두 정복한 전설</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Scoreboard & Live Referee Tool -->
+  <div id="scoreboardModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-pop text-white text-center relative">
+      <button onclick="closeModal('scoreboardModal')" class="absolute right-4 top-4 text-slate-400 hover:text-white p-1">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h3 class="text-base font-extrabold text-emerald-400 mb-1">🏓 11점제 정식 경기 전광판</h3>
+      <p class="text-[11px] text-slate-400 mb-4">동일 학급 대결 (2점/듀스 서브 자동 교대)</p>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">선수 1</label>
+          <select id="sbPlayer1Select" onchange="updateScoreboardPlayer2()" class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-xs rounded-xl p-2 focus:outline-none">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">선수 2</label>
+          <select id="sbPlayer2Select" class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-xs rounded-xl p-2 focus:outline-none">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center">
+          <span id="sbP1ServeBadge" class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mb-2 opacity-0">SERVING</span>
+          <span id="sbScore1Text" class="text-5xl font-black text-amber-400 my-1">0</span>
+          <div class="flex space-x-2 mt-2">
+            <button onclick="updateScore(1, 1)" class="w-10 h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-lg shadow-md">+</button>
+            <button onclick="updateScore(1, -1)" class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-xl font-black text-lg">-</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center">
+          <span id="sbP2ServeBadge" class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mb-2 opacity-0">SERVING</span>
+          <span id="sbScore2Text" class="text-5xl font-black text-amber-400 my-1">0</span>
+          <div class="flex space-x-2 mt-2">
+            <button onclick="updateScore(2, 1)" class="w-10 h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-lg shadow-md">+</button>
+            <button onclick="updateScore(2, -1)" class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-xl font-black text-lg">-</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="resetScoreboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-2xl text-xs">
+          점수 리셋
+        </button>
+        <button onclick="endScoreboardMatch()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3 rounded-2xl shadow-lg text-xs">
+          경기 종료 & 결과 저장 🏆
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Role Auth Passcode Modal -->
+  <div id="roleAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop text-center">
+      <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-slate-800">선생님 모드 인증</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">선생님 모드로 전환하려면 비밀번호를 입력해 주세요.</p>
+
+      <div class="space-y-3">
+        <input type="password" id="adminRolePasscodeInput" maxlength="6" placeholder="비밀번호 입력 (기본: 1234)" class="w-full text-center tracking-widest text-lg py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-bold">
+        <p id="roleAuthErrorMsg" class="text-xs text-rose-500 font-bold hidden">비밀번호가 일치하지 않습니다!</p>
+        
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button onclick="closeModal('roleAuthModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-2xl text-xs transition-all">
+            취소
+          </button>
+          <button onclick="verifyAndSwitchToAdmin()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl shadow-md text-xs transition-all">
+            선생님으로 접속 🔓
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Match Record Modal -->
+  <div id="matchRecordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-extrabold text-slate-800 flex items-center space-x-2">
+          <span>🏓 경기 결과 수동 기록</span>
+        </h3>
+        <button onclick="closeModal('matchRecordModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleRecordMatch(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">선수 1 선택</label>
+          <select id="matchPlayer1Select" onchange="updatePlayer2Options()" required class="w-full px-3 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">선수 2 선택 (동일 학급)</label>
+          <select id="matchPlayer2Select" required class="w-full px-3 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">세트 스코어 (선수 1 : 선수 2)</label>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="number" id="matchScore1" min="0" max="15" placeholder="선수1 점수" required class="w-full text-center py-2.5 rounded-2xl border border-slate-200 text-sm font-bold">
+            <input type="number" id="matchScore2" min="0" max="15" placeholder="선수2 점수" required class="w-full text-center py-2.5 rounded-2xl border border-slate-200 text-sm font-bold">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-md active:scale-95 transition-all text-sm">
+          경기 결과 저장 🏆
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add/Edit Mission Modal -->
+  <div id="addMissionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="addMissionModalTitle" class="text-lg font-extrabold text-slate-800 flex items-center space-x-2">
+          <span>✨ 새 탁구 미션 추가</span>
+        </h3>
+        <button onclick="closeModal('addMissionModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="addMissionForm" onsubmit="handleAddMission(event)" class="space-y-4">
+        <input type="hidden" id="editingMissionId" value="">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">주차 선택 (1주차 ~ 10주차)</label>
+          <select id="missionWeekInput" class="w-full px-3 py-2.5 rounded-2xl border border-slate-200 text-xs font-bold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <option value="1">1주차: 올바른 그립 & 포핸드</option>
+            <option value="2">2주차: 백핸드 쇼트 & 기본 랠리</option>
+            <option value="3">3주차: 대각선 서브 & 규칙</option>
+            <option value="4">4주차: 2보 풋워크 기본기</option>
+            <option value="5">5주차: 포핸드 드라이브 회전</option>
+            <option value="6">6주차: 백핸드 커트 방어</option>
+            <option value="7">7주차: 3구 공격 콤보</option>
+            <option value="8">8주차: 복식 로테이션 호흡</option>
+            <option value="9">9주차: 학급 단체전 리그</option>
+            <option value="10">10주차: 왕중왕전 & 심판 활동</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">미션 제목</label>
+          <input type="text" id="missionTitleInput" required placeholder="예: 백핸드 쇼트 랠리 15회 성공" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">적용 대상</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="missionTarget" value="all" class="peer hidden" checked>
+              <div class="p-2.5 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-800 text-slate-600 font-bold text-xs flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-users font-bold"></i>
+                <span>전체 부원</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="missionTarget" value="current" class="peer hidden">
+              <div class="p-2.5 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-teal-500 peer-checked:bg-teal-50 peer-checked:text-teal-800 text-slate-600 font-bold text-xs flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-user"></i>
+                <span>현재 부원만</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">챌린지 구분</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="personal" class="peer hidden" checked>
+              <div class="p-2.5 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-emerald-500 peer-checked:bg-emerald-50 text-slate-600 font-bold text-xs">개인 챌린지</div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="team" class="peer hidden">
+              <div class="p-2.5 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-teal-500 peer-checked:bg-teal-50 text-slate-600 font-bold text-xs">팀 챌린지</div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">난이도 및 보상</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="difficulty" value="쉬움" data-points="10" class="peer hidden" checked>
+              <div class="p-2 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-emerald-400 peer-checked:bg-emerald-50">
+                <p class="text-xs font-bold text-emerald-600">쉬움</p>
+                <p class="text-[10px] text-slate-500 font-semibold">+10 P</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="difficulty" value="보통" data-points="20" class="peer hidden">
+              <div class="p-2 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-sky-400 peer-checked:bg-sky-50">
+                <p class="text-xs font-bold text-sky-600">보통</p>
+                <p class="text-[10px] text-slate-500 font-semibold">+20 P</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="difficulty" value="어려움" data-points="30" class="peer hidden">
+              <div class="p-2 text-center bg-slate-50 border-2 border-slate-200 rounded-2xl peer-checked:border-purple-400 peer-checked:bg-purple-50">
+                <p class="text-xs font-bold text-purple-600">어려움</p>
+                <p class="text-[10px] text-slate-500 font-semibold">+30 P</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-md active:scale-95 transition-all text-sm">
+          미션 저장하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add Reward Modal -->
+  <div id="addRewardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-extrabold text-slate-800">🎁 새 보상 쿠폰 등록</h3>
+        <button onclick="closeModal('addRewardModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleAddReward(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">보상 이름</label>
+          <input type="text" id="rewardTitleInput" required placeholder="예: 자유 경기 진행권" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">필요 포인트</label>
+          <input type="number" id="rewardPointsInput" required min="10" placeholder="50" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">아이콘 선택</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="selectRewardIcon('🏓')" class="reward-icon-opt p-2.5 bg-emerald-50 border-2 border-emerald-500 rounded-2xl text-2xl text-center">🏓</button>
+            <button type="button" onclick="selectRewardIcon('🎵')" class="reward-icon-opt p-2.5 bg-slate-50 border-2 border-transparent rounded-2xl text-2xl text-center">🎵</button>
+            <button type="button" onclick="selectRewardIcon('🥤')" class="reward-icon-opt p-2.5 bg-slate-50 border-2 border-transparent rounded-2xl text-2xl text-center">🥤</button>
+            <button type="button" onclick="selectRewardIcon('🥇')" class="reward-icon-opt p-2.5 bg-slate-50 border-2 border-transparent rounded-2xl text-2xl text-center">🥇</button>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-md text-sm transition-all">
+          보상 등록하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-extrabold text-slate-800 flex items-center space-x-2">
+          <span>⚙️ 앱 설정 & 파이어베이스</span>
+        </h3>
+        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100">
+          <p class="text-xs font-bold text-emerald-900 mb-1">🔥 Realtime Database 상태</p>
+          <p id="rtDbStatusText" class="text-[11px] font-bold text-emerald-600">실시간 연동 중...</p>
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div>
+            <p class="text-xs font-bold text-slate-800">선생님 승인 모드</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">미션 완료 시 비밀번호 필요</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="teacherModeToggle" onchange="toggleTeacherMode(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <p class="text-xs font-bold text-slate-800 mb-2">선생님 비밀번호 변경</p>
+          <div class="flex space-x-2">
+            <input type="password" id="newPasscodeInput" maxlength="6" placeholder="새 비밀번호 (4자리 이상)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs font-bold">
+            <button onclick="updatePasscode()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs shrink-0">
+              변경
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Add New Student Modal -->
+  <div id="addStudentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop text-center max-h-[90vh] overflow-y-auto">
+      <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h3 id="addStudentModalTitle" class="text-lg font-extrabold text-slate-800">새 탁구 부원 등록</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">등록할 부원의 정보와 학번을 입력해 주세요.</p>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">학생 이름</label>
+          <input type="text" id="addStudentNameInput" placeholder="예: 박스매시" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">학년 / 반 / 번호</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="relative flex items-center">
+              <input type="number" id="addStudentGradeInput" min="1" max="6" placeholder="1" class="w-full pl-2.5 pr-7 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">학년</span>
+            </div>
+            <div class="relative flex items-center">
+              <input type="number" id="addStudentClassInput" min="1" max="30" placeholder="1" class="w-full pl-2.5 pr-5 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">반</span>
+            </div>
+            <div class="relative flex items-center">
+              <input type="number" id="addStudentNumberInput" min="1" max="50" placeholder="1" class="w-full pl-2.5 pr-5 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-center">
+              <span class="absolute right-2 text-xs font-bold text-slate-400 pointer-events-none">번</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="modalStudentDeleteListSection" class="mt-4 pt-3 border-t border-slate-100 text-left">
+        <label id="modalStudentDeleteListLabel" class="block text-xs font-bold text-slate-700 mb-2">등록된 부원 목록 및 관리</label>
+        <div id="modalStudentDeleteList" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+          <!-- Dynamic student delete badges -->
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-4">
+        <button onclick="closeModal('addStudentModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-2xl text-xs transition-all">
+          취소
+        </button>
+        <button onclick="saveNewStudent()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>등록하기 ✨</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Teacher Verification Modal -->
+  <div id="verifyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop text-center">
+      <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-slate-800">선생님 미션 확인</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">미션 완료 도장을 받기 위해 선생님 비밀번호를 입력해 주세요.</p>
+
+      <div class="space-y-3">
+        <input type="password" id="passcodeInput" maxlength="6" placeholder="비밀번호 입력 (기본: 1234)" class="w-full text-center tracking-widest text-lg py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400 font-bold">
+        <p id="verifyErrorMsg" class="text-xs text-rose-500 font-bold hidden">비밀번호가 일치하지 않습니다!</p>
+        
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button onclick="closeModal('verifyModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-2xl text-xs transition-all">
+            취소
+          </button>
+          <button onclick="confirmTeacherPasscode()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl shadow-md text-xs transition-all">
+            확인 및 도장 찍기 💮
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop text-center">
+      <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center text-xl mx-auto mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirmModalTitle" class="text-base font-extrabold text-slate-800">확인</h3>
+      <p id="confirmModalMsg" class="text-xs text-slate-500 mt-1 mb-4">정말 진행하시겠습니까?</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeModal('confirmModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-2xl text-xs">취소</button>
+        <button id="confirmModalOkBtn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 rounded-2xl text-xs">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Bar -->
+  <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">메시지</span>
+  </div>
+
+  <!-- MODAL: Random Group Generator Modal -->
+  <div id="groupGeneratorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop text-center max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 shrink-0">
+        <h3 class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
+          <span>🎲 랜덤 조 편성기</span>
+        </h3>
+        <button onclick="closeModal('groupGeneratorModal')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-left shrink-0 mb-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">대상 학급 선택</label>
+          <select id="groupScopeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <!-- Dynamic Class Options -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">조당 목표 인원 수 (4명 ~ 8명)</label>
+          <select id="groupSizeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option value="4" selected>조 당 4명씩 편성</option>
+            <option value="5">조 당 5명씩 편성</option>
+            <option value="6">조 당 6명씩 편성</option>
+            <option value="7">조 당 7명씩 편성</option>
+            <option value="8">조 당 8명씩 편성</option>
+          </select>
+        </div>
+
+        <button onclick="generateRandomGroups()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-extrabold py-3 rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+          <i class="fa-solid fa-dice text-sm"></i>
+          <span>랜덤 조 편성 실행!</span>
+        </button>
+      </div>
+
+      <!-- Generated Groups List -->
+      <div id="groupResultsContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[150px] text-left">
+        <p class="text-xs text-slate-400 text-center py-8">인원 수 및 학급을 선택 후 조 편성을 실행해 주세요.</p>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex space-x-2 shrink-0">
+        <button id="copyGroupsBtn" onclick="copyGroupResults()" class="hidden flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-2xl text-xs transition-all shadow-xs flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-copy"></i>
+          <span>결과 복사하기</span>
+        </button>
+        <button onclick="closeModal('groupGeneratorModal')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Entry Script -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
