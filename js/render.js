@@ -687,15 +687,20 @@ function renderMissionsView() {
   listContainer.innerHTML = filtered.map(mission => {
     const isPending = mission.pending && !mission.completed;
     const isDone = mission.completed;
+    const isTeacherCheck = !!mission.requiresTeacherCheck;
+
+    let cardBgClass = 'border border-slate-200 bg-white hover:border-emerald-300';
+    if (isDone) {
+      cardBgClass = 'border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50/90';
+    } else if (isPending) {
+      cardBgClass = 'border-2 border-amber-400 bg-amber-50/90 shadow-md ring-1 ring-amber-300';
+    } else if (isTeacherCheck) {
+      // 👑 교사 직접 확인 미션 전용 차별화된 보라/인디고 색상
+      cardBgClass = 'border-2 border-indigo-400 bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-indigo-50/40 shadow-sm ring-1 ring-indigo-200/80 hover:border-indigo-500';
+    }
 
     return `
-    <div class="relative p-3.5 rounded-2xl transition-all shadow-xs overflow-hidden flex items-center justify-between ${
-      isDone 
-        ? 'border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50/90' 
-        : isPending 
-          ? 'border-2 border-amber-400 bg-amber-50/90 shadow-md ring-1 ring-amber-300' 
-          : 'border border-slate-200 bg-white hover:border-emerald-300'
-    }">
+    <div class="relative p-3.5 rounded-2xl transition-all shadow-xs overflow-hidden flex items-center justify-between ${cardBgClass}">
       
       <!-- High-Visibility Stamp Effect for Completed Missions (Frontmost Layer & Centered) -->
       ${isDone ? `
@@ -711,14 +716,22 @@ function renderMissionsView() {
             ? 'bg-emerald-600 border-emerald-600 text-white' 
             : isPending 
               ? 'bg-amber-500 border-amber-500 text-white animate-pulse' 
-              : 'border-slate-300 bg-slate-50 hover:border-emerald-500'
+              : isTeacherCheck 
+                ? 'border-indigo-300 bg-indigo-50/70 hover:border-indigo-500 text-indigo-700' 
+                : 'border-slate-300 bg-slate-50 hover:border-emerald-500'
         }" title="미션 체크/승인요청">
-          <i class="fa-solid ${isDone ? 'fa-check text-sm' : isPending ? 'fa-hourglass-half text-xs animate-spin' : 'fa-check text-xs text-slate-300'}"></i>
+          <i class="fa-solid ${isDone ? 'fa-check text-sm' : isPending ? 'fa-hourglass-half text-xs animate-spin' : isTeacherCheck ? 'fa-eye text-xs text-indigo-400' : 'fa-check text-xs text-slate-300'}"></i>
         </button>
 
         <div onclick="openMissionDetailModal('${mission.id}')" class="min-w-0 flex-1 cursor-pointer group select-none">
           <div class="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
             <span class="bg-emerald-800 text-white text-[9px] font-black px-1.5 py-0.2 rounded-md shrink-0 shadow-2xs">[${mission.week || 1}주차]</span>
+            ${isTeacherCheck ? `
+              <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-md shrink-0 shadow-2xs flex items-center space-x-0.5">
+                <span>👀</span>
+                <span>교사 직접 확인</span>
+              </span>
+            ` : ''}
             <p class="font-black text-xs sm:text-sm text-slate-800 truncate group-hover:text-emerald-700 transition-colors ${isDone ? 'line-through text-slate-500 opacity-90' : ''}">
               ${escapeHtml(mission.title)}
             </p>

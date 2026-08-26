@@ -146,6 +146,7 @@ function openMissionDetailModal(missionId) {
     const diffSelect = document.getElementById('editMissionDifficultySelect');
     const ptsInput = document.getElementById('editMissionPointsInput');
     const descTextarea = document.getElementById('editMissionDescTextarea');
+    const requiresCheck = document.getElementById('editMissionRequiresCheck');
 
     if (titleInput) titleInput.value = mission.title || '';
     if (weekSelect) weekSelect.value = String(mission.week || 1);
@@ -153,6 +154,7 @@ function openMissionDetailModal(missionId) {
     if (diffSelect) diffSelect.value = mission.difficulty || '보통';
     if (ptsInput) ptsInput.value = mission.points || 20;
     if (descTextarea) descTextarea.value = mission.description || '';
+    if (requiresCheck) requiresCheck.checked = !!mission.requiresTeacherCheck;
   } else {
     // 🏓 학생 모드: 읽기 전용 뷰 활성화
     if (teacherBadge) teacherBadge.classList.add('hidden');
@@ -164,6 +166,8 @@ function openMissionDetailModal(missionId) {
     const catBadge = document.getElementById('detailMissionCategoryBadge');
     const diffBadge = document.getElementById('detailMissionDifficultyBadge');
     const ptsBadge = document.getElementById('detailMissionPointsBadge');
+    const teacherCheckBadge = document.getElementById('detailMissionTeacherCheckBadge');
+    const teacherCheckAlert = document.getElementById('detailMissionTeacherCheckAlert');
 
     if (weekBadge) weekBadge.innerText = `${mission.week || 1}주차`;
     if (catBadge) {
@@ -174,6 +178,14 @@ function openMissionDetailModal(missionId) {
     }
     if (diffBadge) diffBadge.innerText = mission.difficulty || '보통';
     if (ptsBadge) ptsBadge.innerText = `+${mission.points || 20} P`;
+
+    if (mission.requiresTeacherCheck) {
+      if (teacherCheckBadge) teacherCheckBadge.classList.remove('hidden');
+      if (teacherCheckAlert) teacherCheckAlert.classList.remove('hidden');
+    } else {
+      if (teacherCheckBadge) teacherCheckBadge.classList.add('hidden');
+      if (teacherCheckAlert) teacherCheckAlert.classList.add('hidden');
+    }
 
     const statusBanner = document.getElementById('detailMissionStatusBanner');
     const statusText = document.getElementById('detailMissionStatusText');
@@ -214,7 +226,7 @@ function openMissionDetailModal(missionId) {
           `;
         } else {
           actionButtons += `
-            <button onclick="toggleMissionCompletion(getCurrentStudent(), getCurrentStudent().missions.find(m=>m.id==='${mission.id}')); openMissionDetailModal('${mission.id}');" class="flex-1 bg-rose-100 hover:rose-200 text-rose-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
+            <button onclick="toggleMissionCompletion(getCurrentStudent(), getCurrentStudent().missions.find(m=>m.id==='${mission.id}')); openMissionDetailModal('${mission.id}');" class="flex-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
               완료 취소
             </button>
           `;
@@ -261,6 +273,7 @@ function saveFullMissionEditFromModal() {
   const newDifficulty = document.getElementById('editMissionDifficultySelect')?.value || '보통';
   const newPoints = parseInt(document.getElementById('editMissionPointsInput')?.value) || 20;
   const newDesc = document.getElementById('editMissionDescTextarea')?.value.trim() || '';
+  const requiresTeacherCheck = !!document.getElementById('editMissionRequiresCheck')?.checked;
 
   if (!newTitle) {
     showToast('미션 제목을 입력해 주세요!', '⚠️');
@@ -280,6 +293,7 @@ function saveFullMissionEditFromModal() {
           m.difficulty = newDifficulty;
           m.points = newPoints;
           m.description = newDesc;
+          m.requiresTeacherCheck = requiresTeacherCheck;
         }
       });
     }
@@ -296,6 +310,7 @@ function saveFullMissionEditFromModal() {
       defM.difficulty = newDifficulty;
       defM.points = newPoints;
       defM.description = newDesc;
+      defM.requiresTeacherCheck = requiresTeacherCheck;
     }
   }
 
@@ -371,6 +386,8 @@ function openAddMissionModal() {
   document.getElementById('missionTitleInput').value = '';
   const descInput = document.getElementById('missionDescInput');
   if (descInput) descInput.value = '';
+  const reqCheck = document.getElementById('addMissionRequiresCheck');
+  if (reqCheck) reqCheck.checked = false;
   openModal('addMissionModal');
 }
 
@@ -380,6 +397,7 @@ function handleAddMission(event) {
   const title = document.getElementById('missionTitleInput').value.trim();
   const week = parseInt(document.getElementById('missionWeekInput').value) || 1;
   const description = document.getElementById('missionDescInput')?.value.trim() || '';
+  const requiresTeacherCheck = !!document.getElementById('addMissionRequiresCheck')?.checked;
   if (!title) return;
 
   const targetRadio = document.querySelector('input[name="missionTarget"]:checked');
@@ -404,6 +422,7 @@ function handleAddMission(event) {
             m.difficulty = difficulty;
             m.points = points;
             m.description = description;
+            m.requiresTeacherCheck = requiresTeacherCheck;
             updated = true;
           }
         });
@@ -422,7 +441,8 @@ function handleAddMission(event) {
       points: points,
       completed: false,
       pending: false,
-      description: description
+      description: description,
+      requiresTeacherCheck: requiresTeacherCheck
     };
 
     if (targetScope === 'all') {
@@ -439,7 +459,7 @@ function handleAddMission(event) {
         currentStudent.missions.push({ ...newMissionTemplate });
         saveStudentToRTDB(currentStudent);
       }
-      showToast(`새 ${week}주차 미션이 추가되었습니다!`, '✨');
+      showToast(`선택된 부원에게 ${week}주차 미션이 추가되었습니다!`, '✨');
     }
   }
 
