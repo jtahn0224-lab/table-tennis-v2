@@ -294,6 +294,18 @@
           <h3 class="font-extrabold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
             <span id="missionSectionTitle">🎯 주차별 탁구 커리큘럼 미션</span>
           </h3>
+          <div class="flex items-center space-x-1.5">
+            <!-- 미션 탭 상단 교사용 조 편성 버튼 -->
+            <button id="missionTabGroupTeacherBtn" onclick="openGroupGeneratorModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-xs flex items-center space-x-1 active:scale-95">
+              <i class="fa-solid fa-shuffle text-[11px]"></i>
+              <span>🎲 조 편성</span>
+            </button>
+            <!-- 미션 탭 상단 학생용 조 편성 결과 확인 버튼 -->
+            <button id="missionTabGroupStudentBtn" onclick="openGroupGeneratorModal()" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-900 border border-indigo-200 font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-2xs flex items-center space-x-1 active:scale-95">
+              <i class="fa-solid fa-list-check text-indigo-600 text-[11px]"></i>
+              <span>📋 조 편성 결과</span>
+            </button>
+          </div>
         </div>
 
         <!-- 10-Week Selector Bar -->
@@ -353,9 +365,15 @@
             <span>🏓 학급별 경기 & 랭킹</span>
           </h3>
           <div class="flex items-center space-x-1.5">
-            <button onclick="openGroupGeneratorModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
+            <!-- 교사용 랜덤 조 편성 버튼 -->
+            <button id="groupGeneratorTeacherBtn" onclick="openGroupGeneratorModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
               <i class="fa-solid fa-shuffle"></i>
               <span>🎲 조 편성</span>
+            </button>
+            <!-- 학생용 조 편성 결과 확인 버튼 -->
+            <button id="groupResultsStudentBtn" onclick="openGroupGeneratorModal()" class="hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
+              <i class="fa-solid fa-list-check"></i>
+              <span>📋 조 편성 결과</span>
             </button>
             <button onclick="openScoreboardModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
               <i class="fa-solid fa-play"></i>
@@ -621,59 +639,107 @@
     </div>
   </div>
 
-  <!-- MODAL: Scoreboard & Live Referee Tool -->
-  <div id="scoreboardModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-pop text-white text-center relative">
-      <button onclick="closeModal('scoreboardModal')" class="absolute right-4 top-4 text-slate-400 hover:text-white p-1">
-        <i class="fa-solid fa-xmark text-xl"></i>
-      </button>
-
-      <h3 class="text-base font-extrabold text-emerald-400 mb-1">🏓 11점제 정식 경기 전광판</h3>
-      <p class="text-[11px] text-slate-400 mb-4">동일 학급 대결 (2점/듀스 서브 자동 교대)</p>
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label class="block text-[11px] text-slate-400 mb-1">선수 1</label>
-          <select id="sbPlayer1Select" onchange="updateScoreboardPlayer2()" class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-xs rounded-xl p-2 focus:outline-none">
-            <!-- Dynamic Options -->
-          </select>
-        </div>
-        <div>
-          <label class="block text-[11px] text-slate-400 mb-1">선수 2</label>
-          <select id="sbPlayer2Select" class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-xs rounded-xl p-2 focus:outline-none">
-            <!-- Dynamic Options -->
-          </select>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center">
-          <span id="sbP1ServeBadge" class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mb-2 opacity-0">SERVING</span>
-          <span id="sbScore1Text" class="text-5xl font-black text-amber-400 my-1">0</span>
-          <div class="flex space-x-2 mt-2">
-            <button onclick="updateScore(1, 1)" class="w-10 h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-lg shadow-md">+</button>
-            <button onclick="updateScore(1, -1)" class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-xl font-black text-lg">-</button>
+  <!-- MODAL: Scoreboard & Live Referee Tool (Fullscreen Display) -->
+  <div id="scoreboardModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex flex-col p-2 sm:p-5 z-50 hidden">
+    <div class="bg-slate-900/95 border border-slate-700/80 w-full h-full rounded-2xl sm:rounded-3xl p-4 sm:p-7 flex flex-col justify-between text-white relative shadow-2xl overflow-y-auto">
+      
+      <!-- Top Header Bar -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center space-x-2">
+          <span class="text-xl sm:text-2xl">🏓</span>
+          <div>
+            <h3 class="text-sm sm:text-lg font-black text-emerald-400 leading-tight">탁구 공식 11점제 라이브 전광판</h3>
+            <p class="text-[10px] sm:text-xs text-slate-400">2점마다 서브 자동 교대 • 10:10 듀스 시 1점마다 교대 (2점 차 승리)</p>
           </div>
         </div>
 
-        <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center">
-          <span id="sbP2ServeBadge" class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full mb-2 opacity-0">SERVING</span>
-          <span id="sbScore2Text" class="text-5xl font-black text-amber-400 my-1">0</span>
-          <div class="flex space-x-2 mt-2">
-            <button onclick="updateScore(2, 1)" class="w-10 h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-black text-lg shadow-md">+</button>
-            <button onclick="updateScore(2, -1)" class="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-xl font-black text-lg">-</button>
-          </div>
+        <div class="flex items-center space-x-2">
+          <span id="sbMatchStatusBadge" class="hidden text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-amber-500 text-slate-950 shadow-md animate-pulse">
+            🔥 MATCH POINT
+          </span>
+          <button onclick="closeModal('scoreboardModal')" class="w-9 h-9 sm:w-10 sm:h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl flex items-center justify-center transition-colors">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="resetScoreboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-2xl text-xs">
-          점수 리셋
+      <!-- Player Selectors -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-6 py-2 shrink-0">
+        <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-2xl border border-slate-700">
+          <label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">🟦 선수 1 (선공 서브)</label>
+          <select id="sbPlayer1Select" onchange="updateScoreboardPlayer2()" class="w-full bg-slate-900 border border-slate-700 text-white font-black text-xs sm:text-sm rounded-xl p-2 sm:p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+        <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-2xl border border-slate-700">
+          <label class="block text-[11px] sm:text-xs font-bold text-slate-400 mb-1">🟥 선수 2 (후공)</label>
+          <select id="sbPlayer2Select" class="w-full bg-slate-900 border border-slate-700 text-white font-black text-xs sm:text-sm rounded-xl p-2 sm:p-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <!-- Dynamic Options -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Giant Interactive Score Display Grid -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-6 flex-1 my-2 min-h-[220px]">
+        
+        <!-- Player 1 Score Box -->
+        <div class="bg-gradient-to-b from-slate-800/90 to-slate-900/90 p-4 sm:p-6 rounded-3xl border-2 border-slate-700/90 flex flex-col items-center justify-between shadow-inner relative overflow-hidden">
+          <span id="sbP1ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-3.5 py-1 rounded-full shadow-lg transition-opacity duration-300 opacity-0 flex items-center space-x-1">
+            <span>🏓 SERVING</span>
+          </span>
+
+          <div class="my-auto flex flex-col items-center select-none">
+            <span id="sbScore1Text" class="text-7xl sm:text-9xl md:text-[140px] font-black text-amber-400 font-mono tracking-tighter leading-none drop-shadow-[0_4px_16px_rgba(251,191,36,0.3)]">0</span>
+          </div>
+
+          <div class="flex items-center space-x-3 sm:space-x-5 w-full justify-center">
+            <button onclick="updateScore(1, 1)" class="flex-1 max-w-[140px] py-3 sm:py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded-2xl font-black text-2xl sm:text-3xl shadow-lg transition-all flex items-center justify-center space-x-1" title="득점 (+1)">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button onclick="updateScore(1, -1)" class="w-14 sm:w-18 py-3 sm:py-4 bg-slate-700 hover:bg-slate-600 active:scale-95 rounded-2xl font-black text-lg sm:text-xl text-slate-300 transition-all flex items-center justify-center" title="점수 정정 (-1)">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Player 2 Score Box -->
+        <div class="bg-gradient-to-b from-slate-800/90 to-slate-900/90 p-4 sm:p-6 rounded-3xl border-2 border-slate-700/90 flex flex-col items-center justify-between shadow-inner relative overflow-hidden">
+          <span id="sbP2ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black px-3.5 py-1 rounded-full shadow-lg transition-opacity duration-300 opacity-0 flex items-center space-x-1">
+            <span>🏓 SERVING</span>
+          </span>
+
+          <div class="my-auto flex flex-col items-center select-none">
+            <span id="sbScore2Text" class="text-7xl sm:text-9xl md:text-[140px] font-black text-amber-400 font-mono tracking-tighter leading-none drop-shadow-[0_4px_16px_rgba(251,191,36,0.3)]">0</span>
+          </div>
+
+          <div class="flex items-center space-x-3 sm:space-x-5 w-full justify-center">
+            <button onclick="updateScore(2, 1)" class="flex-1 max-w-[140px] py-3 sm:py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded-2xl font-black text-2xl sm:text-3xl shadow-lg transition-all flex items-center justify-center space-x-1" title="득점 (+1)">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button onclick="updateScore(2, -1)" class="w-14 sm:w-18 py-3 sm:py-4 bg-slate-700 hover:bg-slate-600 active:scale-95 rounded-2xl font-black text-lg sm:text-xl text-slate-300 transition-all flex items-center justify-center" title="점수 정정 (-1)">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Control Action Bar -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-3 pt-2 shrink-0 border-t border-slate-800">
+        <button onclick="toggleScoreboardServe()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+          <i class="fa-solid fa-rotate text-xs"></i>
+          <span>서브 수동 교대</span>
         </button>
-        <button onclick="endScoreboardMatch()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3 rounded-2xl shadow-lg text-xs">
-          경기 종료 & 결과 저장 🏆
+        <button onclick="resetScoreboard()" class="bg-slate-800 hover:bg-slate-700 text-rose-400 font-extrabold py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+          <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
+          <span>점수 리셋</span>
+        </button>
+        <button onclick="endScoreboardMatch()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-3 sm:py-3.5 rounded-2xl shadow-xl text-xs sm:text-sm transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+          <i class="fa-solid fa-trophy text-xs text-amber-300"></i>
+          <span>경기 종료 & 결과 저장 🏆</span>
         </button>
       </div>
+
     </div>
   </div>
 
@@ -1188,11 +1254,11 @@
     <span id="toastMessage">메시지</span>
   </div>
 
-  <!-- MODAL: Random Group Generator Modal -->
+  <!-- MODAL: Random Group Generator & Viewer Modal -->
   <div id="groupGeneratorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl animate-pop text-center max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 shrink-0">
-        <h3 class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
+        <h3 id="groupGeneratorModalTitle" class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
           <span>🎲 랜덤 조 편성기</span>
         </h3>
         <button onclick="closeModal('groupGeneratorModal')" class="text-slate-400 hover:text-slate-600 p-1">
@@ -1200,7 +1266,8 @@
         </button>
       </div>
 
-      <div class="space-y-3 text-left shrink-0 mb-3">
+      <!-- Teacher Only Controls -->
+      <div id="groupGeneratorTeacherControls" class="space-y-3 text-left shrink-0 mb-3">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">대상 학급 선택</label>
           <select id="groupScopeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
@@ -1221,8 +1288,17 @@
 
         <button onclick="generateRandomGroups()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-extrabold py-3 rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-1.5 active:scale-95">
           <i class="fa-solid fa-dice text-sm"></i>
-          <span>랜덤 조 편성 실행!</span>
+          <span>랜덤 조 편성 실행 & 저장 💾</span>
         </button>
+      </div>
+
+      <!-- Student View Notice Banner -->
+      <div id="groupGeneratorStudentNotice" class="hidden p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs font-bold text-left mb-3 flex items-center space-x-2">
+        <span class="text-lg">📢</span>
+        <div>
+          <p class="font-black text-indigo-900">선생님이 편성한 경기 조 목록</p>
+          <p id="groupGeneratorNoticeDate" class="text-[10px] text-indigo-700 font-normal">자신의 조와 팀원을 확인해 보세요.</p>
+        </div>
       </div>
 
       <!-- Generated Groups List -->
@@ -1233,7 +1309,12 @@
       <div class="pt-3 border-t border-slate-100 flex space-x-2 shrink-0">
         <button id="copyGroupsBtn" onclick="copyGroupResults()" class="hidden flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-2xl text-xs transition-all shadow-xs flex items-center justify-center space-x-1">
           <i class="fa-solid fa-copy"></i>
-          <span>결과 복사하기</span>
+          <span>결과 복사</span>
+        </button>
+        <!-- 선생님 전용 조 편성 초기화 리셋 버튼 -->
+        <button id="resetGroupsBtn" onclick="resetGroupAssignment()" class="hidden flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold py-2.5 rounded-2xl text-xs transition-all shadow-2xs flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>조 편성 리셋 🔄</span>
         </button>
         <button onclick="closeModal('groupGeneratorModal')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
           닫기

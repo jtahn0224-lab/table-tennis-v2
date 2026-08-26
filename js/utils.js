@@ -50,6 +50,36 @@ function normalizeStudentGradeClass(s) {
   return s;
 }
 
+function getStudentExactClassKey(student) {
+  if (!student) return '기타 / 학년 미지정';
+  const s = normalizeStudentGradeClass(student);
+  const grade = s.grade ? String(s.grade).trim() : '';
+  const classNum = s.classNum ? String(s.classNum).trim() : '';
+
+  if (grade && classNum) {
+    return `${grade}학년 ${classNum}반`;
+  } else if (grade) {
+    return `${grade}학년`;
+  } else if (s.className) {
+    return s.className;
+  }
+  return '기타 / 학년 미지정';
+}
+
+function compareExactClassKeys(a, b) {
+  const matchA = a.match(/(\d+)학년(?:\s*(\d+)반)?/);
+  const matchB = b.match(/(\d+)학년(?:\s*(\d+)반)?/);
+  if (matchA && matchB) {
+    const gA = parseInt(matchA[1], 10);
+    const gB = parseInt(matchB[1], 10);
+    if (gA !== gB) return gA - gB;
+    const cA = matchA[2] ? parseInt(matchA[2], 10) : 0;
+    const cB = matchB[2] ? parseInt(matchB[2], 10) : 0;
+    return cA - cB;
+  }
+  return a.localeCompare(b, 'ko');
+}
+
 function getStudentGroupKey(student) {
   if (!student) return '기타 / 학년 미지정';
   const s = normalizeStudentGradeClass(student);

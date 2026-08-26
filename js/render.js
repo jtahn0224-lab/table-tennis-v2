@@ -223,6 +223,8 @@ function renderUI() {
     else adminPointAdjustBox.classList.add('hidden');
   }
 
+  if (typeof renderGroupButtons === 'function') renderGroupButtons();
+
   // HEADER RENDERING
   const mainProfileHeader = document.getElementById('mainProfileHeader');
   const headerName = document.getElementById('headerName');

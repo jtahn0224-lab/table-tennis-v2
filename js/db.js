@@ -173,4 +173,18 @@ function setupRealtimeListeners() {
       }
     }
   });
+
+  const groupRef = db.ref(`artifacts/${appId}/public/data/group_assignment/current`);
+  groupRef.on('value', (snapshot) => {
+    const val = snapshot.val();
+    state.savedGroupAssignment = val || null;
+    if (typeof renderGroupButtons === 'function') renderGroupButtons();
+  });
+}
+
+function saveGroupAssignmentToRTDB(data) {
+  if (!db) return;
+  db.ref(`artifacts/${appId}/public/data/group_assignment/current`).set(data).catch(e => {
+    console.error("Firebase save group_assignment error:", e);
+  });
 }

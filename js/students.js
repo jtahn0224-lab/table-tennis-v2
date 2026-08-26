@@ -137,32 +137,124 @@ function updatePasscode() {
   }
 }
 
-function openGroupGeneratorModal() {
-  const scopeSelect = document.getElementById('groupScopeSelect');
-  if (scopeSelect) {
-    const classes = new Set();
-    state.students.forEach(s => {
-      const key = getStudentGroupKey(s);
-      classes.add(key);
-    });
-    let opts = `<option value="all">전체 부원 (${state.students.length}명)</option>`;
-    Array.from(classes).sort(compareGroupKeys).forEach(c => {
-      opts += `<option value="${c}">🏫 ${c}</option>`;
-    });
-    scopeSelect.innerHTML = opts;
+function renderGroupButtons() {
+  const isAdmin = state.role === 'admin';
+  const teacherBtn = document.getElementById('groupGeneratorTeacherBtn');
+  const studentBtn = document.getElementById('groupResultsStudentBtn');
+  const missionTeacherBtn = document.getElementById('missionTabGroupTeacherBtn');
+  const missionStudentBtn = document.getElementById('missionTabGroupStudentBtn');
+
+  const hasGroups = !!(state.savedGroupAssignment && state.savedGroupAssignment.groups && state.savedGroupAssignment.groups.length > 0);
+
+  if (teacherBtn) {
+    if (isAdmin) teacherBtn.classList.remove('hidden');
+    else teacherBtn.classList.add('hidden');
   }
+
+  if (studentBtn) {
+    if (!isAdmin && hasGroups) studentBtn.classList.remove('hidden');
+    else studentBtn.classList.add('hidden');
+  }
+
+  if (missionTeacherBtn) {
+    if (isAdmin) missionTeacherBtn.classList.remove('hidden');
+    else missionTeacherBtn.classList.add('hidden');
+  }
+
+  if (missionStudentBtn) {
+    if (!isAdmin && hasGroups) missionStudentBtn.classList.remove('hidden');
+    else missionStudentBtn.classList.add('hidden');
+  }
+}
+
+function openGroupGeneratorModal() {
+  const isAdmin = state.role === 'admin';
+  const modalTitle = document.getElementById('groupGeneratorModalTitle');
+  const teacherControls = document.getElementById('groupGeneratorTeacherControls');
+  const studentNotice = document.getElementById('groupGeneratorStudentNotice');
+  const noticeDate = document.getElementById('groupGeneratorNoticeDate');
+  const container = document.getElementById('groupResultsContainer');
+  const copyBtn = document.getElementById('copyGroupsBtn');
+  const resetBtn = document.getElementById('resetGroupsBtn');
+
+  if (isAdmin) {
+    if (modalTitle) modalTitle.innerHTML = '<span>🎲 랜덤 조 편성기</span>';
+    if (teacherControls) teacherControls.classList.remove('hidden');
+    if (studentNotice) studentNotice.classList.add('hidden');
+
+    const scopeSelect = document.getElementById('groupScopeSelect');
+    if (scopeSelect) {
+      const classCountMap = {};
+      state.students.forEach(s => {
+        const key = getStudentExactClassKey(s);
+        classCountMap[key] = (classCountMap[key] || 0) + 1;
+      });
+
+      let opts = `<option value="all">전체 부원 (총 ${state.students.length}명)</option>`;
+      const exactKeys = Object.keys(classCountMap).sort(compareExactClassKeys);
+      exactKeys.forEach(c => {
+        opts += `<option value="${c}">🏫 ${c} (${classCountMap[c]}명)</option>`;
+      });
+      scopeSelect.innerHTML = opts;
+    }
+
+    if (state.savedGroupAssignment && state.savedGroupAssignment.groups && state.savedGroupAssignment.groups.length > 0) {
+      renderGroupResultsDisplay(state.savedGroupAssignment);
+      if (resetBtn) resetBtn.classList.remove('hidden');
+    } else {
+      if (resetBtn) resetBtn.classList.add('hidden');
+      if (copyBtn) copyBtn.classList.add('hidden');
+      if (container) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">인원 수 및 학급을 선택 후 조 편성을 실행해 주세요.</p>`;
+      }
+    }
+  } else {
+    // 🏓 학생 모드: 결과 확인 전용
+    if (modalTitle) modalTitle.innerHTML = '<span>📋 탁구 경기 조 편성 결과</span>';
+    if (teacherControls) teacherControls.classList.add('hidden');
+    if (studentNotice) studentNotice.classList.remove('hidden');
+    if (resetBtn) resetBtn.classList.add('hidden');
+
+    if (state.savedGroupAssignment && state.savedGroupAssignment.groups && state.savedGroupAssignment.groups.length > 0) {
+      if (noticeDate && state.savedGroupAssignment.createdAt) {
+        noticeDate.innerText = `편성 일시: ${state.savedGroupAssignment.createdAt} (대상: ${state.savedGroupAssignment.scopeTitle || '전체'})`;
+      }
+      renderGroupResultsDisplay(state.savedGroupAssignment);
+    } else {
+      if (container) {
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <span class="text-3xl mb-2">⏳</span>
+            <p class="text-xs font-bold text-slate-700">선생님이 아직 조 편성을 진행하지 않았습니다.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">선생님이 조 편성을 완료하면 이곳에 자동으로 표시됩니다.</p>
+          </div>
+        `;
+      }
+      if (copyBtn) copyBtn.classList.add('hidden');
+    }
+  }
+
   openModal('groupGeneratorModal');
 }
 
 function generateRandomGroups() {
-  const scope = document.getElementById('groupScopeSelect')?.value;
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 조 편성을 진행할 수 있습니다.', '🔒');
+    return;
+  }
+
+  const scope = document.getElementById('groupScopeSelect')?.value || 'all';
   const groupSize = parseInt(document.getElementById('groupSizeSelect')?.value) || 4;
 
   let targetStudents = [];
+  let scopeTitle = '전체 부원';
+
   if (scope === 'all') {
     targetStudents = [...state.students];
+    scopeTitle = '전체 부원';
   } else {
-    targetStudents = state.students.filter(s => getStudentGroupKey(s) === scope);
+    targetStudents = state.students.filter(s => getStudentExactClassKey(s) === scope);
+    scopeTitle = scope;
   }
 
   if (targetStudents.length === 0) {
@@ -180,18 +272,55 @@ function generateRandomGroups() {
   const groups = Array.from({ length: numGroups }, () => []);
 
   shuffled.forEach((student, idx) => {
-    groups[idx % numGroups].push(student);
+    groups[idx % numGroups].push({
+      id: student.id,
+      name: student.name,
+      number: student.number || '',
+      className: student.className || '',
+      avatar: student.avatar || '🏓',
+      equippedNameSkin: student.equippedNameSkin || 'name-skin-none'
+    });
   });
 
-  const container = document.getElementById('groupResultsContainer');
-  const copyBtn = document.getElementById('copyGroupsBtn');
-  if (!container) return;
+  const now = new Date();
+  const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-  let html = '';
-  let textCopy = `[🏓 탁구 조 편성 결과 - ${scope === 'all' ? '전체' : scope}]\n`;
-
+  let textCopy = `[🏓 탁구 조 편성 결과 - ${scopeTitle} (${dateStr})]\n`;
   groups.forEach((group, gIdx) => {
     textCopy += `\n📌 ${gIdx + 1}조 (${group.length}명):\n`;
+    group.forEach(s => {
+      textCopy += ` - ${s.number ? `${s.number}번 ` : ''}${s.name}\n`;
+    });
+  });
+
+  const assignmentData = {
+    scope: scope,
+    scopeTitle: scopeTitle,
+    groupSize: groupSize,
+    groups: groups,
+    createdAt: dateStr,
+    textCopy: textCopy
+  };
+
+  state.savedGroupAssignment = assignmentData;
+  if (typeof saveGroupAssignmentToRTDB === 'function') {
+    saveGroupAssignmentToRTDB(assignmentData);
+  }
+
+  renderGroupResultsDisplay(assignmentData);
+  renderGroupButtons();
+  playSuccessSound();
+  showToast(`${groups.length}개 조가 생성 및 실시간 저장되었습니다! 💾`, '🎲');
+}
+
+function renderGroupResultsDisplay(assignmentData) {
+  const container = document.getElementById('groupResultsContainer');
+  const copyBtn = document.getElementById('copyGroupsBtn');
+  const resetBtn = document.getElementById('resetGroupsBtn');
+  if (!container || !assignmentData || !assignmentData.groups) return;
+
+  let html = '';
+  assignmentData.groups.forEach((group, gIdx) => {
     html += `
       <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 shadow-2xs">
         <h5 class="text-xs font-black text-indigo-900 mb-2 flex justify-between items-center pb-1 border-b border-slate-200">
@@ -199,26 +328,57 @@ function generateRandomGroups() {
           <span class="bg-indigo-100 text-indigo-800 text-[10px] px-2 py-0.5 rounded-full font-bold">${group.length}명</span>
         </h5>
         <div class="grid grid-cols-2 gap-1.5 text-xs">
-          ${group.map(s => {
-            textCopy += ` - ${s.number ? `${s.number}번 ` : ''}${s.name}\n`;
-            return `
-              <div class="bg-white p-2 rounded-xl border border-slate-100 flex items-center space-x-1.5 truncate">
-                <span class="text-sm shrink-0">${s.avatar || '🏓'}</span>
-                <span class="font-bold text-slate-800 truncate ${s.equippedNameSkin || 'name-skin-none'}">${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}</span>
-              </div>
-            `;
-          }).join('')}
+          ${group.map(s => `
+            <div class="bg-white p-2 rounded-xl border border-slate-100 flex items-center space-x-1.5 truncate">
+              <span class="text-sm shrink-0">${s.avatar || '🏓'}</span>
+              <span class="font-bold text-slate-800 truncate ${s.equippedNameSkin || 'name-skin-none'}">${s.number ? `${s.number}번 ` : ''}${escapeHtml(s.name)}</span>
+            </div>
+          `).join('')}
         </div>
       </div>
     `;
   });
 
   container.innerHTML = html;
-  lastGeneratedGroupsText = textCopy;
-
+  lastGeneratedGroupsText = assignmentData.textCopy || '';
   if (copyBtn) copyBtn.classList.remove('hidden');
-  playSuccessSound();
-  showToast(`${groups.length}개 조가 생성되었습니다!`, '🎲');
+  if (resetBtn && state.role === 'admin') resetBtn.classList.remove('hidden');
+}
+
+function resetGroupAssignment() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 리셋할 수 있습니다.', '🔒');
+    return;
+  }
+
+  showCustomConfirm('조 편성 초기화 (리셋)', '저장된 조 편성 결과를 삭제하고 초기화하시겠습니까? 학생들의 화면에서도 편성 결과가 사라집니다.', () => {
+    state.savedGroupAssignment = null;
+    lastGeneratedGroupsText = '';
+
+    if (typeof saveGroupAssignmentToRTDB === 'function') {
+      saveGroupAssignmentToRTDB(null);
+    }
+
+    const container = document.getElementById('groupResultsContainer');
+    const copyBtn = document.getElementById('copyGroupsBtn');
+    const resetBtn = document.getElementById('resetGroupsBtn');
+
+    if (container) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <span class="text-3xl mb-2">🎲</span>
+          <p class="text-xs font-bold text-slate-700">조 편성 결과가 초기화되었습니다.</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">상단의 학급 및 인원수를 선택하고 다시 편성을 실행할 수 있습니다.</p>
+        </div>
+      `;
+    }
+
+    if (copyBtn) copyBtn.classList.add('hidden');
+    if (resetBtn) resetBtn.classList.add('hidden');
+
+    renderGroupButtons();
+    showToast('조 편성 결과가 성공적으로 리셋되었습니다.', '🔄');
+  });
 }
 
 function copyGroupResults() {

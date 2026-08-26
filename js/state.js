@@ -36,7 +36,8 @@ let state = {
   rewards: JSON.parse(JSON.stringify(DEFAULT_REWARDS)),
   matchHistory: [],
   teacherMode: true,
-  passcode: DEFAULT_PASSCODE
+  passcode: DEFAULT_PASSCODE,
+  savedGroupAssignment: null
 };
 
 let loggedInStudentId = null;

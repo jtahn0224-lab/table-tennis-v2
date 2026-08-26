@@ -25,6 +25,30 @@ function updateScoreboardPlayer2() {
   ).join('');
 }
 
+let sbManualServerOverride = null;
+
+function toggleScoreboardServe() {
+  const currentServer = sbManualServerOverride !== null ? sbManualServerOverride : calculateDefaultServer();
+  sbManualServerOverride = currentServer === 1 ? 2 : 1;
+  applyServerBadge(sbManualServerOverride);
+}
+
+function calculateDefaultServer() {
+  const total = sbState.score1 + sbState.score2;
+  const isDeuce = sbState.score1 >= 10 && sbState.score2 >= 10;
+  if (isDeuce) {
+    return (total % 2 === 0) ? 1 : 2;
+  }
+  return (Math.floor(total / 2) % 2 === 0) ? 1 : 2;
+}
+
+function applyServerBadge(server) {
+  const p1Badge = document.getElementById('sbP1ServeBadge');
+  const p2Badge = document.getElementById('sbP2ServeBadge');
+  if (p1Badge) p1Badge.style.opacity = server === 1 ? '1' : '0';
+  if (p2Badge) p2Badge.style.opacity = server === 2 ? '1' : '0';
+}
+
 function updateScore(playerNum, delta) {
   if (playerNum === 1) sbState.score1 = Math.max(0, sbState.score1 + delta);
   if (playerNum === 2) sbState.score2 = Math.max(0, sbState.score2 + delta);
@@ -34,25 +58,43 @@ function updateScore(playerNum, delta) {
   if (score1El) score1El.innerText = sbState.score1;
   if (score2El) score2El.innerText = sbState.score2;
 
-  const total = sbState.score1 + sbState.score2;
-  const isDeuce = sbState.score1 >= 10 && sbState.score2 >= 10;
-  
-  let server = 1;
-  if (isDeuce) {
-    server = (total % 2 === 0) ? 1 : 2;
-  } else {
-    server = (Math.floor(total / 2) % 2 === 0) ? 1 : 2;
-  }
+  sbManualServerOverride = null; // 점수 변동 시 자동 룰로 복귀
+  const server = calculateDefaultServer();
+  applyServerBadge(server);
 
-  const p1Badge = document.getElementById('sbP1ServeBadge');
-  const p2Badge = document.getElementById('sbP2ServeBadge');
-  if (p1Badge) p1Badge.style.opacity = server === 1 ? '1' : '0';
-  if (p2Badge) p2Badge.style.opacity = server === 2 ? '1' : '0';
+  // Match Point / Deuce Status Badge
+  const statusBadge = document.getElementById('sbMatchStatusBadge');
+  if (statusBadge) {
+    const s1 = sbState.score1;
+    const s2 = sbState.score2;
+    const isDeuce = s1 >= 10 && s2 >= 10;
+
+    if (isDeuce) {
+      if (s1 === s2) {
+        statusBadge.innerText = '⚡ DEUCE (10:10)';
+        statusBadge.className = 'text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-rose-600 text-white shadow-md animate-pulse';
+        statusBadge.classList.remove('hidden');
+      } else {
+        const leader = s1 > s2 ? '선수 1' : '선수 2';
+        statusBadge.innerText = `🔥 ADVANTAGE (${leader})`;
+        statusBadge.className = 'text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-amber-400 text-slate-950 shadow-md animate-bounce';
+        statusBadge.classList.remove('hidden');
+      }
+    } else if (s1 === 10 || s2 === 10) {
+      const leader = s1 === 10 ? '선수 1' : '선수 2';
+      statusBadge.innerText = `🎯 MATCH POINT (${leader})`;
+      statusBadge.className = 'text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-amber-400 text-slate-950 shadow-md animate-bounce';
+      statusBadge.classList.remove('hidden');
+    } else {
+      statusBadge.classList.add('hidden');
+    }
+  }
 }
 
 function resetScoreboard() {
   sbState.score1 = 0;
   sbState.score2 = 0;
+  sbManualServerOverride = null;
   updateScore(1, 0);
 }
 
