@@ -95,7 +95,8 @@ async function handleStudentLogin(e) {
             equippedCeremony: s.equippedCeremony || 'ceremony-default',
             unlockedCeremonies: s.unlockedCeremonies || ['ceremony-default'],
             history: s.history || [],
-            redeemedRewards: s.redeemedRewards || []
+            redeemedRewards: s.redeemedRewards || [],
+            assessment: s.assessment || null
           };
         });
         existing = state.students.find(s => isStudentMatch(s, grade, classNum, number, cleanName));
@@ -171,7 +172,8 @@ async function handleStudentLogin(e) {
         wins: 0,
         losses: 0,
         history: [],
-        redeemedRewards: []
+        redeemedRewards: [],
+        assessment: null
       };
       state.students.push(newStudent);
       loggedInStudentId = newId;

@@ -131,7 +131,8 @@ function setupRealtimeListeners() {
             equippedCeremony: s.equippedCeremony || 'ceremony-default',
             unlockedCeremonies: s.unlockedCeremonies || ['ceremony-default'],
             history: s.history || [],
-            redeemedRewards: s.redeemedRewards || []
+            redeemedRewards: s.redeemedRewards || [],
+            assessment: s.assessment || null
           };
         });
         if (typeof renderUI === 'function') renderUI();

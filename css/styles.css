@@ -318,3 +318,49 @@ body {
   animation: pulse-glow 1.5s infinite ease-in-out;
 }
 
+/* 3x3 SERVE TARGET SCOREBOARD-THEMED BUTTONS */
+.target-btn-gold {
+  background: linear-gradient(145deg, rgba(69, 26, 3, 0.9) 0%, rgba(15, 23, 42, 0.95) 60%, rgba(180, 83, 9, 0.3) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.75);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.target-btn-gold:hover {
+  border-color: rgba(251, 191, 36, 1);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.6), inset 0 0 15px rgba(245, 158, 11, 0.25);
+  transform: translateY(-2px);
+}
+.target-btn-gold:active {
+  transform: scale(0.95);
+}
+
+.target-btn-cyan {
+  background: linear-gradient(145deg, rgba(8, 47, 73, 0.9) 0%, rgba(15, 23, 42, 0.95) 60%, rgba(3, 105, 161, 0.3) 100%);
+  border: 2px solid rgba(6, 182, 212, 0.75);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.target-btn-cyan:hover {
+  border-color: rgba(6, 182, 212, 1);
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.6), inset 0 0 15px rgba(6, 182, 212, 0.25);
+  transform: translateY(-2px);
+}
+.target-btn-cyan:active {
+  transform: scale(0.95);
+}
+
+.target-btn-rose {
+  background: linear-gradient(145deg, rgba(76, 5, 25, 0.9) 0%, rgba(15, 23, 42, 0.95) 60%, rgba(190, 18, 60, 0.3) 100%);
+  border: 2px solid rgba(244, 63, 94, 0.75);
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.target-btn-rose:hover {
+  border-color: rgba(244, 63, 94, 1);
+  box-shadow: 0 0 35px rgba(244, 63, 94, 0.6), inset 0 0 15px rgba(244, 63, 94, 0.25);
+  transform: translateY(-2px);
+}
+.target-btn-rose:active {
+  transform: scale(0.95);
+}
+

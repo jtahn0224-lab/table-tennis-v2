@@ -59,7 +59,8 @@ function saveNewStudent() {
     wins: 0,
     losses: 0,
     history: [],
-    redeemedRewards: []
+    redeemedRewards: [],
+    assessment: null
   };
 
   state.students.push(newStudent);
