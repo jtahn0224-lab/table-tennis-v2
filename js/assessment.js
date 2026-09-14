@@ -190,19 +190,19 @@ function loadStudentAssessmentData(studentId) {
   if (presetSvContainer) {
     if (isGrade2) {
       presetSvContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">A (50점)<br><span class="text-[9px] font-normal text-slate-500">26점+</span></button>
-        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">B (42점)<br><span class="text-[9px] font-normal text-slate-500">22~25점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">C (35점)<br><span class="text-[9px] font-normal text-slate-500">18~21점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">D (28점)<br><span class="text-[9px] font-normal text-slate-500">14~17점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">E (20점)<br><span class="text-[9px] font-normal text-slate-500">13점 이하</span></button>
+        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">26점+</span></button>
+        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">22~25</span></button>
+        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">18~21</span></button>
+        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">14~17</span></button>
+        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">13점↓</span></button>
       `;
     } else {
       presetSvContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">A (50점)<br><span class="text-[9px] font-normal text-slate-500">27점+</span></button>
-        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">B (42점)<br><span class="text-[9px] font-normal text-slate-500">23~26점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">C (35점)<br><span class="text-[9px] font-normal text-slate-500">19~22점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">D (28점)<br><span class="text-[9px] font-normal text-slate-500">15~18점</span></button>
-        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">E (20점)<br><span class="text-[9px] font-normal text-slate-500">14점 이하</span></button>
+        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">27점+</span></button>
+        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">23~26</span></button>
+        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">19~22</span></button>
+        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">15~18</span></button>
+        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">14점↓</span></button>
       `;
     }
   }
@@ -210,19 +210,19 @@ function loadStudentAssessmentData(studentId) {
   if (presetFhContainer) {
     if (isGrade2) {
       presetFhContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">A (50점)<br><span class="text-[9px] font-normal text-slate-500">25회+</span></button>
-        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">B (42점)<br><span class="text-[9px] font-normal text-slate-500">19~24회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">C (35점)<br><span class="text-[9px] font-normal text-slate-500">13~18회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">D (28점)<br><span class="text-[9px] font-normal text-slate-500">7~12회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">E (20점)<br><span class="text-[9px] font-normal text-slate-500">6회 이하</span></button>
+        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">25회+</span></button>
+        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">19~24</span></button>
+        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">13~18</span></button>
+        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">7~12</span></button>
+        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">6회↓</span></button>
       `;
     } else {
       presetFhContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">A (50점)<br><span class="text-[9px] font-normal text-slate-500">30회+</span></button>
-        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">B (42점)<br><span class="text-[9px] font-normal text-slate-500">23~29회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">C (35점)<br><span class="text-[9px] font-normal text-slate-500">16~22회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">D (28점)<br><span class="text-[9px] font-normal text-slate-500">9~15회</span></button>
-        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1.5 rounded-lg border border-slate-200 text-center hover:bg-emerald-50">E (20점)<br><span class="text-[9px] font-normal text-slate-500">8회 이하</span></button>
+        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">30회+</span></button>
+        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">23~29</span></button>
+        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">16~22</span></button>
+        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">9~15</span></button>
+        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">8회↓</span></button>
       `;
     }
   }
