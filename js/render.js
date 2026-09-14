@@ -432,7 +432,7 @@ function renderStudentDirectory() {
     if (groupNode.isDirect) {
       // 1학년 1반 (단독 학급)
       const list = groupNode.students;
-      list.sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999) || a.name.localeCompare(b.name, 'ko'));
+      list.sort(compareStudentsByNumber);
 
       const totalClassPoints = list.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
       const avgPoints = list.length > 0 ? Math.round(totalClassPoints / list.length) : 0;
@@ -511,7 +511,7 @@ function renderStudentDirectory() {
             ${subKeys.map(subKey => {
               const subObj = groupNode.subGroups[subKey];
               const subList = subObj.students;
-              subList.sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999) || a.name.localeCompare(b.name, 'ko'));
+              subList.sort(compareStudentsByNumber);
 
               const totalSubPoints = subList.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
               const avgSubPoints = subList.length > 0 ? Math.round(totalSubPoints / subList.length) : 0;

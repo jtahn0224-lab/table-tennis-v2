@@ -80,6 +80,29 @@ function compareExactClassKeys(a, b) {
   return a.localeCompare(b, 'ko');
 }
 
+function compareStudentsByNumber(a, b) {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+
+  const normA = normalizeStudentGradeClass(a);
+  const normB = normalizeStudentGradeClass(b);
+
+  const gA = parseInt(normA.grade, 10) || 0;
+  const gB = parseInt(normB.grade, 10) || 0;
+  if (gA !== gB) return gA - gB;
+
+  const cA = parseInt(normA.classNum, 10) || 0;
+  const cB = parseInt(normB.classNum, 10) || 0;
+  if (cA !== cB) return cA - cB;
+
+  const nA = parseInt(normA.number, 10) || 0;
+  const nB = parseInt(normB.number, 10) || 0;
+  if (nA !== nB) return nA - nB;
+
+  return (a.name || '').localeCompare(b.name || '', 'ko');
+}
+
 function getStudentGroupKey(student) {
   if (!student) return '기타 / 학년 미지정';
   const s = normalizeStudentGradeClass(student);

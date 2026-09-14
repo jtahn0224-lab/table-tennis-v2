@@ -707,8 +707,27 @@
         </div>
       </div>
 
-      <!-- Player Selectors -->
-      <div class="grid grid-cols-2 gap-3 sm:gap-6 py-2.5 shrink-0">
+      <!-- Mode Selector Tabs (Singles vs Doubles) -->
+      <div class="flex items-center justify-between py-1.5 shrink-0 border-b border-slate-800/80">
+        <div class="flex items-center space-x-1 bg-slate-800/90 p-1 rounded-2xl border border-slate-700">
+          <button id="sbModeSinglesBtn" onclick="setScoreboardMode('singles')" class="px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black transition-all bg-emerald-600 text-white shadow-md flex items-center space-x-1.5 cursor-pointer">
+            <i class="fa-solid fa-user text-xs"></i>
+            <span>단식 (1 vs 1)</span>
+          </button>
+          <button id="sbModeDoublesBtn" onclick="setScoreboardMode('doubles')" class="px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black transition-all text-slate-400 hover:text-white flex items-center space-x-1.5 cursor-pointer">
+            <i class="fa-solid fa-user-group text-xs"></i>
+            <span>복식 (2 vs 2)</span>
+          </button>
+        </div>
+
+        <div id="sbDoublesOrderGuide" class="hidden text-[10px] sm:text-xs text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/30 flex items-center space-x-1.5 flex-wrap">
+          <span id="sbDoublesActiveRally">🔄 🏓 A1 (서브) ➔ 🛡️ B1 (리시브)</span>
+          <span class="opacity-60 text-[9px] sm:text-[10px] hidden md:inline">(순서: A1 ➔ B1 ➔ A2 ➔ B2)</span>
+        </div>
+      </div>
+
+      <!-- Singles Player Selectors Container -->
+      <div id="sbSinglesPlayerContainer" class="grid grid-cols-2 gap-3 sm:gap-6 py-2.5 shrink-0">
         <div class="bg-cyan-950/30 p-2.5 sm:p-3.5 rounded-2xl border-2 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
           <label class="block text-[11px] sm:text-xs font-black text-cyan-300 mb-1 flex items-center space-x-1">
             <span>🟦 선수 1 (선공 서브)</span>
@@ -727,23 +746,93 @@
         </div>
       </div>
 
+      <!-- Doubles Player Selectors Container (2 vs 2) -->
+      <div id="sbDoublesPlayerContainer" class="hidden flex-col py-2 shrink-0 space-y-2">
+        <!-- Doubles Class Filter -->
+        <div class="flex items-center justify-between bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+          <label class="text-[11px] font-bold text-slate-300 flex items-center space-x-1.5">
+            <span>🏫 대상 학급 빠른 필터:</span>
+          </label>
+          <select id="sbDoublesClassFilter" onchange="filterDoublesByClass()" class="bg-slate-900 border border-slate-600 text-white font-bold text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+            <option value="all">전체 학급 부원 (모든 반 보기)</option>
+            <!-- Dynamic Class Options -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 sm:gap-6">
+          <!-- Team 1 Selectors -->
+          <div class="bg-cyan-950/30 p-2.5 sm:p-3 rounded-2xl border-2 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] space-y-2">
+            <label class="block text-[11px] sm:text-xs font-black text-cyan-300 flex items-center space-x-1">
+              <span>🟦 팀 1 (블루)</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <div>
+                <span class="text-[10px] text-cyan-400 font-bold block mb-0.5">선수 A1 (선공 1)</span>
+                <select id="sbTeam1P1Select" onchange="syncDoublesSelectors()" class="w-full bg-slate-900/90 border border-cyan-500/50 text-cyan-100 font-bold text-xs rounded-xl p-1.5 sm:p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
+                  <!-- Dynamic Options with Optgroups -->
+                </select>
+              </div>
+              <div>
+                <span class="text-[10px] text-cyan-400 font-bold block mb-0.5">선수 A2 (팀원 2)</span>
+                <select id="sbTeam1P2Select" onchange="syncDoublesSelectors()" class="w-full bg-slate-900/90 border border-cyan-500/50 text-cyan-100 font-bold text-xs rounded-xl p-1.5 sm:p-2 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer">
+                  <!-- Dynamic Options with Optgroups -->
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team 2 Selectors -->
+          <div class="bg-rose-950/30 p-2.5 sm:p-3 rounded-2xl border-2 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] space-y-2">
+            <label class="block text-[11px] sm:text-xs font-black text-rose-300 flex items-center space-x-1">
+              <span>🟥 팀 2 (레드)</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <div>
+                <span class="text-[10px] text-rose-400 font-bold block mb-0.5">선수 B1 (후공 1)</span>
+                <select id="sbTeam2P1Select" onchange="syncDoublesSelectors()" class="w-full bg-slate-900/90 border border-rose-500/50 text-rose-100 font-bold text-xs rounded-xl p-1.5 sm:p-2 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer">
+                  <!-- Dynamic Options with Optgroups -->
+                </select>
+              </div>
+              <div>
+                <span class="text-[10px] text-rose-400 font-bold block mb-0.5">선수 B2 (팀원 2)</span>
+                <select id="sbTeam2P2Select" onchange="syncDoublesSelectors()" class="w-full bg-slate-900/90 border border-rose-500/50 text-rose-100 font-bold text-xs rounded-xl p-1.5 sm:p-2 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer">
+                  <!-- Dynamic Options with Optgroups -->
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Giant Interactive Score Display Grid -->
       <div class="grid grid-cols-2 gap-3 sm:gap-6 flex-1 my-2 min-h-[250px] relative">
         
         <!-- Player 1 Score Box (Click to Score +1) -->
-        <div onclick="updateScore(1, 1)" class="scoreboard-p1-card p-4 sm:p-7 rounded-3xl flex flex-col items-center justify-between relative overflow-hidden cursor-pointer select-none group active:scale-[0.98]">
+        <div onclick="updateScore(1, 1)" class="scoreboard-p1-card p-4 sm:p-6 rounded-3xl flex flex-col items-center justify-between relative overflow-hidden cursor-pointer select-none group active:scale-[0.98]">
           
           <!-- Top Glow Accent Line -->
           <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-70"></div>
 
-          <!-- Top Serve Badge -->
-          <span id="sbP1ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
-            <i class="fa-solid fa-table-tennis-paddle-ball text-xs"></i>
-            <span>SERVING 🏓</span>
-          </span>
+          <!-- Top Serve & Receive Badges Container -->
+          <div class="flex items-center justify-center space-x-2 shrink-0 min-h-[28px] z-10">
+            <!-- Top Serve Badge -->
+            <span id="sbP1ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
+              <i class="fa-solid fa-table-tennis-paddle-ball text-xs"></i>
+              <span id="sbP1ServeText">SERVING 🏓</span>
+            </span>
 
-          <!-- Huge Score Display -->
-          <div class="my-auto flex flex-col items-center text-center">
+            <!-- Top Receive Badge (Doubles) -->
+            <span id="sbP1ReceiveBadge" class="hidden text-xs sm:text-sm bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
+              <i class="fa-solid fa-shield-halved text-xs"></i>
+              <span id="sbP1ReceiveText">RECEIVING 🛡️</span>
+            </span>
+          </div>
+
+          <!-- Huge Score Display & Team Name -->
+          <div class="my-auto flex flex-col items-center text-center max-w-full px-1">
+            <div id="sbP1NameDisplay" class="text-xs sm:text-sm font-black text-cyan-200 mb-1 truncate max-w-full bg-cyan-950/60 px-3 py-0.5 rounded-full border border-cyan-500/40">
+              선수 1
+            </div>
             <span id="sbScore1Text" class="text-8xl sm:text-9xl md:text-[150px] font-black scoreboard-digit-p1 tracking-tighter leading-none group-hover:scale-105 transition-transform duration-200">0</span>
             <div class="mt-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] sm:text-xs text-cyan-300 font-extrabold flex items-center space-x-1 group-hover:bg-cyan-500/20 transition-colors">
               <i class="fa-solid fa-hand-pointer text-[10px] animate-bounce"></i>
@@ -758,19 +847,31 @@
         </div>
 
         <!-- Player 2 Score Box (Click to Score +1) -->
-        <div onclick="updateScore(2, 1)" class="scoreboard-p2-card p-4 sm:p-7 rounded-3xl flex flex-col items-center justify-between relative overflow-hidden cursor-pointer select-none group active:scale-[0.98]">
+        <div onclick="updateScore(2, 1)" class="scoreboard-p2-card p-4 sm:p-6 rounded-3xl flex flex-col items-center justify-between relative overflow-hidden cursor-pointer select-none group active:scale-[0.98]">
           
           <!-- Top Glow Accent Line -->
           <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-rose-400 to-transparent opacity-70"></div>
 
-          <!-- Top Serve Badge -->
-          <span id="sbP2ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-rose-400 to-amber-500 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
-            <i class="fa-solid fa-table-tennis-paddle-ball text-xs"></i>
-            <span>SERVING 🏓</span>
-          </span>
+          <!-- Top Serve & Receive Badges Container -->
+          <div class="flex items-center justify-center space-x-2 shrink-0 min-h-[28px] z-10">
+            <!-- Top Serve Badge -->
+            <span id="sbP2ServeBadge" class="text-xs sm:text-sm bg-gradient-to-r from-rose-400 to-amber-500 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
+              <i class="fa-solid fa-table-tennis-paddle-ball text-xs"></i>
+              <span id="sbP2ServeText">SERVING 🏓</span>
+            </span>
 
-          <!-- Huge Score Display -->
-          <div class="my-auto flex flex-col items-center text-center">
+            <!-- Top Receive Badge (Doubles) -->
+            <span id="sbP2ReceiveBadge" class="hidden text-xs sm:text-sm bg-gradient-to-r from-violet-400 to-fuchsia-300 text-slate-950 font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all duration-300 opacity-0 flex items-center space-x-1 shrink-0 animate-pulse">
+              <i class="fa-solid fa-shield-halved text-xs"></i>
+              <span id="sbP2ReceiveText">RECEIVING 🛡️</span>
+            </span>
+          </div>
+
+          <!-- Huge Score Display & Team Name -->
+          <div class="my-auto flex flex-col items-center text-center max-w-full px-1">
+            <div id="sbP2NameDisplay" class="text-xs sm:text-sm font-black text-rose-200 mb-1 truncate max-w-full bg-rose-950/60 px-3 py-0.5 rounded-full border border-rose-500/40">
+              선수 2
+            </div>
             <span id="sbScore2Text" class="text-8xl sm:text-9xl md:text-[150px] font-black scoreboard-digit-p2 tracking-tighter leading-none group-hover:scale-105 transition-transform duration-200">0</span>
             <div class="mt-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] sm:text-xs text-rose-300 font-extrabold flex items-center space-x-1 group-hover:bg-rose-500/20 transition-colors">
               <i class="fa-solid fa-hand-pointer text-[10px] animate-bounce"></i>
