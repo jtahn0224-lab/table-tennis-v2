@@ -1903,7 +1903,7 @@
               </span>
             </div>
             <p class="text-[9px] sm:text-xs text-slate-400 font-medium truncate sm:whitespace-normal">
-              대각선 서브 낙하 지점(3x3) 터치 시 실시간 점수 누적 및 채점표 자동 연동
+              대각선 서브 낙하 지점(3x3) 및 실패(0점) 터치 시 실시간 점수 누적 및 채점표 자동 연동
             </p>
           </div>
         </div>
@@ -2015,6 +2015,29 @@
             </div>
 
           </div>
+
+          <!-- 3. FAULT / OUT / 0 POINT BUTTON (서브 실패 0점 버튼) -->
+          <div class="w-full max-w-[320px] sm:max-w-[440px] mx-auto mt-2 select-none shrink-0">
+            <button type="button" onclick="hitServeTargetZone(0, '서브 실패/아웃 (0점)', -1)" class="w-full target-btn-fail rounded-2xl py-2 sm:py-2.5 px-3 sm:px-4 flex items-center justify-between cursor-pointer group select-none shadow-lg active:scale-95 transition-all">
+              <div class="flex items-center space-x-2">
+                <span class="w-6 h-6 sm:w-8 sm:h-8 rounded-xl bg-rose-950/90 border border-rose-500/60 flex items-center justify-center text-rose-400 group-hover:scale-110 group-hover:text-rose-300 transition-all font-black text-xs sm:text-sm">
+                  ❌
+                </span>
+                <div class="text-left">
+                  <p class="text-xs sm:text-sm font-black text-rose-200 group-hover:text-white transition-colors leading-tight">
+                    서브 실패 (네트 걸림 / 엔드·사이드 아웃)
+                  </p>
+                  <p class="text-[9px] sm:text-[10px] text-rose-300/80 font-bold leading-tight">
+                    시도 횟수 +1회 (0점 기록)
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1 bg-rose-950/80 border border-rose-500/60 px-2.5 py-1 rounded-xl shrink-0">
+                <span class="text-xs sm:text-base font-mono font-black text-rose-300 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]">0점</span>
+              </div>
+            </button>
+          </div>
+
         </div>
 
         <!-- RIGHT COLUMN: Stadium Score Card & Controls (lg:col-span-5) -->

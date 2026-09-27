@@ -364,3 +364,19 @@ body {
   transform: scale(0.95);
 }
 
+.target-btn-fail {
+  background: linear-gradient(145deg, rgba(88, 28, 28, 0.85) 0%, rgba(30, 27, 46, 0.95) 50%, rgba(159, 18, 57, 0.25) 100%);
+  border: 2px solid rgba(244, 63, 94, 0.75);
+  box-shadow: 0 0 18px rgba(225, 29, 72, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.target-btn-fail:hover {
+  border-color: rgba(251, 113, 133, 1);
+  box-shadow: 0 0 28px rgba(225, 29, 72, 0.6), inset 0 0 15px rgba(225, 29, 72, 0.3);
+  transform: translateY(-2px);
+}
+.target-btn-fail:active {
+  transform: scale(0.97);
+}
+
+

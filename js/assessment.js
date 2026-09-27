@@ -727,9 +727,14 @@ function openServeTargetModal() {
   openModal('serveTargetModal');
 }
 
-function calculateServeRubricScore(rawPoints, gradeNum = 3) {
+function calculateServeRubricScore(rawPoints, gradeNum = 3, hasAttempts = false) {
   const isGrade2 = (gradeNum === 2);
-  if (rawPoints <= 0) return { score: 0, gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+  if (rawPoints <= 0 && !hasAttempts) {
+    return { score: 0, gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+  }
+  if (rawPoints <= 0 && hasAttempts) {
+    return { score: 20, gradeName: 'E (20점 환산 ⚠️)', badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+  }
 
   if (isGrade2) {
     // 2학년 기준: 10회 시도 중 26점 이상 A (50점 환산)
@@ -766,7 +771,7 @@ function undoServeHit() {
     return;
   }
   const removed = serveTargetHits.pop();
-  showToast(`마지막 ${removed.point}점 타격이 취소되었습니다.`, '↩️');
+  showToast(`마지막 ${removed.point}점 (${removed.name}) 기록이 취소되었습니다.`, '↩️');
   updateServeTargetUI();
 }
 
@@ -779,6 +784,10 @@ function resetServeTargetHits() {
 
 function updateServeTargetUI() {
   const totalPoints = serveTargetHits.reduce((sum, h) => sum + h.point, 0);
+  const totalAttempts = serveTargetHits.length;
+  const successHits = serveTargetHits.filter(h => h.point > 0).length;
+  const failHits = serveTargetHits.filter(h => h.point === 0).length;
+
   const scoreEl = document.getElementById('serveTargetCurrentScore');
   const countBadge = document.getElementById('serveTargetHitCountBadge');
   const countText = document.getElementById('serveTargetHitCountText');
@@ -786,12 +795,24 @@ function updateServeTargetUI() {
   const gradeBadge = document.getElementById('serveTargetGradeBadge');
 
   const gradeNum = getStudentGradeNum(currentServeTargetStudent);
-  const rubric = calculateServeRubricScore(totalPoints, gradeNum);
+  const rubric = calculateServeRubricScore(totalPoints, gradeNum, totalAttempts > 0);
 
   // Directly display raw accumulated target score (e.g. 3, 6, 9... up to 30)
   if (scoreEl) scoreEl.innerText = totalPoints;
-  if (countBadge) countBadge.innerText = `${serveTargetHits.length}구 성공 (${totalPoints} / 30점)`;
-  if (countText) countText.innerText = `${serveTargetHits.length}회 기록 (과녁 ${totalPoints}점)`;
+  if (countBadge) {
+    if (totalAttempts === 0) {
+      countBadge.innerText = '0회 시도 (0/30점)';
+    } else {
+      countBadge.innerText = `${totalAttempts}회 시도 (${successHits}성공 · ${totalPoints}/30점)`;
+    }
+  }
+  if (countText) {
+    if (totalAttempts === 0) {
+      countText.innerText = '0회';
+    } else {
+      countText.innerText = `${totalAttempts}회 (성공 ${successHits} / 실패 ${failHits})`;
+    }
+  }
 
   if (gradeBadge) {
     gradeBadge.innerText = rubric.gradeName;
@@ -800,7 +821,7 @@ function updateServeTargetUI() {
 
   if (logEl) {
     if (serveTargetHits.length === 0) {
-      logEl.innerHTML = '<span class="text-xs text-slate-500">과녁의 번호(3, 2, 1)를 누르면 실시간 기록됩니다.</span>';
+      logEl.innerHTML = '<span class="text-xs text-slate-500">과녁 번호(3, 2, 1) 또는 [실패 0점] 버튼을 누르면 실시간 기록됩니다.</span>';
     } else {
       logEl.innerHTML = serveTargetHits.map((h, i) => {
         let colorClass = 'bg-amber-950/80 text-amber-300 border-amber-500/60 shadow-[0_0_8px_rgba(245,158,11,0.3)]';
@@ -811,8 +832,11 @@ function updateServeTargetUI() {
         } else if (h.point === 1) {
           colorClass = 'bg-rose-950/80 text-rose-300 border-rose-500/60 shadow-[0_0_8px_rgba(244,63,94,0.3)]';
           label = '센터';
+        } else if (h.point === 0) {
+          colorClass = 'bg-slate-900/90 text-rose-400 border-rose-600/80 shadow-[0_0_8px_rgba(225,29,72,0.4)]';
+          label = '실패/아웃 ❌';
         }
-        return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border ${colorClass} animate-pop flex items-center space-x-1"><span>#${i + 1}</span><span class="font-mono">+${h.point}점</span><span>(${label})</span></span>`;
+        return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border ${colorClass} animate-pop flex items-center space-x-1"><span>#${i + 1}</span><span class="font-mono">${h.point > 0 ? '+' + h.point : '0'}점</span><span>(${label})</span></span>`;
       }).join('');
       logEl.scrollTop = logEl.scrollHeight;
     }
@@ -821,8 +845,9 @@ function updateServeTargetUI() {
 
 function applyServeTargetScore(autoSave = false) {
   const totalPoints = serveTargetHits.reduce((sum, h) => sum + h.point, 0);
+  const totalAttempts = serveTargetHits.length;
   const gradeNum = getStudentGradeNum(currentServeTargetStudent);
-  const rubric = calculateServeRubricScore(totalPoints, gradeNum);
+  const rubric = calculateServeRubricScore(totalPoints, gradeNum, totalAttempts > 0);
   const finalScore = rubric.score;
 
   const svInput = document.getElementById('assessScoreSv');
@@ -840,7 +865,7 @@ function applyServeTargetScore(autoSave = false) {
     }
     saveStudentAssessment();
   } else {
-    showToast(`🎯 서브 과녁 ${totalPoints}점(30점 만점) 획득 ➔ 채점표에 ${finalScore}점(${rubric.gradeName.split(' ')[0]}) 반영 완료!`, '✅');
+    showToast(`🎯 서브 과녁 ${totalPoints}점(30점 만점, ${totalAttempts}회 시도) ➔ 채점표에 ${finalScore}점(${rubric.gradeName.split(' ')[0]}) 반영 완료!`, '✅');
   }
 }
 
@@ -852,6 +877,24 @@ function playHitZoneSound(point) {
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+
+    if (point === 0) {
+      // Miss / Fault low buzz sound
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, now); // A3
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.18); // A2 drop
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.22);
+      return;
+    }
 
     let freq = 523.25; // C5 (1 pt)
     if (point === 3) freq = 880; // A5 (3 pt - high bell)
@@ -874,3 +917,4 @@ function playHitZoneSound(point) {
     osc.stop(now + 0.22);
   } catch (e) {}
 }
+
