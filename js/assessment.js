@@ -601,6 +601,14 @@ function loadStudentAssessmentData(studentId) {
   const dateText = document.getElementById('assessmentDateText');
   const targetResultBox = document.getElementById('assessServeTargetResultBox');
   const targetResultText = document.getElementById('assessServeTargetResultText');
+  const rallyResultBox = document.getElementById('assessRallyResultBox');
+  const rallyResultText = document.getElementById('assessRallyResultText');
+  const openRallyBtnText = document.getElementById('assessOpenRallyBtnText');
+
+  const rallyTypeName = isGrade2 ? '백핸드 쇼트' : '포핸드 드라이브';
+  if (openRallyBtnText) {
+    openRallyBtnText.innerText = `${isGrade2 ? '2학년 백핸드' : '3학년 포핸드'} 랠리 실기 채점판 열기 🏓`;
+  }
 
   const rallyScore = (typeof assess.rally === 'number') ? assess.rally : (isGrade2 ? (assess.backhand || assess.forehand || 0) : (assess.forehand || 0));
 
@@ -618,6 +626,17 @@ function loadStudentAssessmentData(studentId) {
       targetResultBox.classList.remove('hidden');
     } else {
       targetResultBox.classList.add('hidden');
+    }
+  }
+
+  // Display Converted Rally Result if recorded
+  if (rallyResultBox && rallyResultText) {
+    if (typeof assess.rallyCountRaw === 'number' && assess.rallyCountRaw > 0) {
+      const rallyRubric = calculateRallyRubricScore(assess.rallyCountRaw, gradeNum);
+      rallyResultText.innerHTML = `${rallyTypeName} 실기 <b class="text-cyan-600 font-mono">${assess.rallyCountRaw}회</b> 성공 ➔ <b class="text-emerald-700 font-mono">${assess.rally || rallyRubric.score}점</b>(${rallyRubric.tier || 'A'}구간)으로 환산 반영됨`;
+      rallyResultBox.classList.remove('hidden');
+    } else {
+      rallyResultBox.classList.add('hidden');
     }
   }
 
@@ -725,11 +744,13 @@ function saveStudentAssessment() {
     date: dateStr,
     comment: comment,
     serveTargetRaw: (typeof prevAssess.serveTargetRaw === 'number') ? prevAssess.serveTargetRaw : undefined,
-    serveTargetAttempts: (typeof prevAssess.serveTargetAttempts === 'number') ? prevAssess.serveTargetAttempts : undefined
+    serveTargetAttempts: (typeof prevAssess.serveTargetAttempts === 'number') ? prevAssess.serveTargetAttempts : undefined,
+    rallyCountRaw: (typeof prevAssess.rallyCountRaw === 'number') ? prevAssess.rallyCountRaw : undefined
   };
 
   if (student.assessment.serveTargetRaw === undefined) delete student.assessment.serveTargetRaw;
   if (student.assessment.serveTargetAttempts === undefined) delete student.assessment.serveTargetAttempts;
+  if (student.assessment.rallyCountRaw === undefined) delete student.assessment.rallyCountRaw;
 
   saveStudentToRTDB(student);
   playSuccessSound();
@@ -1402,5 +1423,314 @@ function playHitZoneSound(point) {
 
     osc.start(now);
     osc.stop(now + 0.22);
+  } catch (e) {}
+}
+
+/* ==========================================================================
+   RALLY ASSESSMENT MODULE (학년별 포핸드/백핸드 랠리 실기 수행평가 모듈)
+   ========================================================================== */
+
+let currentRallyCount = 0;
+let rallyHistory = [];
+let currentRallyStudent = null;
+
+function openRallyModal() {
+  const studentSelect = document.getElementById('assessmentStudentSelect');
+  let studentId = studentSelect?.value;
+  
+  if (!studentId) {
+    const current = getCurrentStudent();
+    if (current) studentId = current.id;
+  }
+
+  currentRallyStudent = state.students.find(s => s.id === studentId);
+  const nameEl = document.getElementById('rallyStudentName');
+  const nameElMobile = document.getElementById('rallyStudentNameMobile');
+  const modeBadge = document.getElementById('rallyModeBadge');
+  const gradeSpecBadge = document.getElementById('rallyGradeSpecBadge');
+  const modalTitle = document.getElementById('rallyModalTitle');
+  const typeNameText = document.getElementById('rallyTypeNameText');
+  const targetGoalBadge = document.getElementById('rallyTargetGoalBadge');
+
+  const gradeNum = getStudentGradeNum(currentRallyStudent);
+  const isGrade2 = (gradeNum === 2);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+
+  const thA = isGrade2 ? (cfg.grade2?.rally?.thresholds?.A || 25) : (cfg.grade3?.rally?.thresholds?.A || 30);
+  const rallyTypeName = isGrade2 ? '백핸드 쇼트 랠리' : '포핸드 드라이브 랠리';
+
+  if (modalTitle) {
+    modalTitle.innerText = `${isGrade2 ? '2학년 백핸드' : '3학년 포핸드'} 랠리 실기 채점판`;
+  }
+  if (typeNameText) {
+    typeNameText.innerText = `${rallyTypeName} (${isGrade2 ? '2학년' : '3학년'})`;
+  }
+  if (targetGoalBadge) {
+    targetGoalBadge.innerText = `A구간 목표: ${thA}회 이상 (${cfg.scores?.A || 50}점)`;
+  }
+  if (gradeSpecBadge) {
+    gradeSpecBadge.innerText = isGrade2 ? `🌱 2학년: 백핸드 쇼트 ${thA}회 이상 A (50점 만점)` : `🎓 3학년: 포핸드 드라이브 ${thA}회 이상 A (50점 만점)`;
+  }
+
+  if (currentRallyStudent) {
+    const classBadge = formatClassBadge(currentRallyStudent);
+    const fullName = `${classBadge} ${currentRallyStudent.name}`;
+    if (nameEl) nameEl.innerText = fullName;
+    if (nameElMobile) nameElMobile.innerText = fullName;
+  } else {
+    if (nameEl) nameEl.innerText = '부원 선택 필요';
+    if (nameElMobile) nameElMobile.innerText = '부원 선택 필요';
+  }
+
+  if (modeBadge) {
+    if (state.role === 'admin') {
+      modeBadge.className = 'text-xs bg-indigo-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-indigo-400/40';
+      modeBadge.innerText = '👑 선생님 채점';
+    } else {
+      modeBadge.className = 'text-xs bg-emerald-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-emerald-400/40';
+      modeBadge.innerText = '👤 부원 연습 모드';
+    }
+  }
+
+  currentRallyCount = 0;
+  rallyHistory = [];
+  updateRallyUI();
+
+  openModal('rallyAssessmentModal');
+}
+
+function calculateRallyRubricScore(count, gradeNum = 3) {
+  const isGrade2 = (gradeNum === 2);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const th = cfg[gradeKey]?.rally?.thresholds || (isGrade2 ? { A: 25, B: 19, C: 13, D: 7 } : { A: 30, B: 23, C: 16, D: 9 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
+
+  if (count <= 0) {
+    return { score: 0, tier: '-', tierName: '미평가', gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+  }
+  if (count >= th.A) {
+    return { score: sc.A, tier: 'A', tierName: 'A', gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
+  }
+  if (count >= th.B) {
+    return { score: sc.B, tier: 'B', tierName: 'B', gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
+  }
+  if (count >= th.C) {
+    return { score: sc.C, tier: 'C', tierName: 'C', gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
+  }
+  if (count >= th.D) {
+    return { score: sc.D, tier: 'D', tierName: 'D', gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
+  }
+  return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+}
+
+function addRallyCount(amount = 1) {
+  const prev = currentRallyCount;
+  currentRallyCount = Math.max(0, currentRallyCount + amount);
+  rallyHistory.push({ amount, count: currentRallyCount, time: Date.now() });
+
+  playRallyHitSound(currentRallyCount);
+  updateRallyUI();
+}
+
+function undoRallyCount() {
+  if (rallyHistory.length === 0) {
+    if (currentRallyCount > 0) {
+      currentRallyCount = Math.max(0, currentRallyCount - 1);
+      updateRallyUI();
+      showToast('랠리 카운트가 1회 감소되었습니다.', '↩️');
+    } else {
+      showToast('취소할 랠리 기록이 없습니다.', '⚠️');
+    }
+    return;
+  }
+  const last = rallyHistory.pop();
+  currentRallyCount = Math.max(0, currentRallyCount - last.amount);
+  showToast(`마지막 +${last.amount}회 기록이 취소되었습니다. (현재 ${currentRallyCount}회)`, '↩️');
+  updateRallyUI();
+}
+
+function resetRallyCount() {
+  if (currentRallyCount === 0 && rallyHistory.length === 0) return;
+  currentRallyCount = 0;
+  rallyHistory = [];
+  updateRallyUI();
+  showToast('랠리 카운트가 0회로 초기화되었습니다.', '🔄');
+}
+
+function updateRallyUI() {
+  const gradeNum = getStudentGradeNum(currentRallyStudent);
+  const isGrade2 = (gradeNum === 2);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const th = cfg[gradeKey]?.rally?.thresholds || (isGrade2 ? { A: 25, B: 19, C: 13, D: 7 } : { A: 30, B: 23, C: 16, D: 9 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
+  const maxScore = sc.A || 50;
+
+  const rubric = calculateRallyRubricScore(currentRallyCount, gradeNum);
+
+  const countText = document.getElementById('rallyCurrentCountText');
+  const countBadge = document.getElementById('rallyCountBadge');
+  const gradeBadge = document.getElementById('rallyGradeBadge');
+  const progressHint = document.getElementById('rallyTierProgressHint');
+  const rawCountText = document.getElementById('rallyLiveRawCountText');
+  const finalScoreText = document.getElementById('rallyLiveFinalScoreText');
+  const tierBadge = document.getElementById('rallyConversionTierBadge');
+  const summarySentence = document.getElementById('rallySummarySentence');
+  const statusText = document.getElementById('rallyProgressStatusText');
+  const milestoneContainer = document.getElementById('rallyMilestoneChips');
+
+  if (countText) countText.innerText = currentRallyCount;
+  if (countBadge) {
+    if (currentRallyCount === 0) {
+      countBadge.innerText = '0회 연속 성공';
+    } else {
+      countBadge.innerText = `${currentRallyCount}회 연속 성공 🔥`;
+    }
+  }
+
+  if (gradeBadge) {
+    gradeBadge.innerText = rubric.gradeName;
+    gradeBadge.className = `text-xs sm:text-sm font-black px-4 py-1.5 rounded-xl ${rubric.badgeClass}`;
+  }
+
+  // Next tier progress hint
+  if (progressHint) {
+    if (currentRallyCount >= th.A) {
+      progressHint.innerText = `🎉 최고 등급 A구간 달성! (${th.A}회 이상)`;
+    } else if (currentRallyCount >= th.B) {
+      progressHint.innerText = `A구간까지 +${th.A - currentRallyCount}회 더 필요`;
+    } else if (currentRallyCount >= th.C) {
+      progressHint.innerText = `B구간까지 +${th.B - currentRallyCount}회 더 필요`;
+    } else if (currentRallyCount >= th.D) {
+      progressHint.innerText = `C구간까지 +${th.C - currentRallyCount}회 더 필요`;
+    } else {
+      progressHint.innerText = `D구간까지 +${th.D - currentRallyCount}회 더 필요`;
+    }
+  }
+
+  // Real-time conversion card
+  if (rawCountText) {
+    rawCountText.innerText = `${currentRallyCount}회 성공`;
+  }
+  if (finalScoreText) {
+    finalScoreText.innerText = `${rubric.score}점 (${maxScore}점 만점)`;
+  }
+  if (tierBadge) {
+    if (currentRallyCount === 0) {
+      tierBadge.innerText = '대기 중 ⏳';
+      tierBadge.className = 'text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+    } else {
+      tierBadge.innerText = `${rubric.tier}구간 확정 ✨`;
+      tierBadge.className = `text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded ${rubric.badgeClass}`;
+    }
+  }
+
+  if (summarySentence) {
+    if (currentRallyCount === 0) {
+      summarySentence.innerHTML = '🏓 화면의 [랠리 성공!] 버튼을 터치하면 실시간 환산 점수가 계산됩니다.';
+    } else {
+      const rallyName = isGrade2 ? '백핸드 쇼트' : '포핸드 드라이브';
+      summarySentence.innerHTML = `🏓 ${rallyName} <span class="text-cyan-300 font-black font-mono text-xs sm:text-sm">${currentRallyCount}회</span> 연속 성공 ➔ 수행평가 <span class="text-emerald-300 font-black font-mono text-xs sm:text-sm">${rubric.score}점</span>(${rubric.tier}구간)으로 환산되었습니다!`;
+    }
+  }
+
+  // Progress percentage toward A goal
+  const pct = Math.min(100, Math.round((currentRallyCount / th.A) * 100));
+  if (statusText) statusText.innerText = `${pct}% 달성 (${currentRallyCount}/${th.A}회)`;
+
+  // Milestones
+  if (milestoneContainer) {
+    const milestones = [
+      { name: 'A구간', count: th.A, score: sc.A, icon: '🥇', achieved: currentRallyCount >= th.A },
+      { name: 'B구간', count: th.B, score: sc.B, icon: '🥈', achieved: currentRallyCount >= th.B },
+      { name: 'C구간', count: th.C, score: sc.C, icon: '🥉', achieved: currentRallyCount >= th.C },
+      { name: 'D구간', count: th.D, score: sc.D, icon: '🌱', achieved: currentRallyCount >= th.D }
+    ];
+
+    milestoneContainer.innerHTML = milestones.map(m => {
+      if (m.achieved) {
+        return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border bg-emerald-950/80 text-emerald-300 border-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.3)] flex items-center space-x-1 animate-pop"><span>${m.icon} ${m.name}</span><span class="font-mono">(${m.count}회+)</span><span>✔ 달성!</span></span>`;
+      } else {
+        return `<span class="text-xs font-bold px-2 py-1 rounded-xl border bg-slate-900/60 text-slate-500 border-slate-800 flex items-center space-x-1 opacity-70"><span>${m.icon} ${m.name}</span><span class="font-mono">(${m.count}회)</span></span>`;
+      }
+    }).join('');
+  }
+}
+
+function applyRallyScore(autoSave = false) {
+  const gradeNum = getStudentGradeNum(currentRallyStudent);
+  const isGrade2 = (gradeNum === 2);
+  const rubric = calculateRallyRubricScore(currentRallyCount, gradeNum);
+  const finalScore = rubric.score;
+
+  const fhInput = document.getElementById('assessScoreFh');
+  if (fhInput) {
+    fhInput.value = finalScore;
+  }
+
+  // Record raw rally performance on student object
+  if (currentRallyStudent) {
+    if (!currentRallyStudent.assessment) {
+      currentRallyStudent.assessment = {};
+    }
+    currentRallyStudent.assessment.rallyCountRaw = currentRallyCount;
+    currentRallyStudent.assessment.rally = finalScore;
+    if (isGrade2) {
+      currentRallyStudent.assessment.backhand = finalScore;
+    } else {
+      currentRallyStudent.assessment.forehand = finalScore;
+    }
+  }
+
+  // Update Tab 1 Rally Result Indicator
+  const resultBox = document.getElementById('assessRallyResultBox');
+  const resultText = document.getElementById('assessRallyResultText');
+  const rallyTypeName = isGrade2 ? '백핸드 쇼트' : '포핸드 드라이브';
+  if (resultBox && resultText) {
+    resultText.innerHTML = `${rallyTypeName} 실기 <b class="text-cyan-600 font-mono">${currentRallyCount}회</b> 성공 ➔ <b class="text-emerald-700 font-mono">${finalScore}점</b>(${rubric.tier}구간)으로 환산 반영됨`;
+    resultBox.classList.remove('hidden');
+  }
+
+  calcAssessmentTotal();
+  closeModal('rallyAssessmentModal');
+
+  const conversionMsg = `🏓 랠리 ${currentRallyCount}회 성공을 달성하여 ➔ 수행평가 ${rallyTypeName} ${finalScore}점(${rubric.tier}구간)으로 환산 반영되었습니다!`;
+
+  if (autoSave) {
+    if (state.role !== 'admin') {
+      showToast('선생님 모드에서만 서버 저장이 가능합니다. (점수는 반영됨)', '🔒');
+      return;
+    }
+    saveStudentAssessment();
+  } else {
+    showToast(conversionMsg, '🏓');
+  }
+}
+
+function playRallyHitSound(count) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Ping pong ball crisp table bounce sound with slight pitch variation
+    const baseFreq = 700 + ((count % 10) * 25);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(320, now + 0.09);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.13);
   } catch (e) {}
 }
