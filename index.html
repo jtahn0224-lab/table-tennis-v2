@@ -1642,154 +1642,178 @@
 
       </div>
 
-      <!-- TAB 2: Rubric Criteria Table -->
+      <!-- TAB 2: Rubric Criteria Table & Teacher Config Editor -->
       <div id="assessmentViewRubric" class="hidden flex-1 overflow-y-auto space-y-2.5 sm:space-y-3 pr-1 text-left text-xs">
-        <div class="bg-emerald-50 p-2.5 sm:p-3 rounded-2xl border border-emerald-200">
-          <h4 class="font-black text-emerald-900 text-xs sm:text-sm mb-0.5 sm:mb-1">🏫 양주중 체육과 학년별 탁구 실기 수행평가 기준표</h4>
-          <p class="text-[10px] sm:text-[11px] text-emerald-700">3학년(서브 50점 + 포핸드 50점) / 2학년(서브 50점 + 백핸드 50점) = 100점 만점</p>
-        </div>
-
-        <!-- Grade Cutoff Card -->
-        <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-2.5 sm:p-3 rounded-xl text-white border border-slate-700">
-          <div class="text-xs font-black mb-1 flex items-center space-x-1 text-amber-300">
-            <i class="fa-solid fa-award"></i>
-            <span>종합 성취 등급 기준 (3단계)</span>
+        
+        <!-- Top Header & Teacher Edit Mode Toggle -->
+        <div class="bg-emerald-50 p-2.5 sm:p-3 rounded-2xl border border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h4 class="font-black text-emerald-900 text-xs sm:text-sm mb-0.5">🏫 양주중 체육과 학년별 탁구 실기 수행평가 기준표</h4>
+            <p class="text-[10px] sm:text-[11px] text-emerald-700">3학년(서브 50점 + 포핸드 50점) / 2학년(서브 50점 + 백핸드 50점) = 100점 만점</p>
           </div>
-          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10px] sm:text-[11px] font-bold">
-            <div class="p-1.5 sm:p-2 rounded-lg bg-amber-400/20 border border-amber-400/50 text-amber-300">
-              <span class="block font-black text-[11px] sm:text-xs">A (🥇)</span>
-              <span>80점 이상</span>
-            </div>
-            <div class="p-1.5 sm:p-2 rounded-lg bg-emerald-400/20 border border-emerald-400/50 text-emerald-300">
-              <span class="block font-black text-[11px] sm:text-xs">B (🥈)</span>
-              <span>60~79점</span>
-            </div>
-            <div class="p-1.5 sm:p-2 rounded-lg bg-sky-400/20 border border-sky-400/50 text-sky-300">
-              <span class="block font-black text-[11px] sm:text-xs">C (🥉)</span>
-              <span>60점 미만</span>
-            </div>
+          <!-- Teacher Config Editor Toggle Button (Visible only to Teacher) -->
+          <div id="rubricTeacherConfigControls" class="hidden flex items-center space-x-1.5">
+            <button type="button" id="rubricEditModeToggleBtn" onclick="toggleRubricEditMode()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1 shadow-xs transition-all active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-sliders text-amber-300"></i>
+              <span id="rubricEditModeBtnText">⚙️ 배점 및 개수 설정 변경</span>
+            </button>
           </div>
         </div>
 
-        <!-- SECTION 1: 3학년 평가 기준 -->
-        <div class="space-y-2">
-          <div class="flex items-center space-x-1.5 pt-1">
-            <span class="bg-indigo-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🎓 3학년 기준</span>
-            <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(50점) + 포핸드 드라이브 랠리(50점)</span>
+        <!-- TEACHER CONFIG EDITOR PANEL (Collapsible Editor for Teachers) -->
+        <div id="rubricConfigEditorPanel" class="hidden space-y-3 p-3 sm:p-4 rounded-2xl bg-slate-900 text-white border-2 border-indigo-500/50 shadow-lg animate-pop">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">⚙️</span>
+              <h4 class="font-black text-xs sm:text-sm text-amber-300">수행평가 배점 및 등급별 개수 설정 (선생님 전용)</h4>
+            </div>
+            <span class="text-[10px] text-slate-400 font-bold">실시간 자동 반영</span>
           </div>
 
-          <!-- 3학년 Serve Rubric -->
-          <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
-            <div class="flex justify-between items-center mb-1.5 gap-1">
-              <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (50점)</span>
-              <span class="text-[9px] sm:text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / 27점+ A</span>
+          <!-- 1. 등급별 환산 배점 설정 (50점 만점) -->
+          <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-700 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs text-slate-200">1. 각 등급별 환산 배점 (서브 50점 / 랠리 50점 만점)</span>
+              <span class="text-[10px] text-emerald-400 font-bold">5단계 환산 점수</span>
             </div>
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
-              <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
-                <thead>
-                  <tr class="bg-slate-100 text-slate-700 text-center font-bold">
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
-                    <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (과녁 획득 점수)</th>
-                  </tr>
-                </thead>
-                <tbody class="text-slate-700">
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">50점</td><td class="p-1 sm:p-1.5">과녁 점수 27점 이상</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">42점</td><td class="p-1 sm:p-1.5">과녁 점수 23~26점</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">35점</td><td class="p-1 sm:p-1.5">과녁 점수 19~22점</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">28점</td><td class="p-1 sm:p-1.5">과녁 점수 15~18점</td></tr>
-                  <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">20점</td><td class="p-1 sm:p-1.5">과녁 점수 14점 이하</td></tr>
-                </tbody>
-              </table>
+            <div class="grid grid-cols-5 gap-1.5 text-center">
+              <div class="bg-slate-900/90 p-1.5 rounded-lg border border-amber-500/40">
+                <span class="text-[10px] font-black text-amber-400 block mb-1">A구간</span>
+                <div class="flex items-center justify-center space-x-0.5">
+                  <input type="number" id="cfgScoreA" min="0" max="50" class="w-full text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-amber-300 focus:ring-1 focus:ring-amber-400">
+                  <span class="text-[10px] text-slate-400">점</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/90 p-1.5 rounded-lg border border-emerald-500/40">
+                <span class="text-[10px] font-black text-emerald-400 block mb-1">B구간</span>
+                <div class="flex items-center justify-center space-x-0.5">
+                  <input type="number" id="cfgScoreB" min="0" max="50" class="w-full text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-emerald-300 focus:ring-1 focus:ring-emerald-400">
+                  <span class="text-[10px] text-slate-400">점</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/90 p-1.5 rounded-lg border border-sky-500/40">
+                <span class="text-[10px] font-black text-sky-400 block mb-1">C구간</span>
+                <div class="flex items-center justify-center space-x-0.5">
+                  <input type="number" id="cfgScoreC" min="0" max="50" class="w-full text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-sky-300 focus:ring-1 focus:ring-sky-400">
+                  <span class="text-[10px] text-slate-400">점</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/90 p-1.5 rounded-lg border border-orange-500/40">
+                <span class="text-[10px] font-black text-orange-400 block mb-1">D구간</span>
+                <div class="flex items-center justify-center space-x-0.5">
+                  <input type="number" id="cfgScoreD" min="0" max="50" class="w-full text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-orange-300 focus:ring-1 focus:ring-orange-400">
+                  <span class="text-[10px] text-slate-400">점</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/90 p-1.5 rounded-lg border border-rose-500/40">
+                <span class="text-[10px] font-black text-rose-400 block mb-1">E구간</span>
+                <div class="flex items-center justify-center space-x-0.5">
+                  <input type="number" id="cfgScoreE" min="0" max="50" class="w-full text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-rose-300 focus:ring-1 focus:ring-rose-400">
+                  <span class="text-[10px] text-slate-400">점</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 3학년 Forehand Drive Rubric -->
-          <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
-            <div class="flex justify-between items-center mb-1.5 gap-1">
-              <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 포핸드 드라이브 랠리 (50점)</span>
-              <span class="text-[9px] sm:text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">30회+ A</span>
+          <!-- 2. 종합 성취 등급 기준 (100점 만점) -->
+          <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-700 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs text-slate-200">2. 종합 성취 등급 기준 컷 (100점 만점)</span>
+              <span class="text-[10px] text-amber-400 font-bold">3단계 등급 컷</span>
             </div>
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
-              <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
-                <thead>
-                  <tr class="bg-slate-100 text-slate-700 text-center font-bold">
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
-                    <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (연속 랠리 횟수)</th>
-                  </tr>
-                </thead>
-                <tbody class="text-slate-700">
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">50점</td><td class="p-1 sm:p-1.5">드라이브 30회 이상 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">42점</td><td class="p-1 sm:p-1.5">23회 ~ 29회 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">35점</td><td class="p-1 sm:p-1.5">16회 ~ 22회 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">28점</td><td class="p-1 sm:p-1.5">9회 ~ 15회 성공</td></tr>
-                  <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">20점</td><td class="p-1 sm:p-1.5">8회 이하 성공</td></tr>
-                </tbody>
-              </table>
+            <div class="grid grid-cols-2 gap-2 text-center">
+              <div class="bg-slate-900/90 p-2 rounded-lg border border-amber-500/40 flex items-center justify-between px-3">
+                <span class="text-xs font-black text-amber-300">A등급 기준 (🥇)</span>
+                <div class="flex items-center space-x-1">
+                  <input type="number" id="cfgCutoffA" min="0" max="100" class="w-16 text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-amber-300 focus:ring-1 focus:ring-amber-400">
+                  <span class="text-xs text-slate-400 font-bold">점 이상</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/90 p-2 rounded-lg border border-emerald-500/40 flex items-center justify-between px-3">
+                <span class="text-xs font-black text-emerald-300">B등급 기준 (🥈)</span>
+                <div class="flex items-center space-x-1">
+                  <input type="number" id="cfgCutoffB" min="0" max="100" class="w-16 text-center py-1 rounded bg-slate-800 border border-slate-600 font-black text-xs text-emerald-300 focus:ring-1 focus:ring-emerald-400">
+                  <span class="text-xs text-slate-400 font-bold">점 이상</span>
+                </div>
+              </div>
             </div>
+            <p class="text-[10px] text-slate-400">※ B등급 점수 미만은 자동으로 C등급(🥉)으로 처리됩니다.</p>
+          </div>
+
+          <!-- 3. 3학년 실기 개수 / 점수 기준 -->
+          <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-700 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs text-indigo-300">3. 🎓 3학년 등급별 성공 개수 / 과녁 점수 기준</span>
+              <span class="text-[10px] text-indigo-400 font-bold">구간별 최소 기준</span>
+            </div>
+            <!-- 3학년 서브 -->
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+              <span class="text-[11px] font-bold text-slate-300 block mb-1.5">① 서브 정확성 (10회 시도 / 30점 만점)</span>
+              <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div><span class="text-[10px] font-bold text-amber-400">A구간</span><input type="number" id="cfgG3SvA" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-emerald-400">B구간</span><input type="number" id="cfgG3SvB" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-sky-400">C구간</span><input type="number" id="cfgG3SvC" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-orange-400">D구간</span><input type="number" id="cfgG3SvD" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+              </div>
+            </div>
+            <!-- 3학년 포핸드 -->
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+              <span class="text-[11px] font-bold text-slate-300 block mb-1.5">② 포핸드 드라이브 랠리 (연속 성공 횟수)</span>
+              <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div><span class="text-[10px] font-bold text-amber-400">A구간</span><input type="number" id="cfgG3FhA" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-emerald-400">B구간</span><input type="number" id="cfgG3FhB" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-sky-400">C구간</span><input type="number" id="cfgG3FhC" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-orange-400">D구간</span><input type="number" id="cfgG3FhD" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 2학년 실기 개수 / 점수 기준 -->
+          <div class="bg-slate-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-700 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs text-teal-300">4. 🌱 2학년 등급별 성공 개수 / 과녁 점수 기준</span>
+              <span class="text-[10px] text-teal-400 font-bold">구간별 최소 기준</span>
+            </div>
+            <!-- 2학년 서브 -->
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+              <span class="text-[11px] font-bold text-slate-300 block mb-1.5">① 서브 정확성 (10회 시도 / 30점 만점)</span>
+              <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div><span class="text-[10px] font-bold text-amber-400">A구간</span><input type="number" id="cfgG2SvA" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-emerald-400">B구간</span><input type="number" id="cfgG2SvB" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-sky-400">C구간</span><input type="number" id="cfgG2SvC" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-orange-400">D구간</span><input type="number" id="cfgG2SvD" min="0" max="30" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+              </div>
+            </div>
+            <!-- 2학년 백핸드 -->
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-700">
+              <span class="text-[11px] font-bold text-slate-300 block mb-1.5">② 백핸드 쇼트 랠리 (연속 성공 횟수)</span>
+              <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div><span class="text-[10px] font-bold text-amber-400">A구간</span><input type="number" id="cfgG2FhA" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-emerald-400">B구간</span><input type="number" id="cfgG2FhB" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-sky-400">C구간</span><input type="number" id="cfgG2FhC" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+                <div><span class="text-[10px] font-bold text-orange-400">D구간</span><input type="number" id="cfgG2FhD" min="0" max="100" class="w-full text-center py-1 mt-0.5 rounded bg-slate-800 border border-slate-600 font-bold text-xs text-white"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Save and Reset Buttons -->
+          <div class="flex items-center space-x-2 pt-1">
+            <button type="button" onclick="saveAssessmentConfigFromForm()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-2.5 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center space-x-1.5 active:scale-95 transition-all cursor-pointer">
+              <i class="fa-solid fa-floppy-disk text-amber-300"></i>
+              <span>설정 저장 & 즉시 반영 💾</span>
+            </button>
+            <button type="button" onclick="resetAssessmentConfigToDefault()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-slate-700 font-bold px-3 py-2.5 rounded-xl text-xs flex items-center space-x-1 active:scale-95 transition-all cursor-pointer" title="기본 기준값으로 복원">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>기본값 복원</span>
+            </button>
           </div>
         </div>
 
-        <!-- SECTION 2: 2학년 평가 기준 -->
-        <div class="space-y-2 pt-1">
-          <div class="flex items-center space-x-1.5 pt-1">
-            <span class="bg-teal-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🌱 2학년 기준</span>
-            <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(50점) + 백핸드 쇼트 랠리(50점)</span>
-          </div>
-
-          <!-- 2학년 Serve Rubric -->
-          <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
-            <div class="flex justify-between items-center mb-1.5 gap-1">
-              <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (50점)</span>
-              <span class="text-[9px] sm:text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / 26점+ A</span>
-            </div>
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
-              <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
-                <thead>
-                  <tr class="bg-slate-100 text-slate-700 text-center font-bold">
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
-                    <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (과녁 획득 점수)</th>
-                  </tr>
-                </thead>
-                <tbody class="text-slate-700">
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">50점</td><td class="p-1 sm:p-1.5">과녁 점수 26점 이상</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">42점</td><td class="p-1 sm:p-1.5">과녁 점수 22~25점</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">35점</td><td class="p-1 sm:p-1.5">과녁 점수 18~21점</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">28점</td><td class="p-1 sm:p-1.5">과녁 점수 14~17점</td></tr>
-                  <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">20점</td><td class="p-1 sm:p-1.5">과녁 점수 13점 이하</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 2학년 Backhand Short Rubric -->
-          <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
-            <div class="flex justify-between items-center mb-1.5 gap-1">
-              <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 백핸드 쇼트 랠리 (50점)</span>
-              <span class="text-[9px] sm:text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">25회+ A</span>
-            </div>
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
-              <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
-                <thead>
-                  <tr class="bg-slate-100 text-slate-700 text-center font-bold">
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
-                    <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
-                    <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (연속 랠리 횟수)</th>
-                  </tr>
-                </thead>
-                <tbody class="text-slate-700">
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">50점</td><td class="p-1 sm:p-1.5">쇼트 자세 25회 이상 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">42점</td><td class="p-1 sm:p-1.5">19회 ~ 24회 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">35점</td><td class="p-1 sm:p-1.5">13회 ~ 18회 성공</td></tr>
-                  <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">28점</td><td class="p-1 sm:p-1.5">7회 ~ 12회 성공</td></tr>
-                  <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">20점</td><td class="p-1 sm:p-1.5">6회 이하 성공</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <!-- DYNAMIC RUBRIC TABLES DISPLAY CONTAINER -->
+        <div id="rubricTablesContainer" class="space-y-2.5 sm:space-y-3">
+          <!-- Dynamic Rubric Render via renderAssessmentRubricTables() -->
         </div>
+
       </div>
 
       <!-- TAB 3: Class Overview Table -->

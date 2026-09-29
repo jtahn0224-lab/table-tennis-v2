@@ -37,8 +37,31 @@ let state = {
   matchHistory: [],
   teacherMode: true,
   passcode: DEFAULT_PASSCODE,
-  savedGroupAssignment: null
+  savedGroupAssignment: null,
+  assessmentConfig: (function() {
+    try {
+      const saved = localStorage.getItem('tt_assessment_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure structure has all keys merged with defaults
+        return {
+          cutoffs: { ...DEFAULT_ASSESSMENT_CONFIG.cutoffs, ...(parsed.cutoffs || {}) },
+          scores: { ...DEFAULT_ASSESSMENT_CONFIG.scores, ...(parsed.scores || {}) },
+          grade3: {
+            serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.serve, ...(parsed.grade3?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.serve.thresholds, ...(parsed.grade3?.serve?.thresholds || {}) } },
+            rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.rally, ...(parsed.grade3?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.rally.thresholds, ...(parsed.grade3?.rally?.thresholds || {}) } }
+          },
+          grade2: {
+            serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve, ...(parsed.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve.thresholds, ...(parsed.grade2?.serve?.thresholds || {}) } },
+            rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally, ...(parsed.grade2?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally.thresholds, ...(parsed.grade2?.rally?.thresholds || {}) } }
+          }
+        };
+      }
+    } catch(e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_ASSESSMENT_CONFIG));
+  })()
 };
+
 
 let loggedInStudentId = null;
 let isReadOnly = false;

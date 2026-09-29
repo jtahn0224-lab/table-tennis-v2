@@ -181,6 +181,31 @@ function setupRealtimeListeners() {
     state.savedGroupAssignment = val || null;
     if (typeof renderGroupButtons === 'function') renderGroupButtons();
   });
+
+  const assessConfigRef = db.ref(`artifacts/${appId}/public/data/assessment_config`);
+  assessConfigRef.on('value', (snapshot) => {
+    const val = snapshot.val();
+    if (val && typeof val === 'object') {
+      state.assessmentConfig = {
+        cutoffs: { ...DEFAULT_ASSESSMENT_CONFIG.cutoffs, ...(val.cutoffs || {}) },
+        scores: { ...DEFAULT_ASSESSMENT_CONFIG.scores, ...(val.scores || {}) },
+        grade3: {
+          serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.serve, ...(val.grade3?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.serve.thresholds, ...(val.grade3?.serve?.thresholds || {}) } },
+          rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.rally, ...(val.grade3?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade3.rally.thresholds, ...(val.grade3?.rally?.thresholds || {}) } }
+        },
+        grade2: {
+          serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve, ...(val.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve.thresholds, ...(val.grade2?.serve?.thresholds || {}) } },
+          rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally, ...(val.grade2?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally.thresholds, ...(val.grade2?.rally?.thresholds || {}) } }
+        }
+      };
+      try {
+        localStorage.setItem('tt_assessment_config', JSON.stringify(state.assessmentConfig));
+      } catch(e) {}
+      if (typeof refreshAssessmentConfigUI === 'function') {
+        refreshAssessmentConfigUI();
+      }
+    }
+  });
 }
 
 function saveGroupAssignmentToRTDB(data) {
@@ -189,3 +214,11 @@ function saveGroupAssignmentToRTDB(data) {
     console.error("Firebase save group_assignment error:", e);
   });
 }
+
+function saveAssessmentConfigToRTDB(config) {
+  if (!db) return;
+  db.ref(`artifacts/${appId}/public/data/assessment_config`).set(JSON.parse(JSON.stringify(config))).catch(e => {
+    console.error("Firebase save assessment_config error:", e);
+  });
+}
+

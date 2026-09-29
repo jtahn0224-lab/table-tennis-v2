@@ -214,3 +214,47 @@ const GRADE_LEVEL_GUIDE = [
   { level: 7, title: '👑 핑퐁 챔피언', min: 750, max: 999, desc: '학급 토너먼트 상위권의 실력자', color: 'text-purple-600', border: 'border-purple-300' },
   { level: 8, title: '🌟 탁구의 신', min: 1000, max: Infinity, desc: '탁구 기술과 매너를 모두 정복한 전설', color: 'text-rose-600', border: 'border-rose-300' }
 ];
+
+/* PERFORMANCE ASSESSMENT DEFAULT CONFIGURATION (수행평가 배점 및 기준 기본값) */
+const DEFAULT_ASSESSMENT_CONFIG = {
+  cutoffs: {
+    A: 80,
+    B: 60
+  },
+  scores: {
+    A: 50,
+    B: 42,
+    C: 35,
+    D: 28,
+    E: 20
+  },
+  grade3: {
+    serve: {
+      name: '서브 정확성',
+      unit: '점',
+      maxAttempts: 10,
+      maxPoints: 30,
+      thresholds: { A: 27, B: 23, C: 19, D: 15 }
+    },
+    rally: {
+      name: '포핸드 드라이브 랠리',
+      unit: '회',
+      thresholds: { A: 30, B: 23, C: 16, D: 9 }
+    }
+  },
+  grade2: {
+    serve: {
+      name: '서브 정확성',
+      unit: '점',
+      maxAttempts: 10,
+      maxPoints: 30,
+      thresholds: { A: 26, B: 22, C: 18, D: 14 }
+    },
+    rally: {
+      name: '백핸드 쇼트 랠리',
+      unit: '회',
+      thresholds: { A: 25, B: 19, C: 13, D: 7 }
+    }
+  }
+};
+

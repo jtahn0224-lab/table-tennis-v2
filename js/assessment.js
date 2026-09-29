@@ -2,6 +2,7 @@
 
 let assessmentCurrentTab = 'form'; // 'form' | 'rubric' | 'overview'
 let isOverviewInlineMode = false;
+let isRubricEditMode = false;
 
 function openAssessmentModal(initialTab = 'form') {
   const isAdmin = state.role === 'admin';
@@ -11,6 +12,7 @@ function openAssessmentModal(initialTab = 'form') {
   const commentInput = document.getElementById('assessmentCommentInput');
   const studentSelect = document.getElementById('assessmentStudentSelect');
   const classSelect = document.getElementById('assessmentClassSelect');
+  const rubricTeacherControls = document.getElementById('rubricTeacherConfigControls');
 
   if (modeBadge) {
     if (isAdmin) {
@@ -32,6 +34,17 @@ function openAssessmentModal(initialTab = 'form') {
     else studentNoticeBox.classList.add('hidden');
   }
 
+  if (rubricTeacherControls) {
+    if (isAdmin) rubricTeacherControls.classList.remove('hidden');
+    else rubricTeacherControls.classList.add('hidden');
+  }
+
+  if (!isAdmin && isRubricEditMode) {
+    isRubricEditMode = false;
+    const editorPanel = document.getElementById('rubricConfigEditorPanel');
+    if (editorPanel) editorPanel.classList.add('hidden');
+  }
+
   if (commentInput) {
     commentInput.readOnly = !isAdmin;
   }
@@ -48,6 +61,9 @@ function openAssessmentModal(initialTab = 'form') {
     if (studentSelect) studentSelect.value = activeStudent.id;
     loadStudentAssessmentData(activeStudent.id);
   }
+
+  // Render dynamic rubric tables
+  renderAssessmentRubricTables();
 
   // Switch to requested tab
   switchAssessmentTab(initialTab);
@@ -76,10 +92,376 @@ function switchAssessmentTab(tab) {
   if (rubricBtn) rubricBtn.className = tab === 'rubric' ? activeBtnClass : inactiveBtnClass;
   if (overviewBtn) overviewBtn.className = tab === 'overview' ? activeBtnClass : inactiveBtnClass;
 
-  if (tab === 'overview') {
+  if (tab === 'rubric') {
+    renderAssessmentRubricTables();
+  } else if (tab === 'overview') {
     renderAssessmentOverviewTable();
   }
 }
+
+/* ==========================================================================
+   TEACHER ASSESSMENT CONFIGURATION (수행평가 배점 및 등급별 개수 설정 에디터)
+   ========================================================================== */
+
+function toggleRubricEditMode() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 평가 기준을 수정할 수 있습니다.', '🔒');
+    return;
+  }
+
+  isRubricEditMode = !isRubricEditMode;
+  const editorPanel = document.getElementById('rubricConfigEditorPanel');
+  const btnText = document.getElementById('rubricEditModeBtnText');
+  const btn = document.getElementById('rubricEditModeToggleBtn');
+
+  if (editorPanel) {
+    editorPanel.classList.toggle('hidden', !isRubricEditMode);
+  }
+
+  if (btn) {
+    if (isRubricEditMode) {
+      btn.className = 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1 shadow-md transition-all active:scale-95 cursor-pointer';
+      if (btnText) btnText.innerText = '✖ 설정 닫기';
+      populateRubricConfigForm();
+    } else {
+      btn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1 shadow-xs transition-all active:scale-95 cursor-pointer';
+      if (btnText) btnText.innerText = '⚙️ 배점 및 개수 설정 변경';
+    }
+  }
+}
+
+function populateRubricConfigForm() {
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = (val !== undefined) ? val : 0;
+  };
+
+  // Scores
+  setVal('cfgScoreA', cfg.scores?.A);
+  setVal('cfgScoreB', cfg.scores?.B);
+  setVal('cfgScoreC', cfg.scores?.C);
+  setVal('cfgScoreD', cfg.scores?.D);
+  setVal('cfgScoreE', cfg.scores?.E);
+
+  // Cutoffs
+  setVal('cfgCutoffA', cfg.cutoffs?.A);
+  setVal('cfgCutoffB', cfg.cutoffs?.B);
+
+  // Grade 3 Serve
+  setVal('cfgG3SvA', cfg.grade3?.serve?.thresholds?.A);
+  setVal('cfgG3SvB', cfg.grade3?.serve?.thresholds?.B);
+  setVal('cfgG3SvC', cfg.grade3?.serve?.thresholds?.C);
+  setVal('cfgG3SvD', cfg.grade3?.serve?.thresholds?.D);
+
+  // Grade 3 Forehand
+  setVal('cfgG3FhA', cfg.grade3?.rally?.thresholds?.A);
+  setVal('cfgG3FhB', cfg.grade3?.rally?.thresholds?.B);
+  setVal('cfgG3FhC', cfg.grade3?.rally?.thresholds?.C);
+  setVal('cfgG3FhD', cfg.grade3?.rally?.thresholds?.D);
+
+  // Grade 2 Serve
+  setVal('cfgG2SvA', cfg.grade2?.serve?.thresholds?.A);
+  setVal('cfgG2SvB', cfg.grade2?.serve?.thresholds?.B);
+  setVal('cfgG2SvC', cfg.grade2?.serve?.thresholds?.C);
+  setVal('cfgG2SvD', cfg.grade2?.serve?.thresholds?.D);
+
+  // Grade 2 Backhand
+  setVal('cfgG2FhA', cfg.grade2?.rally?.thresholds?.A);
+  setVal('cfgG2FhB', cfg.grade2?.rally?.thresholds?.B);
+  setVal('cfgG2FhC', cfg.grade2?.rally?.thresholds?.C);
+  setVal('cfgG2FhD', cfg.grade2?.rally?.thresholds?.D);
+}
+
+function saveAssessmentConfigFromForm() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 설정을 저장할 수 있습니다.', '🔒');
+    return;
+  }
+
+  const getNum = (id, def) => {
+    const el = document.getElementById(id);
+    const n = parseInt(el?.value, 10);
+    return isNaN(n) ? def : n;
+  };
+
+  const newConfig = {
+    cutoffs: {
+      A: Math.max(1, getNum('cfgCutoffA', 80)),
+      B: Math.max(1, getNum('cfgCutoffB', 60))
+    },
+    scores: {
+      A: Math.max(0, getNum('cfgScoreA', 50)),
+      B: Math.max(0, getNum('cfgScoreB', 42)),
+      C: Math.max(0, getNum('cfgScoreC', 35)),
+      D: Math.max(0, getNum('cfgScoreD', 28)),
+      E: Math.max(0, getNum('cfgScoreE', 20))
+    },
+    grade3: {
+      serve: {
+        name: '서브 정확성',
+        unit: '점',
+        maxAttempts: 10,
+        maxPoints: 30,
+        thresholds: {
+          A: Math.max(1, getNum('cfgG3SvA', 27)),
+          B: Math.max(1, getNum('cfgG3SvB', 23)),
+          C: Math.max(1, getNum('cfgG3SvC', 19)),
+          D: Math.max(1, getNum('cfgG3SvD', 15))
+        }
+      },
+      rally: {
+        name: '포핸드 드라이브 랠리',
+        unit: '회',
+        thresholds: {
+          A: Math.max(1, getNum('cfgG3FhA', 30)),
+          B: Math.max(1, getNum('cfgG3FhB', 23)),
+          C: Math.max(1, getNum('cfgG3FhC', 16)),
+          D: Math.max(1, getNum('cfgG3FhD', 9))
+        }
+      }
+    },
+    grade2: {
+      serve: {
+        name: '서브 정확성',
+        unit: '점',
+        maxAttempts: 10,
+        maxPoints: 30,
+        thresholds: {
+          A: Math.max(1, getNum('cfgG2SvA', 26)),
+          B: Math.max(1, getNum('cfgG2SvB', 22)),
+          C: Math.max(1, getNum('cfgG2SvC', 18)),
+          D: Math.max(1, getNum('cfgG2SvD', 14))
+        }
+      },
+      rally: {
+        name: '백핸드 쇼트 랠리',
+        unit: '회',
+        thresholds: {
+          A: Math.max(1, getNum('cfgG2FhA', 25)),
+          B: Math.max(1, getNum('cfgG2FhB', 19)),
+          C: Math.max(1, getNum('cfgG2FhC', 13)),
+          D: Math.max(1, getNum('cfgG2FhD', 7))
+        }
+      }
+    }
+  };
+
+  state.assessmentConfig = newConfig;
+
+  try {
+    localStorage.setItem('tt_assessment_config', JSON.stringify(newConfig));
+  } catch(e) {}
+
+  if (typeof saveAssessmentConfigToRTDB === 'function') {
+    saveAssessmentConfigToRTDB(newConfig);
+  }
+
+  refreshAssessmentConfigUI();
+  playSuccessSound();
+  showToast('수행평가 배점 및 기준 설정이 성공적으로 저장 및 반영되었습니다! 💾', '🎉');
+
+  // Close edit mode
+  toggleRubricEditMode();
+}
+
+function resetAssessmentConfigToDefault() {
+  if (state.role !== 'admin') {
+    showToast('선생님 모드에서만 초기화할 수 있습니다.', '🔒');
+    return;
+  }
+
+  state.assessmentConfig = JSON.parse(JSON.stringify(DEFAULT_ASSESSMENT_CONFIG));
+
+  try {
+    localStorage.setItem('tt_assessment_config', JSON.stringify(state.assessmentConfig));
+  } catch(e) {}
+
+  if (typeof saveAssessmentConfigToRTDB === 'function') {
+    saveAssessmentConfigToRTDB(state.assessmentConfig);
+  }
+
+  populateRubricConfigForm();
+  refreshAssessmentConfigUI();
+  showToast('수행평가 배점 및 기준이 기본값으로 초기화되었습니다. 🔄', '↩️');
+}
+
+function refreshAssessmentConfigUI() {
+  renderAssessmentRubricTables();
+
+  const studentSelect = document.getElementById('assessmentStudentSelect');
+  const currentStudentId = studentSelect?.value;
+  if (currentStudentId) {
+    loadStudentAssessmentData(currentStudentId);
+  }
+
+  if (assessmentCurrentTab === 'overview') {
+    renderAssessmentOverviewTable();
+  }
+}
+
+function renderAssessmentRubricTables() {
+  const container = document.getElementById('rubricTablesContainer');
+  if (!container) return;
+
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const sc = cfg.scores;
+  const cut = cfg.cutoffs;
+  const g3 = cfg.grade3;
+  const g2 = cfg.grade2;
+
+  container.innerHTML = `
+    <!-- Grade Cutoff Card -->
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-2.5 sm:p-3 rounded-xl text-white border border-slate-700">
+      <div class="text-xs font-black mb-1 flex items-center justify-between text-amber-300">
+        <div class="flex items-center space-x-1">
+          <i class="fa-solid fa-award"></i>
+          <span>종합 성취 등급 기준 (3단계)</span>
+        </div>
+        <span class="text-[10px] text-slate-400 font-normal">총점 100점 만점 기준</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10px] sm:text-[11px] font-bold">
+        <div class="p-1.5 sm:p-2 rounded-lg bg-amber-400/20 border border-amber-400/50 text-amber-300">
+          <span class="block font-black text-[11px] sm:text-xs">A (🥇)</span>
+          <span>${cut.A}점 이상</span>
+        </div>
+        <div class="p-1.5 sm:p-2 rounded-lg bg-emerald-400/20 border border-emerald-400/50 text-emerald-300">
+          <span class="block font-black text-[11px] sm:text-xs">B (🥈)</span>
+          <span>${cut.B}~${cut.A - 1}점</span>
+        </div>
+        <div class="p-1.5 sm:p-2 rounded-lg bg-sky-400/20 border border-sky-400/50 text-sky-300">
+          <span class="block font-black text-[11px] sm:text-xs">C (🥉)</span>
+          <span>${cut.B}점 미만</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: 3학년 평가 기준 -->
+    <div class="space-y-2">
+      <div class="flex items-center space-x-1.5 pt-1">
+        <span class="bg-indigo-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🎓 3학년 기준</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 포핸드 드라이브 랠리(${sc.A}점)</span>
+      </div>
+
+      <!-- 3학년 Serve Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${g3.serve.thresholds.A}점+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (과녁 획득 점수 / 30점 만점)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">과녁 점수 ${g3.serve.thresholds.A}점 이상</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g3.serve.thresholds.B}~${g3.serve.thresholds.A - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g3.serve.thresholds.C}~${g3.serve.thresholds.B - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g3.serve.thresholds.D}~${g3.serve.thresholds.C - 1}점</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">과녁 점수 ${g3.serve.thresholds.D - 1}점 이하</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3학년 Forehand Drive Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 포핸드 드라이브 랠리 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">${g3.rally.thresholds.A}회+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (연속 랠리 성공 횟수)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">드라이브 ${g3.rally.thresholds.A}회 이상 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">${g3.rally.thresholds.B}회 ~ ${g3.rally.thresholds.A - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">${g3.rally.thresholds.C}회 ~ ${g3.rally.thresholds.B - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">${g3.rally.thresholds.D}회 ~ ${g3.rally.thresholds.C - 1}회 성공</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">${g3.rally.thresholds.D - 1}회 이하 성공</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: 2학년 평가 기준 -->
+    <div class="space-y-2 pt-1">
+      <div class="flex items-center space-x-1.5 pt-1">
+        <span class="bg-teal-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🌱 2학년 기준</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 백핸드 쇼트 랠리(${sc.A}점)</span>
+      </div>
+
+      <!-- 2학년 Serve Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${g2.serve.thresholds.A}점+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (과녁 획득 점수 / 30점 만점)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">과녁 점수 ${g2.serve.thresholds.A}점 이상</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g2.serve.thresholds.B}~${g2.serve.thresholds.A - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g2.serve.thresholds.C}~${g2.serve.thresholds.B - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${g2.serve.thresholds.D}~${g2.serve.thresholds.C - 1}점</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">과녁 점수 ${g2.serve.thresholds.D - 1}점 이하</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2학년 Backhand Short Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 백핸드 쇼트 랠리 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">${g2.rally.thresholds.A}회+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (연속 랠리 성공 횟수)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">쇼트 자세 ${g2.rally.thresholds.A}회 이상 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">${g2.rally.thresholds.B}회 ~ ${g2.rally.thresholds.A - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">${g2.rally.thresholds.C}회 ~ ${g2.rally.thresholds.B - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">${g2.rally.thresholds.D}회 ~ ${g2.rally.thresholds.C - 1}회 성공</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">${g2.rally.thresholds.D - 1}회 이하 성공</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   STUDENT FORM ASSESSMENT & CLASS ROSTER
+   ========================================================================== */
 
 function populateAssessmentClassOptions() {
   const classSelect = document.getElementById('assessmentClassSelect');
@@ -168,7 +550,13 @@ function loadStudentAssessmentData(studentId) {
   const gradeNum = getStudentGradeNum(student);
   const isGrade2 = (gradeNum === 2);
 
-  // Dynamic Rubric Titles and Preset Buttons based on Grade
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const svTh = cfg[gradeKey].serve.thresholds;
+  const rallyTh = cfg[gradeKey].rally.thresholds;
+  const sc = cfg.scores;
+
+  // Dynamic Rubric Titles and Preset Buttons based on Grade and Config
   const crit1Desc = document.getElementById('assessCriteria1Desc');
   const crit2Title = document.getElementById('assessCriteria2Title');
   const crit2Desc = document.getElementById('assessCriteria2Desc');
@@ -176,55 +564,35 @@ function loadStudentAssessmentData(studentId) {
   const presetFhContainer = document.getElementById('assessPresetFhContainer');
 
   if (crit1Desc) {
-    crit1Desc.innerText = isGrade2 ? '10회 시도 / 26점 이상 A (50점 만점)' : '10회 시도 / 27점 이상 A (50점 만점)';
+    crit1Desc.innerText = `10회 시도 / ${svTh.A}점 이상 A (${sc.A}점 만점)`;
   }
 
   if (crit2Title) {
-    crit2Title.innerText = isGrade2 ? '2. 백핸드 쇼트 랠리 (50점)' : '2. 포핸드 드라이브 랠리 (50점)';
+    crit2Title.innerText = isGrade2 ? `2. 백핸드 쇼트 랠리 (${sc.A}점)` : `2. 포핸드 드라이브 랠리 (${sc.A}점)`;
   }
 
   if (crit2Desc) {
-    crit2Desc.innerText = isGrade2 ? '2학년: 25회 이상 연속 성공 A (50점)' : '3학년: 30회 이상 연속 성공 A (50점)';
+    crit2Desc.innerText = isGrade2 ? `2학년: ${rallyTh.A}회 이상 연속 성공 A (${sc.A}점)` : `3학년: ${rallyTh.A}회 이상 연속 성공 A (${sc.A}점)`;
   }
 
   if (presetSvContainer) {
-    if (isGrade2) {
-      presetSvContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">26점+</span></button>
-        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">22~25</span></button>
-        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">18~21</span></button>
-        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">14~17</span></button>
-        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">13점↓</span></button>
-      `;
-    } else {
-      presetSvContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('sv', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">27점+</span></button>
-        <button type="button" onclick="setAssessItem('sv', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">23~26</span></button>
-        <button type="button" onclick="setAssessItem('sv', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">19~22</span></button>
-        <button type="button" onclick="setAssessItem('sv', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">15~18</span></button>
-        <button type="button" onclick="setAssessItem('sv', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">14점↓</span></button>
-      `;
-    }
+    presetSvContainer.innerHTML = `
+      <button type="button" onclick="setAssessItem('sv', ${sc.A})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (${sc.A})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${svTh.A}점+</span></button>
+      <button type="button" onclick="setAssessItem('sv', ${sc.B})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (${sc.B})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${svTh.B}~${svTh.A - 1}</span></button>
+      <button type="button" onclick="setAssessItem('sv', ${sc.C})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (${sc.C})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${svTh.C}~${svTh.B - 1}</span></button>
+      <button type="button" onclick="setAssessItem('sv', ${sc.D})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (${sc.D})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${svTh.D}~${svTh.C - 1}</span></button>
+      <button type="button" onclick="setAssessItem('sv', ${sc.E})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (${sc.E})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${svTh.D - 1}점↓</span></button>
+    `;
   }
 
   if (presetFhContainer) {
-    if (isGrade2) {
-      presetFhContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">25회+</span></button>
-        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">19~24</span></button>
-        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">13~18</span></button>
-        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">7~12</span></button>
-        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">6회↓</span></button>
-      `;
-    } else {
-      presetFhContainer.innerHTML = `
-        <button type="button" onclick="setAssessItem('fh', 50)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (50)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">30회+</span></button>
-        <button type="button" onclick="setAssessItem('fh', 42)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (42)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">23~29</span></button>
-        <button type="button" onclick="setAssessItem('fh', 35)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (35)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">16~22</span></button>
-        <button type="button" onclick="setAssessItem('fh', 28)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (28)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">9~15</span></button>
-        <button type="button" onclick="setAssessItem('fh', 20)" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (20)<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">8회↓</span></button>
-      `;
-    }
+    presetFhContainer.innerHTML = `
+      <button type="button" onclick="setAssessItem('fh', ${sc.A})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">A (${sc.A})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${rallyTh.A}회+</span></button>
+      <button type="button" onclick="setAssessItem('fh', ${sc.B})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">B (${sc.B})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${rallyTh.B}~${rallyTh.A - 1}</span></button>
+      <button type="button" onclick="setAssessItem('fh', ${sc.C})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">C (${sc.C})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${rallyTh.C}~${rallyTh.B - 1}</span></button>
+      <button type="button" onclick="setAssessItem('fh', ${sc.D})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">D (${sc.D})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${rallyTh.D}~${rallyTh.C - 1}</span></button>
+      <button type="button" onclick="setAssessItem('fh', ${sc.E})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-emerald-50 leading-tight">E (${sc.E})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${rallyTh.D - 1}회↓</span></button>
+    `;
   }
 
   const svInput = document.getElementById('assessScoreSv');
@@ -260,18 +628,23 @@ function setAssessItem(category, score) {
 }
 
 function calcAssessmentTotal() {
-  const sv = Math.min(50, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
-  const fh = Math.min(50, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+  const sv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
+  const fh = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
 
   const total = sv + fh;
   let grade = '미평가';
   let gradeBadgeClass = 'bg-white/20 text-white font-black text-xs px-3 py-1.5 rounded-xl border border-white/30 backdrop-blur-sm';
 
+  const cutA = cfg.cutoffs?.A || 80;
+  const cutB = cfg.cutoffs?.B || 60;
+
   if (total > 0 || (sv > 0 || fh > 0)) {
-    if (total >= 80) {
+    if (total >= cutA) {
       grade = 'A (최우수 🥇)';
       gradeBadgeClass = 'bg-amber-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl border border-amber-300 shadow-sm';
-    } else if (total >= 60) {
+    } else if (total >= cutB) {
       grade = 'B (우수 🥈)';
       gradeBadgeClass = 'bg-emerald-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl border border-emerald-300 shadow-sm';
     } else {
@@ -305,8 +678,11 @@ function saveStudentAssessment() {
   const student = state.students.find(s => s.id === studentId);
   if (!student) return;
 
-  const sv = Math.min(50, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
-  const fh = Math.min(50, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+
+  const sv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
+  const fh = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
   const comment = document.getElementById('assessmentCommentInput')?.value.trim() || '';
 
   const gradeNum = getStudentGradeNum(student);
@@ -314,9 +690,12 @@ function saveStudentAssessment() {
   const rallyType = isGrade2 ? 'backhand' : 'forehand';
 
   const total = sv + fh;
+  const cutA = cfg.cutoffs?.A || 80;
+  const cutB = cfg.cutoffs?.B || 60;
+
   let grade = 'C';
-  if (total >= 80) grade = 'A';
-  else if (total >= 60) grade = 'B';
+  if (total >= cutA) grade = 'A';
+  else if (total >= cutB) grade = 'B';
 
   const dateStr = new Date().toLocaleDateString('ko-KR');
 
@@ -396,12 +775,17 @@ function renderAssessmentOverviewTable() {
   const tbody = document.getElementById('assessmentOverviewTableBody');
   if (!tbody || !classKey) return;
 
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+  const cutA = cfg.cutoffs?.A || 80;
+  const cutB = cfg.cutoffs?.B || 60;
+
   const m = classKey.match(/(\d+)학년/);
   const classGrade = m ? parseInt(m[1], 10) : 3;
   const isGrade2 = (classGrade === 2);
   const thRally = document.getElementById('thAssessRallyCol');
   if (thRally) {
-    thRally.innerText = isGrade2 ? '백핸드 쇼트(50)' : '포핸드 드라이브(50)';
+    thRally.innerText = isGrade2 ? `백핸드 쇼트(${maxScore})` : `포핸드 드라이브(${maxScore})`;
   }
 
   const list = state.students
@@ -418,7 +802,12 @@ function renderAssessmentOverviewTable() {
     if (s.assessment && typeof s.assessment.total === 'number' && s.assessment.total > 0) {
       evaluatedCount++;
       totalScoreSum += s.assessment.total;
-      const g = s.assessment.grade || 'C';
+      let g = s.assessment.grade;
+      if (!g || g === '미평가') {
+        if (s.assessment.total >= cutA) g = 'A';
+        else if (s.assessment.total >= cutB) g = 'B';
+        else g = 'C';
+      }
       if (gradeCounts[g] !== undefined) gradeCounts[g]++;
       else gradeCounts.C++;
     } else {
@@ -462,7 +851,13 @@ function renderAssessmentOverviewTable() {
     const sv = a.serve || 0;
     const fh = (typeof a.rally === 'number') ? a.rally : (isGrade2 ? (a.backhand || a.forehand || 0) : (a.forehand || 0));
     const total = (a.total > 0 || (sv > 0 || fh > 0)) ? `${a.total}점` : '-';
-    const grade = a.grade || '미평가';
+    let grade = a.grade || '미평가';
+    if (grade === '미평가' && (a.total > 0 || (sv > 0 || fh > 0))) {
+      const totNum = (a.total > 0) ? a.total : (sv + fh);
+      if (totNum >= cutA) grade = 'A';
+      else if (totNum >= cutB) grade = 'B';
+      else grade = 'C';
+    }
 
     let gradeColor = 'text-slate-400';
     if (grade === 'A') gradeColor = 'text-amber-600 font-black';
@@ -476,10 +871,10 @@ function renderAssessmentOverviewTable() {
           <td class="p-2 border-r border-slate-100 font-bold">${s.number || '-'}번</td>
           <td class="p-2 border-r border-slate-100 font-extrabold text-slate-800">${escapeHtml(s.name)}</td>
           <td class="p-1 border-r border-slate-100">
-            <input type="number" min="0" max="50" value="${sv}" data-type="sv" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
+            <input type="number" min="0" max="${maxScore}" value="${sv}" data-type="sv" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
           </td>
           <td class="p-1 border-r border-slate-100">
-            <input type="number" min="0" max="50" value="${fh}" data-type="fh" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
+            <input type="number" min="0" max="${maxScore}" value="${fh}" data-type="fh" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
           </td>
           <td class="p-2 border-r border-slate-100 font-black text-emerald-700 inline-total">${total}</td>
           <td class="p-2 border-r border-slate-100 inline-grade ${gradeColor}">${grade}</td>
@@ -517,13 +912,19 @@ function onInlineScoreChange(inputEl) {
   const tr = inputEl.closest('tr');
   if (!tr) return;
 
-  const sv = Math.min(50, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
-  const fh = Math.min(50, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+
+  const sv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
+  const fh = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
 
   const total = sv + fh;
+  const cutA = cfg.cutoffs?.A || 80;
+  const cutB = cfg.cutoffs?.B || 60;
+
   let grade = 'C';
-  if (total >= 80) grade = 'A';
-  else if (total >= 60) grade = 'B';
+  if (total >= cutA) grade = 'A';
+  else if (total >= cutB) grade = 'B';
 
   const totalEl = tr.querySelector('.inline-total');
   const gradeEl = tr.querySelector('.inline-grade');
@@ -544,6 +945,11 @@ function saveOverviewBatchAssessment() {
   const rows = document.querySelectorAll('#assessmentOverviewTableBody tr[data-std-id]');
   if (rows.length === 0) return;
 
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+  const cutA = cfg.cutoffs?.A || 80;
+  const cutB = cfg.cutoffs?.B || 60;
+
   const dateStr = new Date().toLocaleDateString('ko-KR');
   let savedCount = 0;
 
@@ -556,13 +962,13 @@ function saveOverviewBatchAssessment() {
     const isGrade2 = (gradeNum === 2);
     const rallyType = isGrade2 ? 'backhand' : 'forehand';
 
-    const sv = Math.min(50, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
-    const fh = Math.min(50, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
+    const sv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
+    const fh = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
 
     const total = sv + fh;
     let grade = 'C';
-    if (total >= 80) grade = 'A';
-    else if (total >= 60) grade = 'B';
+    if (total >= cutA) grade = 'A';
+    else if (total >= cutB) grade = 'B';
 
     student.assessment = {
       serve: sv,
@@ -596,13 +1002,15 @@ function copyAssessmentOverviewTable() {
     return;
   }
 
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
   const m = classKey.match(/(\d+)학년/);
   const classGrade = m ? parseInt(m[1], 10) : 3;
   const isGrade2 = (classGrade === 2);
-  const rallyColName = isGrade2 ? '백핸드 쇼트(50)' : '포핸드 드라이브(50)';
+  const rallyColName = isGrade2 ? `백핸드 쇼트(${maxScore})` : `포핸드 드라이브(${maxScore})`;
 
   let text = `[양주중학교 체육수업 탁구 수행평가 일람표 - ${classKey}]\n`;
-  text += `번호\t이름\t서브(50)\t${rallyColName}\t총점(100)\t등급\t피드백\n`;
+  text += `번호\t이름\t서브(${maxScore})\t${rallyColName}\t총점(${maxScore * 2})\t등급\t피드백\n`;
 
   list.forEach(s => {
     const a = s.assessment;
@@ -634,13 +1042,15 @@ function downloadAssessmentCSV() {
     return;
   }
 
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
   const m = classKey.match(/(\d+)학년/);
   const classGrade = m ? parseInt(m[1], 10) : 3;
   const isGrade2 = (classGrade === 2);
-  const rallyColName = isGrade2 ? '백핸드 쇼트(50점)' : '포핸드 드라이브(50점)';
+  const rallyColName = isGrade2 ? `백핸드 쇼트(${maxScore}점)` : `포핸드 드라이브(${maxScore}점)`;
 
   let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Korean encoding
-  csvContent += `학년,반,번호,이름,서브(50점),${rallyColName},총점(100점),등급,평가일자,선생님 피드백\n`;
+  csvContent += `학년,반,번호,이름,서브(${maxScore}점),${rallyColName},총점(${maxScore * 2}점),등급,평가일자,선생님 피드백\n`;
 
   list.forEach(s => {
     const a = s.assessment;
@@ -695,9 +1105,12 @@ function openServeTargetModal() {
 
   const gradeNum = getStudentGradeNum(currentServeTargetStudent);
   const isGrade2 = (gradeNum === 2);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
 
   if (gradeSpecBadge) {
-    gradeSpecBadge.innerText = isGrade2 ? '🌱 2학년: 10회 중 26점 이상 A (30점 만점)' : '🎓 3학년: 10회 중 27점 이상 A (30점 만점)';
+    const th2 = cfg.grade2?.serve?.thresholds?.A || 26;
+    const th3 = cfg.grade3?.serve?.thresholds?.A || 27;
+    gradeSpecBadge.innerText = isGrade2 ? `🌱 2학년: 10회 중 ${th2}점 이상 A (30점 만점)` : `🎓 3학년: 10회 중 ${th3}점 이상 A (30점 만점)`;
   }
 
   if (currentServeTargetStudent) {
@@ -729,28 +1142,31 @@ function openServeTargetModal() {
 
 function calculateServeRubricScore(rawPoints, gradeNum = 3, hasAttempts = false) {
   const isGrade2 = (gradeNum === 2);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const th = cfg[gradeKey].serve.thresholds;
+  const sc = cfg.scores;
+
   if (rawPoints <= 0 && !hasAttempts) {
     return { score: 0, gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
   }
   if (rawPoints <= 0 && hasAttempts) {
-    return { score: 20, gradeName: 'E (20점 환산 ⚠️)', badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+    return { score: sc.E, gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
   }
 
-  if (isGrade2) {
-    // 2학년 기준: 10회 시도 중 26점 이상 A (50점 환산)
-    if (rawPoints >= 26) return { score: 50, gradeName: 'A (50점 환산 🥇)', badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
-    if (rawPoints >= 22) return { score: 42, gradeName: 'B (42점 환산 🥈)', badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
-    if (rawPoints >= 18) return { score: 35, gradeName: 'C (35점 환산 🥉)', badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
-    if (rawPoints >= 14) return { score: 28, gradeName: 'D (28점 환산 🌱)', badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
-    return { score: 20, gradeName: 'E (20점 환산 ⚠️)', badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
-  } else {
-    // 3학년 기준: 10회 시도 중 27점 이상 A (50점 환산)
-    if (rawPoints >= 27) return { score: 50, gradeName: 'A (50점 환산 🥇)', badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
-    if (rawPoints >= 23) return { score: 42, gradeName: 'B (42점 환산 🥈)', badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
-    if (rawPoints >= 19) return { score: 35, gradeName: 'C (35점 환산 🥉)', badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
-    if (rawPoints >= 15) return { score: 28, gradeName: 'D (28점 환산 🌱)', badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
-    return { score: 20, gradeName: 'E (20점 환산 ⚠️)', badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+  if (rawPoints >= th.A) {
+    return { score: sc.A, gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
   }
+  if (rawPoints >= th.B) {
+    return { score: sc.B, gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
+  }
+  if (rawPoints >= th.C) {
+    return { score: sc.C, gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
+  }
+  if (rawPoints >= th.D) {
+    return { score: sc.D, gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
+  }
+  return { score: sc.E, gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
 }
 
 function hitServeTargetZone(point, name, index) {
@@ -917,4 +1333,3 @@ function playHitZoneSound(point) {
     osc.stop(now + 0.22);
   } catch (e) {}
 }
-
