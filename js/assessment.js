@@ -599,6 +599,8 @@ function loadStudentAssessmentData(studentId) {
   const fhInput = document.getElementById('assessScoreFh');
   const commentInput = document.getElementById('assessmentCommentInput');
   const dateText = document.getElementById('assessmentDateText');
+  const targetResultBox = document.getElementById('assessServeTargetResultBox');
+  const targetResultText = document.getElementById('assessServeTargetResultText');
 
   const rallyScore = (typeof assess.rally === 'number') ? assess.rally : (isGrade2 ? (assess.backhand || assess.forehand || 0) : (assess.forehand || 0));
 
@@ -606,6 +608,18 @@ function loadStudentAssessmentData(studentId) {
   if (fhInput) fhInput.value = rallyScore;
   if (commentInput) commentInput.value = assess.comment || '';
   if (dateText) dateText.innerText = assess.date ? `${assess.date} 채점` : '평가 전';
+
+  // Display Converted Serve Target Result if recorded
+  if (targetResultBox && targetResultText) {
+    if (typeof assess.serveTargetRaw === 'number' && assess.serveTargetRaw > 0) {
+      const targetAttempts = assess.serveTargetAttempts || 10;
+      const targetRubric = calculateServeRubricScore(assess.serveTargetRaw, gradeNum, true);
+      targetResultText.innerHTML = `과녁 실기 <b class="text-amber-600 font-mono">${assess.serveTargetRaw}점</b>(30점 만점, ${targetAttempts}회) 획득 ➔ <b class="text-emerald-700 font-mono">${assess.serve || targetRubric.score}점</b>(${targetRubric.tier || 'A'}구간)으로 환산 반영됨`;
+      targetResultBox.classList.remove('hidden');
+    } else {
+      targetResultBox.classList.add('hidden');
+    }
+  }
 
   calcAssessmentTotal();
 }
@@ -698,18 +712,24 @@ function saveStudentAssessment() {
   else if (total >= cutB) grade = 'B';
 
   const dateStr = new Date().toLocaleDateString('ko-KR');
+  const prevAssess = student.assessment || {};
 
   student.assessment = {
     serve: sv,
-    forehand: isGrade2 ? (student.assessment?.forehand || 0) : fh,
-    backhand: isGrade2 ? fh : (student.assessment?.backhand || 0),
+    forehand: isGrade2 ? (prevAssess.forehand || 0) : fh,
+    backhand: isGrade2 ? fh : (prevAssess.backhand || 0),
     rally: fh,
     rallyType: rallyType,
     total: total,
     grade: grade,
     date: dateStr,
-    comment: comment
+    comment: comment,
+    serveTargetRaw: (typeof prevAssess.serveTargetRaw === 'number') ? prevAssess.serveTargetRaw : undefined,
+    serveTargetAttempts: (typeof prevAssess.serveTargetAttempts === 'number') ? prevAssess.serveTargetAttempts : undefined
   };
+
+  if (student.assessment.serveTargetRaw === undefined) delete student.assessment.serveTargetRaw;
+  if (student.assessment.serveTargetAttempts === undefined) delete student.assessment.serveTargetAttempts;
 
   saveStudentToRTDB(student);
   playSuccessSound();
@@ -1144,29 +1164,29 @@ function calculateServeRubricScore(rawPoints, gradeNum = 3, hasAttempts = false)
   const isGrade2 = (gradeNum === 2);
   const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
   const gradeKey = isGrade2 ? 'grade2' : 'grade3';
-  const th = cfg[gradeKey].serve.thresholds;
-  const sc = cfg.scores;
+  const th = cfg[gradeKey]?.serve?.thresholds || (isGrade2 ? { A: 26, B: 22, C: 18, D: 14 } : { A: 27, B: 23, C: 19, D: 15 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
 
   if (rawPoints <= 0 && !hasAttempts) {
-    return { score: 0, gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+    return { score: 0, tier: '-', tierName: '미평가', gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
   }
   if (rawPoints <= 0 && hasAttempts) {
-    return { score: sc.E, gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+    return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
   }
 
   if (rawPoints >= th.A) {
-    return { score: sc.A, gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
+    return { score: sc.A, tier: 'A', tierName: 'A', gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
   }
   if (rawPoints >= th.B) {
-    return { score: sc.B, gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
+    return { score: sc.B, tier: 'B', tierName: 'B', gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
   }
   if (rawPoints >= th.C) {
-    return { score: sc.C, gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
+    return { score: sc.C, tier: 'C', tierName: 'C', gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
   }
   if (rawPoints >= th.D) {
-    return { score: sc.D, gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
+    return { score: sc.D, tier: 'D', tierName: 'D', gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
   }
-  return { score: sc.E, gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+  return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
 }
 
 function hitServeTargetZone(point, name, index) {
@@ -1210,8 +1230,15 @@ function updateServeTargetUI() {
   const logEl = document.getElementById('serveTargetHitLog');
   const gradeBadge = document.getElementById('serveTargetGradeBadge');
 
+  const rawScoreText = document.getElementById('serveTargetLiveRawScoreText');
+  const finalScoreText = document.getElementById('serveTargetLiveFinalScoreText');
+  const tierBadge = document.getElementById('serveTargetConversionTierBadge');
+  const summarySentence = document.getElementById('serveTargetSummarySentence');
+
   const gradeNum = getStudentGradeNum(currentServeTargetStudent);
   const rubric = calculateServeRubricScore(totalPoints, gradeNum, totalAttempts > 0);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
 
   // Directly display raw accumulated target score (e.g. 3, 6, 9... up to 30)
   if (scoreEl) scoreEl.innerText = totalPoints;
@@ -1233,6 +1260,30 @@ function updateServeTargetUI() {
   if (gradeBadge) {
     gradeBadge.innerText = rubric.gradeName;
     gradeBadge.className = `text-xs sm:text-sm font-black px-4 py-1.5 rounded-xl ${rubric.badgeClass}`;
+  }
+
+  // Update Live Conversion Box Elements
+  if (rawScoreText) {
+    rawScoreText.innerText = `${totalPoints}점 (30점 만점)`;
+  }
+  if (finalScoreText) {
+    finalScoreText.innerText = `${rubric.score}점 (${maxScore}점 만점)`;
+  }
+  if (tierBadge) {
+    if (totalAttempts === 0) {
+      tierBadge.innerText = '대기 중 ⏳';
+      tierBadge.className = 'text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+    } else {
+      tierBadge.innerText = `${rubric.tier}구간 확정 ✨`;
+      tierBadge.className = `text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded ${rubric.badgeClass}`;
+    }
+  }
+  if (summarySentence) {
+    if (totalAttempts === 0) {
+      summarySentence.innerHTML = '🎯 과녁 번호(3, 2, 1) 또는 [실패 0점]을 누르면 실시간 환산 점수가 표시됩니다.';
+    } else {
+      summarySentence.innerHTML = `🎯 과녁에서 <span class="text-amber-300 font-black font-mono text-xs sm:text-sm">${totalPoints}점</span>(30점 만점) 획득 ➔ 수행평가 <span class="text-emerald-300 font-black font-mono text-xs sm:text-sm">${rubric.score}점</span>(${rubric.tier}구간)으로 환산되었습니다!`;
+    }
   }
 
   if (logEl) {
@@ -1271,8 +1322,28 @@ function applyServeTargetScore(autoSave = false) {
     svInput.value = finalScore;
   }
 
+  // Record raw target performance on student object
+  if (currentServeTargetStudent) {
+    if (!currentServeTargetStudent.assessment) {
+      currentServeTargetStudent.assessment = {};
+    }
+    currentServeTargetStudent.assessment.serveTargetRaw = totalPoints;
+    currentServeTargetStudent.assessment.serveTargetAttempts = totalAttempts;
+    currentServeTargetStudent.assessment.serve = finalScore;
+  }
+
+  // Update Tab 1 Serve Target Result Indicator
+  const resultBox = document.getElementById('assessServeTargetResultBox');
+  const resultText = document.getElementById('assessServeTargetResultText');
+  if (resultBox && resultText) {
+    resultText.innerHTML = `과녁 실기 <b class="text-amber-600 font-mono">${totalPoints}점</b>(30점 만점, ${totalAttempts}회) 획득 ➔ <b class="text-emerald-700 font-mono">${finalScore}점</b>(${rubric.tier}구간)으로 환산 반영됨`;
+    resultBox.classList.remove('hidden');
+  }
+
   calcAssessmentTotal();
   closeModal('serveTargetModal');
+
+  const conversionMsg = `🎯 과녁에서 ${totalPoints}점(30점 만점)을 얻어 ➔ 수행평가 서브 ${finalScore}점(${rubric.tier}구간)으로 환산 반영되었습니다!`;
 
   if (autoSave) {
     if (state.role !== 'admin') {
@@ -1281,7 +1352,7 @@ function applyServeTargetScore(autoSave = false) {
     }
     saveStudentAssessment();
   } else {
-    showToast(`🎯 서브 과녁 ${totalPoints}점(30점 만점, ${totalAttempts}회 시도) ➔ 채점표에 ${finalScore}점(${rubric.gradeName.split(' ')[0]}) 반영 완료!`, '✅');
+    showToast(conversionMsg, '🎯');
   }
 }
 
