@@ -54,6 +54,16 @@ let state = {
           grade2: {
             serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve, ...(parsed.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve.thresholds, ...(parsed.grade2?.serve?.thresholds || {}) } },
             rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally, ...(parsed.grade2?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally.thresholds, ...(parsed.grade2?.rally?.thresholds || {}) } }
+          },
+          badminton: {
+            grade3: {
+              serve: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.serve, ...(parsed.badminton?.grade3?.serve || parsed.badminton?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.serve.thresholds, ...(parsed.badminton?.grade3?.serve?.thresholds || parsed.badminton?.serve?.thresholds || {}) } },
+              clear: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.clear, ...(parsed.badminton?.grade3?.clear || parsed.badminton?.clear || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.clear.thresholds, ...(parsed.badminton?.grade3?.clear?.thresholds || parsed.badminton?.clear?.thresholds || {}) } }
+            },
+            grade2: {
+              serve: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.serve, ...(parsed.badminton?.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.serve.thresholds, ...(parsed.badminton?.grade2?.serve?.thresholds || {}) } },
+              clear: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.clear, ...(parsed.badminton?.grade2?.clear || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.clear.thresholds, ...(parsed.badminton?.grade2?.clear?.thresholds || {}) } }
+            }
           }
         };
       }

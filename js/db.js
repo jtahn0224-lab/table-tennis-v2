@@ -196,6 +196,16 @@ function setupRealtimeListeners() {
         grade2: {
           serve: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve, ...(val.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.serve.thresholds, ...(val.grade2?.serve?.thresholds || {}) } },
           rally: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally, ...(val.grade2?.rally || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.grade2.rally.thresholds, ...(val.grade2?.rally?.thresholds || {}) } }
+        },
+        badminton: {
+          grade3: {
+            serve: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.serve, ...(val.badminton?.grade3?.serve || val.badminton?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.serve.thresholds, ...(val.badminton?.grade3?.serve?.thresholds || val.badminton?.serve?.thresholds || {}) } },
+            clear: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.clear, ...(val.badminton?.grade3?.clear || val.badminton?.clear || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade3.clear.thresholds, ...(val.badminton?.grade3?.clear?.thresholds || val.badminton?.clear?.thresholds || {}) } }
+          },
+          grade2: {
+            serve: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.serve, ...(val.badminton?.grade2?.serve || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.serve.thresholds, ...(val.badminton?.grade2?.serve?.thresholds || {}) } },
+            clear: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.clear, ...(val.badminton?.grade2?.clear || {}), thresholds: { ...DEFAULT_ASSESSMENT_CONFIG.badminton.grade2.clear.thresholds, ...(val.badminton?.grade2?.clear?.thresholds || {}) } }
+          }
         }
       };
       try {

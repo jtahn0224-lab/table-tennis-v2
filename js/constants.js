@@ -255,6 +255,38 @@ const DEFAULT_ASSESSMENT_CONFIG = {
       unit: '회',
       thresholds: { A: 25, B: 19, C: 13, D: 7 }
     }
+  },
+  badminton: {
+    grade3: {
+      serve: {
+        name: '배드민턴 서브 정확성',
+        unit: '점',
+        maxAttempts: 10,
+        maxPoints: 30,
+        thresholds: { A: 26, B: 22, C: 18, D: 14 }
+      },
+      clear: {
+        name: '배드민턴 하이클리어',
+        unit: '회',
+        maxAttempts: 10,
+        thresholds: { A: 8, B: 6, C: 4, D: 2 }
+      }
+    },
+    grade2: {
+      serve: {
+        name: '배드민턴 서브 정확성',
+        unit: '점',
+        maxAttempts: 10,
+        maxPoints: 30,
+        thresholds: { A: 25, B: 21, C: 17, D: 13 }
+      },
+      clear: {
+        name: '배드민턴 하이클리어',
+        unit: '회',
+        maxAttempts: 10,
+        thresholds: { A: 7, B: 5, C: 3, D: 1 }
+      }
+    }
   }
 };
 

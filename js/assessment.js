@@ -1,8 +1,31 @@
-/* TABLE TENNIS PERFORMANCE ASSESSMENT (수행평가 관리 및 채점 모듈) */
+/* TABLE TENNIS & BADMINTON PERFORMANCE ASSESSMENT (수행평가 관리 및 채점 모듈) */
 
 let assessmentCurrentTab = 'form'; // 'form' | 'rubric' | 'overview'
+let assessSportCurrentView = 'tt'; // 'tt' | 'bm' | 'all'
 let isOverviewInlineMode = false;
 let isRubricEditMode = false;
+
+function switchAssessSportView(mode = 'tt') {
+  assessSportCurrentView = mode;
+  const ttSection = document.getElementById('assessSectionTableTennis');
+  const bmSection = document.getElementById('assessSectionBadminton');
+
+  const ttBtn = document.getElementById('assessSportTabTtBtn');
+  const bmBtn = document.getElementById('assessSportTabBmBtn');
+  const allBtn = document.getElementById('assessSportTabAllBtn');
+
+  if (ttSection) ttSection.classList.toggle('hidden', mode === 'bm');
+  if (bmSection) bmSection.classList.toggle('hidden', mode === 'tt');
+
+  const activeTtClass = 'py-2 rounded-lg font-black text-xs transition-all bg-emerald-600 text-white shadow-xs flex items-center justify-center space-x-1 cursor-pointer';
+  const activeBmClass = 'py-2 rounded-lg font-black text-xs transition-all bg-sky-600 text-white shadow-xs flex items-center justify-center space-x-1 cursor-pointer';
+  const activeAllClass = 'py-2 rounded-lg font-black text-xs transition-all bg-indigo-600 text-white shadow-xs flex items-center justify-center space-x-1 cursor-pointer';
+  const inactiveClass = 'py-2 rounded-lg font-extrabold text-xs transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center space-x-1 cursor-pointer';
+
+  if (ttBtn) ttBtn.className = mode === 'tt' ? activeTtClass : inactiveClass;
+  if (bmBtn) bmBtn.className = mode === 'bm' ? activeBmClass : inactiveClass;
+  if (allBtn) allBtn.className = mode === 'all' ? activeAllClass : inactiveClass;
+}
 
 function openAssessmentModal(initialTab = 'form') {
   const isAdmin = state.role === 'admin';
@@ -64,6 +87,9 @@ function openAssessmentModal(initialTab = 'form') {
 
   // Render dynamic rubric tables
   renderAssessmentRubricTables();
+
+  // Ensure sport view switcher matches state
+  switchAssessSportView(assessSportCurrentView);
 
   // Switch to requested tab
   switchAssessmentTab(initialTab);
@@ -172,6 +198,30 @@ function populateRubricConfigForm() {
   setVal('cfgG2FhB', cfg.grade2?.rally?.thresholds?.B);
   setVal('cfgG2FhC', cfg.grade2?.rally?.thresholds?.C);
   setVal('cfgG2FhD', cfg.grade2?.rally?.thresholds?.D);
+
+  // Badminton Grade 3 Serve & High Clear
+  const bmG3 = cfg.badminton?.grade3 || DEFAULT_ASSESSMENT_CONFIG.badminton.grade3;
+  setVal('cfgBmG3SvA', bmG3.serve?.thresholds?.A ?? 26);
+  setVal('cfgBmG3SvB', bmG3.serve?.thresholds?.B ?? 22);
+  setVal('cfgBmG3SvC', bmG3.serve?.thresholds?.C ?? 18);
+  setVal('cfgBmG3SvD', bmG3.serve?.thresholds?.D ?? 14);
+
+  setVal('cfgBmG3ClA', bmG3.clear?.thresholds?.A ?? 8);
+  setVal('cfgBmG3ClB', bmG3.clear?.thresholds?.B ?? 6);
+  setVal('cfgBmG3ClC', bmG3.clear?.thresholds?.C ?? 4);
+  setVal('cfgBmG3ClD', bmG3.clear?.thresholds?.D ?? 2);
+
+  // Badminton Grade 2 Serve & High Clear
+  const bmG2 = cfg.badminton?.grade2 || DEFAULT_ASSESSMENT_CONFIG.badminton.grade2;
+  setVal('cfgBmG2SvA', bmG2.serve?.thresholds?.A ?? 25);
+  setVal('cfgBmG2SvB', bmG2.serve?.thresholds?.B ?? 21);
+  setVal('cfgBmG2SvC', bmG2.serve?.thresholds?.C ?? 17);
+  setVal('cfgBmG2SvD', bmG2.serve?.thresholds?.D ?? 13);
+
+  setVal('cfgBmG2ClA', bmG2.clear?.thresholds?.A ?? 7);
+  setVal('cfgBmG2ClB', bmG2.clear?.thresholds?.B ?? 5);
+  setVal('cfgBmG2ClC', bmG2.clear?.thresholds?.C ?? 3);
+  setVal('cfgBmG2ClD', bmG2.clear?.thresholds?.D ?? 1);
 }
 
 function saveAssessmentConfigFromForm() {
@@ -245,6 +295,58 @@ function saveAssessmentConfigFromForm() {
           D: Math.max(1, getNum('cfgG2FhD', 7))
         }
       }
+    },
+    badminton: {
+      grade3: {
+        serve: {
+          name: '배드민턴 서브 정확성',
+          unit: '점',
+          maxAttempts: 10,
+          maxPoints: 30,
+          thresholds: {
+            A: Math.max(1, getNum('cfgBmG3SvA', 26)),
+            B: Math.max(1, getNum('cfgBmG3SvB', 22)),
+            C: Math.max(1, getNum('cfgBmG3SvC', 18)),
+            D: Math.max(1, getNum('cfgBmG3SvD', 14))
+          }
+        },
+        clear: {
+          name: '배드민턴 하이클리어',
+          unit: '회',
+          maxAttempts: 10,
+          thresholds: {
+            A: Math.max(1, getNum('cfgBmG3ClA', 8)),
+            B: Math.max(1, getNum('cfgBmG3ClB', 6)),
+            C: Math.max(1, getNum('cfgBmG3ClC', 4)),
+            D: Math.max(1, getNum('cfgBmG3ClD', 2))
+          }
+        }
+      },
+      grade2: {
+        serve: {
+          name: '배드민턴 서브 정확성',
+          unit: '점',
+          maxAttempts: 10,
+          maxPoints: 30,
+          thresholds: {
+            A: Math.max(1, getNum('cfgBmG2SvA', 25)),
+            B: Math.max(1, getNum('cfgBmG2SvB', 21)),
+            C: Math.max(1, getNum('cfgBmG2SvC', 17)),
+            D: Math.max(1, getNum('cfgBmG2SvD', 13))
+          }
+        },
+        clear: {
+          name: '배드민턴 하이클리어',
+          unit: '회',
+          maxAttempts: 10,
+          thresholds: {
+            A: Math.max(1, getNum('cfgBmG2ClA', 7)),
+            B: Math.max(1, getNum('cfgBmG2ClB', 5)),
+            C: Math.max(1, getNum('cfgBmG2ClC', 3)),
+            D: Math.max(1, getNum('cfgBmG2ClD', 1))
+          }
+        }
+      }
     }
   };
 
@@ -310,44 +412,56 @@ function renderAssessmentRubricTables() {
   const cut = cfg.cutoffs;
   const g3 = cfg.grade3;
   const g2 = cfg.grade2;
+  const bmG3 = cfg.badminton?.grade3 || DEFAULT_ASSESSMENT_CONFIG.badminton.grade3;
+  const bmG2 = cfg.badminton?.grade2 || DEFAULT_ASSESSMENT_CONFIG.badminton.grade2;
 
   container.innerHTML = `
-    <!-- Grade Cutoff Card -->
-    <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-2.5 sm:p-3 rounded-xl text-white border border-slate-700">
-      <div class="text-xs font-black mb-1 flex items-center justify-between text-amber-300">
+    <!-- Grade Cutoff & Dual-Sport Weight Card -->
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-2.5 sm:p-3 rounded-xl text-white border border-slate-700 space-y-2">
+      <div class="text-xs font-black flex items-center justify-between text-amber-300">
         <div class="flex items-center space-x-1">
           <i class="fa-solid fa-award"></i>
-          <span>종합 성취 등급 기준 (3단계)</span>
+          <span>종합 성취 등급 기준 & 종목별 반영 비율</span>
         </div>
-        <span class="text-[10px] text-slate-400 font-normal">총점 100점 만점 기준</span>
+        <span class="text-[10px] text-slate-300 font-bold">탁구 50% + 배드민턴 50% = 100점</span>
+      </div>
+      <div class="grid grid-cols-2 gap-1.5 text-[10px] sm:text-[11px] font-bold">
+        <div class="p-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 flex items-center justify-between">
+          <span>🏓 탁구 (서브50 + 랠리50)</span>
+          <span class="font-black text-emerald-300">100점 (50%)</span>
+        </div>
+        <div class="p-1.5 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-200 flex items-center justify-between">
+          <span>🏸 배드민턴 (서브50 + 클리어50)</span>
+          <span class="font-black text-sky-300">100점 (50%)</span>
+        </div>
       </div>
       <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10px] sm:text-[11px] font-bold">
         <div class="p-1.5 sm:p-2 rounded-lg bg-amber-400/20 border border-amber-400/50 text-amber-300">
           <span class="block font-black text-[11px] sm:text-xs">A (🥇)</span>
-          <span>${cut.A}점 이상</span>
+          <span>합산 ${cut.A}점 이상</span>
         </div>
         <div class="p-1.5 sm:p-2 rounded-lg bg-emerald-400/20 border border-emerald-400/50 text-emerald-300">
           <span class="block font-black text-[11px] sm:text-xs">B (🥈)</span>
-          <span>${cut.B}~${cut.A - 1}점</span>
+          <span>합산 ${cut.B}~${cut.A - 1}점</span>
         </div>
         <div class="p-1.5 sm:p-2 rounded-lg bg-sky-400/20 border border-sky-400/50 text-sky-300">
           <span class="block font-black text-[11px] sm:text-xs">C (🥉)</span>
-          <span>${cut.B}점 미만</span>
+          <span>합산 ${cut.B}점 미만</span>
         </div>
       </div>
     </div>
 
-    <!-- SECTION 1: 3학년 평가 기준 -->
+    <!-- SECTION 1: 3학년 탁구 평가 기준 -->
     <div class="space-y-2">
       <div class="flex items-center space-x-1.5 pt-1">
-        <span class="bg-indigo-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🎓 3학년 기준</span>
-        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 포핸드 드라이브 랠리(${sc.A}점)</span>
+        <span class="bg-indigo-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🏓 3학년 탁구 (50%)</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 포핸드 드라이브 랠리(${sc.A}점) = 100점</span>
       </div>
 
       <!-- 3학년 Serve Rubric -->
       <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
         <div class="flex justify-between items-center mb-1.5 gap-1">
-          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 탁구 서브 정확성 (${sc.A}점 만점)</span>
           <span class="text-[9px] sm:text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${g3.serve.thresholds.A}점+ A</span>
         </div>
         <div class="overflow-x-auto rounded-lg border border-slate-200">
@@ -397,17 +511,17 @@ function renderAssessmentRubricTables() {
       </div>
     </div>
 
-    <!-- SECTION 2: 2학년 평가 기준 -->
+    <!-- SECTION 2: 2학년 탁구 평가 기준 -->
     <div class="space-y-2 pt-1">
       <div class="flex items-center space-x-1.5 pt-1">
-        <span class="bg-teal-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🌱 2학년 기준</span>
-        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 백핸드 쇼트 랠리(${sc.A}점)</span>
+        <span class="bg-teal-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🏓 2학년 탁구 (50%)</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 백핸드 쇼트 랠리(${sc.A}점) = 100점</span>
       </div>
 
       <!-- 2학년 Serve Rubric -->
       <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200">
         <div class="flex justify-between items-center mb-1.5 gap-1">
-          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 탁구 서브 정확성 (${sc.A}점 만점)</span>
           <span class="text-[9px] sm:text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${g2.serve.thresholds.A}점+ A</span>
         </div>
         <div class="overflow-x-auto rounded-lg border border-slate-200">
@@ -451,6 +565,126 @@ function renderAssessmentRubricTables() {
               <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">${g2.rally.thresholds.C}회 ~ ${g2.rally.thresholds.B - 1}회 성공</td></tr>
               <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">${g2.rally.thresholds.D}회 ~ ${g2.rally.thresholds.C - 1}회 성공</td></tr>
               <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">${g2.rally.thresholds.D - 1}회 이하 성공</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: 3학년 배드민턴 평가 기준 -->
+    <div class="space-y-2 pt-1">
+      <div class="flex items-center space-x-1.5 pt-1">
+        <span class="bg-sky-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🏸 3학년 배드민턴 (50%)</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 하이클리어(${sc.A}점) = 100점</span>
+      </div>
+
+      <!-- 3학년 Badminton Serve Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-sky-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 3학년 배드민턴 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${bmG3.serve.thresholds.A}점+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-sky-50 text-sky-900 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (구역별 3·2·1점 획득 / 10회 30점 만점)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">과녁 점수 ${bmG3.serve.thresholds.A}점 이상</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG3.serve.thresholds.B}~${bmG3.serve.thresholds.A - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG3.serve.thresholds.C}~${bmG3.serve.thresholds.B - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG3.serve.thresholds.D}~${bmG3.serve.thresholds.C - 1}점</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">과녁 점수 ${bmG3.serve.thresholds.D - 1}점 이하</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3학년 Badminton High Clear Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-sky-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 3학년 배드민턴 하이클리어 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${bmG3.clear.thresholds.A}회+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-sky-50 text-sky-900 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (10회 타격 중 목표 구역 IN 횟수)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">10회 중 ${bmG3.clear.thresholds.A}회 이상 구역 IN 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">${bmG3.clear.thresholds.B}회 ~ ${bmG3.clear.thresholds.A - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">${bmG3.clear.thresholds.C}회 ~ ${bmG3.clear.thresholds.B - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">${bmG3.clear.thresholds.D}회 ~ ${bmG3.clear.thresholds.C - 1}회 성공</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">${bmG3.clear.thresholds.D - 1}회 이하 성공</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: 2학년 배드민턴 평가 기준 -->
+    <div class="space-y-2 pt-1">
+      <div class="flex items-center space-x-1.5 pt-1">
+        <span class="bg-violet-600 text-white font-black text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shrink-0">🏸 2학년 배드민턴 (50%)</span>
+        <span class="text-[10px] sm:text-[11px] text-slate-500 font-bold truncate">서브(${sc.A}점) + 하이클리어(${sc.A}점) = 100점</span>
+      </div>
+
+      <!-- 2학년 Badminton Serve Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-violet-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">1. 2학년 배드민턴 서브 정확성 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${bmG2.serve.thresholds.A}점+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-violet-50 text-violet-900 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (구역별 3·2·1점 획득 / 10회 30점 만점)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">과녁 점수 ${bmG2.serve.thresholds.A}점 이상</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG2.serve.thresholds.B}~${bmG2.serve.thresholds.A - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG2.serve.thresholds.C}~${bmG2.serve.thresholds.B - 1}점</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">과녁 점수 ${bmG2.serve.thresholds.D}~${bmG2.serve.thresholds.C - 1}점</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">과녁 점수 ${bmG2.serve.thresholds.D - 1}점 이하</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2학년 Badminton High Clear Rubric -->
+      <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-violet-200">
+        <div class="flex justify-between items-center mb-1.5 gap-1">
+          <span class="font-black text-slate-800 text-[11px] sm:text-xs">2. 2학년 배드민턴 하이클리어 (${sc.A}점 만점)</span>
+          <span class="text-[9px] sm:text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-md shrink-0">10회 시도 / ${bmG2.clear.thresholds.A}회+ A</span>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full text-[10px] sm:text-[11px] border-collapse min-w-[280px]">
+            <thead>
+              <tr class="bg-violet-50 text-violet-900 text-center font-bold">
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">구분</th>
+                <th class="p-1 sm:p-1.5 border-r border-b border-slate-200">배점</th>
+                <th class="p-1 sm:p-1.5 border-b border-slate-200">성취 기준 (10회 타격 중 목표 구역 IN 횟수)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-amber-600">A구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.A}점</td><td class="p-1 sm:p-1.5 font-semibold">10회 중 ${bmG2.clear.thresholds.A}회 이상 구역 IN 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-emerald-600">B구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.B}점</td><td class="p-1 sm:p-1.5">${bmG2.clear.thresholds.B}회 ~ ${bmG2.clear.thresholds.A - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-sky-600">C구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.C}점</td><td class="p-1 sm:p-1.5">${bmG2.clear.thresholds.C}회 ~ ${bmG2.clear.thresholds.B - 1}회 성공</td></tr>
+              <tr class="border-b border-slate-200"><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-orange-600">D구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.D}점</td><td class="p-1 sm:p-1.5">${bmG2.clear.thresholds.D}회 ~ ${bmG2.clear.thresholds.C - 1}회 성공</td></tr>
+              <tr><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold text-rose-600">E구간</td><td class="p-1 sm:p-1.5 border-r border-slate-200 text-center font-bold">${sc.E}점</td><td class="p-1 sm:p-1.5 text-slate-500">${bmG2.clear.thresholds.D - 1}회 이하 성공</td></tr>
             </tbody>
           </table>
         </div>
@@ -503,7 +737,7 @@ function populateAssessmentStudentOptions(classKey) {
   let html = '';
   list.forEach(s => {
     const numStr = s.number ? `${s.number}번 ` : '';
-    const scoreStr = s.assessment ? ` (총점: ${s.assessment.total || 0}점 / ${s.assessment.grade || '-'})` : ' (미평가)';
+    const scoreStr = s.assessment ? ` (합산: ${s.assessment.total || 0}점 / ${s.assessment.grade || '-'})` : ' (미평가)';
     html += `<option value="${s.id}">👤 ${numStr}${escapeHtml(s.name)}${scoreStr}</option>`;
   });
 
@@ -541,6 +775,8 @@ function loadStudentAssessmentData(studentId) {
   const assess = student.assessment || {
     serve: 0,
     forehand: 0,
+    bmServe: 0,
+    bmClear: 0,
     total: 0,
     grade: '미평가',
     date: '',
@@ -554,17 +790,32 @@ function loadStudentAssessmentData(studentId) {
   const gradeKey = isGrade2 ? 'grade2' : 'grade3';
   const svTh = cfg[gradeKey].serve.thresholds;
   const rallyTh = cfg[gradeKey].rally.thresholds;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const bmSvTh = bmGradeCfg.serve.thresholds;
+  const bmClTh = bmGradeCfg.clear.thresholds;
   const sc = cfg.scores;
 
   // Dynamic Rubric Titles and Preset Buttons based on Grade and Config
+  const crit1Title = document.getElementById('assessCriteria1Title');
   const crit1Desc = document.getElementById('assessCriteria1Desc');
   const crit2Title = document.getElementById('assessCriteria2Title');
   const crit2Desc = document.getElementById('assessCriteria2Desc');
+  const crit3Title = document.getElementById('assessCriteriaBmSvTitle');
+  const crit3Desc = document.getElementById('assessCriteriaBmSvDesc');
+  const crit4Title = document.getElementById('assessCriteriaBmClTitle');
+  const crit4Desc = document.getElementById('assessCriteriaBmClDesc');
+
   const presetSvContainer = document.getElementById('assessPresetSvContainer');
   const presetFhContainer = document.getElementById('assessPresetFhContainer');
+  const presetBmSvContainer = document.getElementById('assessPresetBmSvContainer');
+  const presetBmClContainer = document.getElementById('assessPresetBmClContainer');
+
+  if (crit1Title) {
+    crit1Title.innerText = `1. 탁구 서브 정확성 (${sc.A}점)`;
+  }
 
   if (crit1Desc) {
-    crit1Desc.innerText = `10회 시도 / ${svTh.A}점 이상 A (${sc.A}점 만점)`;
+    crit1Desc.innerText = `${isGrade2 ? '2학년' : '3학년'}: 10회 시도 / ${svTh.A}점 이상 A (${sc.A}점 만점)`;
   }
 
   if (crit2Title) {
@@ -573,6 +824,22 @@ function loadStudentAssessmentData(studentId) {
 
   if (crit2Desc) {
     crit2Desc.innerText = isGrade2 ? `2학년: ${rallyTh.A}회 이상 연속 성공 A (${sc.A}점)` : `3학년: ${rallyTh.A}회 이상 연속 성공 A (${sc.A}점)`;
+  }
+
+  if (crit3Title) {
+    crit3Title.innerText = `1. 배드민턴 서브 정확성 (${sc.A}점)`;
+  }
+
+  if (crit3Desc) {
+    crit3Desc.innerText = `${isGrade2 ? '2학년' : '3학년'}: 구역별 3·2·1점 / 10회 중 ${bmSvTh.A}점 이상 A (${sc.A}점)`;
+  }
+
+  if (crit4Title) {
+    crit4Title.innerText = `2. 배드민턴 하이클리어 (${sc.A}점)`;
+  }
+
+  if (crit4Desc) {
+    crit4Desc.innerText = `${isGrade2 ? '2학년' : '3학년'}: 10회 타구 중 목표 구역 내 ${bmClTh.A}회 이상 성공 시 A (${sc.A}점)`;
   }
 
   if (presetSvContainer) {
@@ -595,14 +862,42 @@ function loadStudentAssessmentData(studentId) {
     `;
   }
 
+  if (presetBmSvContainer) {
+    presetBmSvContainer.innerHTML = `
+      <button type="button" onclick="setAssessItem('bmSv', ${sc.A})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">A (${sc.A})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmSvTh.A}점+</span></button>
+      <button type="button" onclick="setAssessItem('bmSv', ${sc.B})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">B (${sc.B})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmSvTh.B}~${bmSvTh.A - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmSv', ${sc.C})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">C (${sc.C})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmSvTh.C}~${bmSvTh.B - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmSv', ${sc.D})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">D (${sc.D})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmSvTh.D}~${bmSvTh.C - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmSv', ${sc.E})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">E (${sc.E})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmSvTh.D - 1}점↓</span></button>
+    `;
+  }
+
+  if (presetBmClContainer) {
+    presetBmClContainer.innerHTML = `
+      <button type="button" onclick="setAssessItem('bmCl', ${sc.A})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">A (${sc.A})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmClTh.A}회+</span></button>
+      <button type="button" onclick="setAssessItem('bmCl', ${sc.B})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">B (${sc.B})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmClTh.B}~${bmClTh.A - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmCl', ${sc.C})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">C (${sc.C})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmClTh.C}~${bmClTh.B - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmCl', ${sc.D})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">D (${sc.D})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmClTh.D}~${bmClTh.C - 1}</span></button>
+      <button type="button" onclick="setAssessItem('bmCl', ${sc.E})" class="assess-opt-btn p-1 rounded-lg border border-slate-200 text-center hover:bg-sky-50 leading-tight">E (${sc.E})<br><span class="text-[8px] sm:text-[9px] font-normal text-slate-500">${bmClTh.D - 1}회↓</span></button>
+    `;
+  }
+
   const svInput = document.getElementById('assessScoreSv');
   const fhInput = document.getElementById('assessScoreFh');
+  const bmSvInput = document.getElementById('assessScoreBmSv');
+  const bmClInput = document.getElementById('assessScoreBmCl');
   const commentInput = document.getElementById('assessmentCommentInput');
   const dateText = document.getElementById('assessmentDateText');
+
   const targetResultBox = document.getElementById('assessServeTargetResultBox');
   const targetResultText = document.getElementById('assessServeTargetResultText');
   const rallyResultBox = document.getElementById('assessRallyResultBox');
   const rallyResultText = document.getElementById('assessRallyResultText');
+  const bmServeResultBox = document.getElementById('assessBmServeResultBox');
+  const bmServeResultText = document.getElementById('assessBmServeResultText');
+  const bmClearResultBox = document.getElementById('assessBmClearResultBox');
+  const bmClearResultText = document.getElementById('assessBmClearResultText');
+
   const openRallyBtnText = document.getElementById('assessOpenRallyBtnText');
 
   const rallyTypeName = isGrade2 ? '백핸드 쇼트' : '포핸드 드라이브';
@@ -614,12 +909,14 @@ function loadStudentAssessmentData(studentId) {
 
   if (svInput) svInput.value = assess.serve || 0;
   if (fhInput) fhInput.value = rallyScore;
+  if (bmSvInput) bmSvInput.value = assess.bmServe || 0;
+  if (bmClInput) bmClInput.value = assess.bmClear || 0;
   if (commentInput) commentInput.value = assess.comment || '';
   if (dateText) dateText.innerText = assess.date ? `${assess.date} 채점` : '평가 전';
 
   // Display Converted Serve Target Result if recorded
   if (targetResultBox && targetResultText) {
-    if (typeof assess.serveTargetRaw === 'number' && assess.serveTargetRaw > 0) {
+    if (typeof assess.serveTargetRaw === 'number' && (assess.serveTargetRaw > 0 || assess.serveTargetAttempts > 0)) {
       const targetAttempts = assess.serveTargetAttempts || 10;
       const targetRubric = calculateServeRubricScore(assess.serveTargetRaw, gradeNum, true);
       targetResultText.innerHTML = `과녁 실기 <b class="text-amber-600 font-mono">${assess.serveTargetRaw}점</b>(30점 만점, ${targetAttempts}회) 획득 ➔ <b class="text-emerald-700 font-mono">${assess.serve || targetRubric.score}점</b>(${targetRubric.tier || 'A'}구간)으로 환산 반영됨`;
@@ -640,6 +937,30 @@ function loadStudentAssessmentData(studentId) {
     }
   }
 
+  // Display Converted Badminton Serve Result if recorded
+  if (bmServeResultBox && bmServeResultText) {
+    if (typeof assess.bmServeRaw === 'number' && (assess.bmServeRaw > 0 || assess.bmServeAttempts > 0)) {
+      const bmAttempts = assess.bmServeAttempts || 10;
+      const bmSvRubric = calculateBmServeRubricScore(assess.bmServeRaw, gradeNum, true);
+      bmServeResultText.innerHTML = `배드민턴 서브 실기 <b class="text-amber-600 font-mono">${assess.bmServeRaw}점</b>(30점 만점, ${bmAttempts}회) 획득 ➔ <b class="text-sky-700 font-mono">${assess.bmServe || bmSvRubric.score}점</b>(${bmSvRubric.tier || 'A'}구간)으로 환산 반영됨`;
+      bmServeResultBox.classList.remove('hidden');
+    } else {
+      bmServeResultBox.classList.add('hidden');
+    }
+  }
+
+  // Display Converted Badminton High Clear Result if recorded
+  if (bmClearResultBox && bmClearResultText) {
+    if (typeof assess.bmClearRaw === 'number' && (assess.bmClearRaw > 0 || assess.bmClearAttempts > 0)) {
+      const bmClAttempts = assess.bmClearAttempts || 10;
+      const bmClRubric = calculateBmClearRubricScore(assess.bmClearRaw, gradeNum, true);
+      bmClearResultText.innerHTML = `하이클리어 실기 <b class="text-sky-600 font-mono">${assess.bmClearRaw}/${bmClAttempts}회</b> 구역 IN 성공 ➔ <b class="text-sky-700 font-mono">${assess.bmClear || bmClRubric.score}점</b>(${bmClRubric.tier || 'A'}구간)으로 환산 반영됨`;
+      bmClearResultBox.classList.remove('hidden');
+    } else {
+      bmClearResultBox.classList.add('hidden');
+    }
+  }
+
   calcAssessmentTotal();
 }
 
@@ -655,6 +976,12 @@ function setAssessItem(category, score) {
   } else if (category === 'fh') {
     const el = document.getElementById('assessScoreFh');
     if (el) el.value = score;
+  } else if (category === 'bmSv') {
+    const el = document.getElementById('assessScoreBmSv');
+    if (el) el.value = score;
+  } else if (category === 'bmCl') {
+    const el = document.getElementById('assessScoreBmCl');
+    if (el) el.value = score;
   }
 
   calcAssessmentTotal();
@@ -665,15 +992,23 @@ function calcAssessmentTotal() {
   const maxScore = cfg.scores?.A || 50;
   const sv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
   const fh = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
+  const bmSv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreBmSv')?.value) || 0));
+  const bmCl = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreBmCl')?.value) || 0));
 
-  const total = sv + fh;
+  const ttTotal = sv + fh; // max 100
+  const bmTotal = bmSv + bmCl; // max 100
+  const raw200 = ttTotal + bmTotal; // max 200
+  const ttWeighted = Math.round(ttTotal * 0.5 * 10) / 10; // max 50
+  const bmWeighted = Math.round(bmTotal * 0.5 * 10) / 10; // max 50
+  const total = Math.round((ttWeighted + bmWeighted) * 10) / 10; // max 100
+
   let grade = '미평가';
   let gradeBadgeClass = 'bg-white/20 text-white font-black text-xs px-3 py-1.5 rounded-xl border border-white/30 backdrop-blur-sm';
 
   const cutA = cfg.cutoffs?.A || 80;
   const cutB = cfg.cutoffs?.B || 60;
 
-  if (total > 0 || (sv > 0 || fh > 0)) {
+  if (raw200 > 0) {
     if (total >= cutA) {
       grade = 'A (최우수 🥇)';
       gradeBadgeClass = 'bg-amber-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl border border-amber-300 shadow-sm';
@@ -687,9 +1022,20 @@ function calcAssessmentTotal() {
   }
 
   const totalEl = document.getElementById('assessmentTotalScore');
+  const raw200El = document.getElementById('assessmentRaw200Score');
+  const ttSubEl = document.getElementById('assessmentTtSubTotalText');
+  const bmSubEl = document.getElementById('assessmentBmSubTotalText');
+  const ttSectionBadge = document.getElementById('assessSectionTtScoreBadge');
+  const bmSectionBadge = document.getElementById('assessSectionBmScoreBadge');
   const gradeEl = document.getElementById('assessmentGradeBadge');
 
   if (totalEl) totalEl.innerText = total;
+  if (raw200El) raw200El.innerText = raw200;
+  if (ttSubEl) ttSubEl.innerText = `${ttTotal}/100점 (${ttWeighted}점)`;
+  if (bmSubEl) bmSubEl.innerText = `${bmTotal}/100점 (${bmWeighted}점)`;
+  if (ttSectionBadge) ttSectionBadge.innerText = `${ttTotal} / 100점 (50% 환산: ${ttWeighted}점)`;
+  if (bmSectionBadge) bmSectionBadge.innerText = `${bmTotal} / 100점 (50% 환산: ${bmWeighted}점)`;
+
   if (gradeEl) {
     gradeEl.innerText = grade;
     gradeEl.className = gradeBadgeClass;
@@ -716,13 +1062,19 @@ function saveStudentAssessment() {
 
   const sv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreSv')?.value) || 0));
   const fh = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreFh')?.value) || 0));
+  const bmSv = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreBmSv')?.value) || 0));
+  const bmCl = Math.min(maxScore, Math.max(0, parseInt(document.getElementById('assessScoreBmCl')?.value) || 0));
   const comment = document.getElementById('assessmentCommentInput')?.value.trim() || '';
 
   const gradeNum = getStudentGradeNum(student);
   const isGrade2 = (gradeNum === 2);
   const rallyType = isGrade2 ? 'backhand' : 'forehand';
 
-  const total = sv + fh;
+  const ttTotal = sv + fh;
+  const bmTotal = bmSv + bmCl;
+  const raw200 = ttTotal + bmTotal;
+  const total = Math.round((ttTotal * 0.5 + bmTotal * 0.5) * 10) / 10;
+
   const cutA = cfg.cutoffs?.A || 80;
   const cutB = cfg.cutoffs?.B || 60;
 
@@ -739,22 +1091,31 @@ function saveStudentAssessment() {
     backhand: isGrade2 ? fh : (prevAssess.backhand || 0),
     rally: fh,
     rallyType: rallyType,
+    ttTotal: ttTotal,
+    bmServe: bmSv,
+    bmClear: bmCl,
+    bmTotal: bmTotal,
+    raw200: raw200,
     total: total,
     grade: grade,
     date: dateStr,
     comment: comment,
     serveTargetRaw: (typeof prevAssess.serveTargetRaw === 'number') ? prevAssess.serveTargetRaw : undefined,
     serveTargetAttempts: (typeof prevAssess.serveTargetAttempts === 'number') ? prevAssess.serveTargetAttempts : undefined,
-    rallyCountRaw: (typeof prevAssess.rallyCountRaw === 'number') ? prevAssess.rallyCountRaw : undefined
+    rallyCountRaw: (typeof prevAssess.rallyCountRaw === 'number') ? prevAssess.rallyCountRaw : undefined,
+    bmServeRaw: (typeof prevAssess.bmServeRaw === 'number') ? prevAssess.bmServeRaw : undefined,
+    bmServeAttempts: (typeof prevAssess.bmServeAttempts === 'number') ? prevAssess.bmServeAttempts : undefined,
+    bmClearRaw: (typeof prevAssess.bmClearRaw === 'number') ? prevAssess.bmClearRaw : undefined,
+    bmClearAttempts: (typeof prevAssess.bmClearAttempts === 'number') ? prevAssess.bmClearAttempts : undefined
   };
 
-  if (student.assessment.serveTargetRaw === undefined) delete student.assessment.serveTargetRaw;
-  if (student.assessment.serveTargetAttempts === undefined) delete student.assessment.serveTargetAttempts;
-  if (student.assessment.rallyCountRaw === undefined) delete student.assessment.rallyCountRaw;
+  Object.keys(student.assessment).forEach(k => {
+    if (student.assessment[k] === undefined) delete student.assessment[k];
+  });
 
   saveStudentToRTDB(student);
   playSuccessSound();
-  showToast(`[${student.name}] 부원의 수행평가(${total}점 / ${grade}등급)가 실시간 저장되었습니다!`, '💾');
+  showToast(`[${student.name}] 부원 수행평가(탁구 ${ttTotal * 0.5}점 + 배드민턴 ${bmTotal * 0.5}점 = ${total}점 / ${grade}등급)가 저장되었습니다!`, '💾');
 
   // Refresh student dropdown label
   const classKey = getStudentExactClassKey(student);
@@ -826,7 +1187,7 @@ function renderAssessmentOverviewTable() {
   const isGrade2 = (classGrade === 2);
   const thRally = document.getElementById('thAssessRallyCol');
   if (thRally) {
-    thRally.innerText = isGrade2 ? `백핸드 쇼트(${maxScore})` : `포핸드 드라이브(${maxScore})`;
+    thRally.innerText = isGrade2 ? `🏓쇼트(${maxScore})` : `🏓드라이브(${maxScore})`;
   }
 
   const list = state.students
@@ -882,21 +1243,31 @@ function renderAssessmentOverviewTable() {
   }
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">해당 학급에 등록된 부원이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400">해당 학급에 등록된 부원이 없습니다.</td></tr>`;
     return;
   }
 
   let html = '';
   list.forEach(s => {
-    const a = s.assessment || { serve: 0, forehand: 0, backhand: 0, total: 0, grade: '미평가' };
+    const a = s.assessment || { serve: 0, forehand: 0, backhand: 0, bmServe: 0, bmClear: 0, total: 0, grade: '미평가' };
     const sv = a.serve || 0;
     const fh = (typeof a.rally === 'number') ? a.rally : (isGrade2 ? (a.backhand || a.forehand || 0) : (a.forehand || 0));
-    const total = (a.total > 0 || (sv > 0 || fh > 0)) ? `${a.total}점` : '-';
+    const bmSv = a.bmServe || 0;
+    const bmCl = a.bmClear || 0;
+
+    const ttSub = sv + fh;
+    const bmSub = bmSv + bmCl;
+    const ttWeighted = Math.round(ttSub * 0.5 * 10) / 10;
+    const bmWeighted = Math.round(bmSub * 0.5 * 10) / 10;
+    const calcTotal = Math.round((ttWeighted + bmWeighted) * 10) / 10;
+    const hasAnyScore = (sv > 0 || fh > 0 || bmSv > 0 || bmCl > 0 || a.total > 0);
+    const displayTotalNum = hasAnyScore ? calcTotal : 0;
+    const total = hasAnyScore ? `${displayTotalNum}점` : '-';
+
     let grade = a.grade || '미평가';
-    if (grade === '미평가' && (a.total > 0 || (sv > 0 || fh > 0))) {
-      const totNum = (a.total > 0) ? a.total : (sv + fh);
-      if (totNum >= cutA) grade = 'A';
-      else if (totNum >= cutB) grade = 'B';
+    if (hasAnyScore) {
+      if (displayTotalNum >= cutA) grade = 'A';
+      else if (displayTotalNum >= cutB) grade = 'B';
       else grade = 'C';
     }
 
@@ -906,20 +1277,28 @@ function renderAssessmentOverviewTable() {
     else if (grade === 'C') gradeColor = 'text-blue-600 font-black';
 
     if (isOverviewInlineMode && state.role === 'admin') {
-      // Inline Interactive Input Row
+      // Inline Interactive Input Row (11 columns)
       html += `
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors" data-std-id="${s.id}">
-          <td class="p-2 border-r border-slate-100 font-bold">${s.number || '-'}번</td>
-          <td class="p-2 border-r border-slate-100 font-extrabold text-slate-800">${escapeHtml(s.name)}</td>
+          <td class="p-1.5 border-r border-slate-100 font-bold">${s.number || '-'}번</td>
+          <td class="p-1.5 border-r border-slate-100 font-extrabold text-slate-800">${escapeHtml(s.name)}</td>
           <td class="p-1 border-r border-slate-100">
-            <input type="number" min="0" max="${maxScore}" value="${sv}" data-type="sv" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
+            <input type="number" min="0" max="${maxScore}" value="${sv}" data-type="sv" onchange="onInlineScoreChange(this)" class="w-12 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
           </td>
           <td class="p-1 border-r border-slate-100">
-            <input type="number" min="0" max="${maxScore}" value="${fh}" data-type="fh" onchange="onInlineScoreChange(this)" class="w-14 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
+            <input type="number" min="0" max="${maxScore}" value="${fh}" data-type="fh" onchange="onInlineScoreChange(this)" class="w-12 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-emerald-50 focus:ring-1 focus:ring-emerald-500">
           </td>
-          <td class="p-2 border-r border-slate-100 font-black text-emerald-700 inline-total">${total}</td>
-          <td class="p-2 border-r border-slate-100 inline-grade ${gradeColor}">${grade}</td>
-          <td class="p-1.5">
+          <td class="p-1.5 border-r border-slate-100 font-black text-emerald-700 bg-emerald-50/40 inline-tt-sub">${ttSub} (${ttWeighted})</td>
+          <td class="p-1 border-r border-slate-100">
+            <input type="number" min="0" max="${maxScore}" value="${bmSv}" data-type="bmSv" onchange="onInlineScoreChange(this)" class="w-12 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-sky-50 focus:ring-1 focus:ring-sky-500">
+          </td>
+          <td class="p-1 border-r border-slate-100">
+            <input type="number" min="0" max="${maxScore}" value="${bmCl}" data-type="bmCl" onchange="onInlineScoreChange(this)" class="w-12 text-center p-1 rounded-md border border-slate-300 font-bold text-xs bg-sky-50 focus:ring-1 focus:ring-sky-500">
+          </td>
+          <td class="p-1.5 border-r border-slate-100 font-black text-sky-700 bg-sky-50/40 inline-bm-sub">${bmSub} (${bmWeighted})</td>
+          <td class="p-1.5 border-r border-slate-100 font-black text-indigo-700 bg-indigo-50/40 inline-total">${total}</td>
+          <td class="p-1.5 border-r border-slate-100 inline-grade ${gradeColor}">${grade}</td>
+          <td class="p-1">
             <button type="button" onclick="selectStudentForAssessmentFromOverview('${s.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg text-[10px] font-bold">
               상세
             </button>
@@ -927,18 +1306,22 @@ function renderAssessmentOverviewTable() {
         </tr>
       `;
     } else {
-      // Clean Clickable Table Row
+      // Clean Clickable Table Row (11 columns)
       html += `
         <tr onclick="selectStudentForAssessmentFromOverview('${s.id}')" class="border-b border-slate-100 hover:bg-emerald-50/50 cursor-pointer transition-colors group">
-          <td class="p-2 border-r border-slate-100 font-bold">${s.number || '-'}번</td>
-          <td class="p-2 border-r border-slate-100 font-extrabold text-slate-800 group-hover:text-emerald-700">${escapeHtml(s.name)}</td>
-          <td class="p-2 border-r border-slate-100">${sv > 0 ? `${sv}점` : '-'}</td>
-          <td class="p-2 border-r border-slate-100">${fh > 0 ? `${fh}점` : '-'}</td>
-          <td class="p-2 border-r border-slate-100 font-black text-emerald-700">${total}</td>
-          <td class="p-2 border-r border-slate-100 ${gradeColor}">${grade}</td>
-          <td class="p-1.5">
+          <td class="p-1.5 border-r border-slate-100 font-bold">${s.number || '-'}번</td>
+          <td class="p-1.5 border-r border-slate-100 font-extrabold text-slate-800 group-hover:text-emerald-700">${escapeHtml(s.name)}</td>
+          <td class="p-1.5 border-r border-slate-100">${sv > 0 ? `${sv}` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100">${fh > 0 ? `${fh}` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100 font-extrabold text-emerald-700 bg-emerald-50/30">${ttSub > 0 ? `${ttSub} (${ttWeighted})` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100">${bmSv > 0 ? `${bmSv}` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100">${bmCl > 0 ? `${bmCl}` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100 font-extrabold text-sky-700 bg-sky-50/30">${bmSub > 0 ? `${bmSub} (${bmWeighted})` : '-'}</td>
+          <td class="p-1.5 border-r border-slate-100 font-black text-indigo-700 bg-indigo-50/30">${total}</td>
+          <td class="p-1.5 border-r border-slate-100 ${gradeColor}">${grade}</td>
+          <td class="p-1">
             <span class="text-[10px] text-emerald-600 font-bold group-hover:underline">
-              ✏️ 채점하기
+              ✏️ 채점
             </span>
           </td>
         </tr>
@@ -958,8 +1341,15 @@ function onInlineScoreChange(inputEl) {
 
   const sv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
   const fh = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
+  const bmSv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="bmSv"]')?.value) || 0));
+  const bmCl = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="bmCl"]')?.value) || 0));
 
-  const total = sv + fh;
+  const ttSub = sv + fh;
+  const bmSub = bmSv + bmCl;
+  const ttWeighted = Math.round(ttSub * 0.5 * 10) / 10;
+  const bmWeighted = Math.round(bmSub * 0.5 * 10) / 10;
+  const total = Math.round((ttWeighted + bmWeighted) * 10) / 10;
+
   const cutA = cfg.cutoffs?.A || 80;
   const cutB = cfg.cutoffs?.B || 60;
 
@@ -967,13 +1357,17 @@ function onInlineScoreChange(inputEl) {
   if (total >= cutA) grade = 'A';
   else if (total >= cutB) grade = 'B';
 
+  const ttSubEl = tr.querySelector('.inline-tt-sub');
+  const bmSubEl = tr.querySelector('.inline-bm-sub');
   const totalEl = tr.querySelector('.inline-total');
   const gradeEl = tr.querySelector('.inline-grade');
 
+  if (ttSubEl) ttSubEl.innerText = `${ttSub} (${ttWeighted})`;
+  if (bmSubEl) bmSubEl.innerText = `${bmSub} (${bmWeighted})`;
   if (totalEl) totalEl.innerText = `${total}점`;
   if (gradeEl) {
     gradeEl.innerText = grade;
-    gradeEl.className = `p-2 border-r border-slate-100 inline-grade ${grade === 'A' ? 'text-amber-600 font-black' : (grade === 'B' ? 'text-emerald-600 font-black' : 'text-blue-600 font-black')}`;
+    gradeEl.className = `p-1.5 border-r border-slate-100 inline-grade ${grade === 'A' ? 'text-amber-600 font-black' : (grade === 'B' ? 'text-emerald-600 font-black' : 'text-blue-600 font-black')}`;
   }
 }
 
@@ -1005,22 +1399,36 @@ function saveOverviewBatchAssessment() {
 
     const sv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="sv"]')?.value) || 0));
     const fh = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="fh"]')?.value) || 0));
+    const bmSv = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="bmSv"]')?.value) || 0));
+    const bmCl = Math.min(maxScore, Math.max(0, parseInt(tr.querySelector('input[data-type="bmCl"]')?.value) || 0));
 
-    const total = sv + fh;
+    const ttTotal = sv + fh;
+    const bmTotal = bmSv + bmCl;
+    const raw200 = ttTotal + bmTotal;
+    const total = Math.round((ttTotal * 0.5 + bmTotal * 0.5) * 10) / 10;
+
     let grade = 'C';
     if (total >= cutA) grade = 'A';
     else if (total >= cutB) grade = 'B';
 
+    const prevAssess = student.assessment || {};
+
     student.assessment = {
+      ...prevAssess,
       serve: sv,
-      forehand: isGrade2 ? (student.assessment?.forehand || 0) : fh,
-      backhand: isGrade2 ? fh : (student.assessment?.backhand || 0),
+      forehand: isGrade2 ? (prevAssess.forehand || 0) : fh,
+      backhand: isGrade2 ? fh : (prevAssess.backhand || 0),
       rally: fh,
       rallyType: rallyType,
+      ttTotal: ttTotal,
+      bmServe: bmSv,
+      bmClear: bmCl,
+      bmTotal: bmTotal,
+      raw200: raw200,
       total: total,
       grade: grade,
       date: dateStr,
-      comment: student.assessment?.comment || ''
+      comment: prevAssess.comment || ''
     };
 
     saveStudentToRTDB(student);
@@ -1028,7 +1436,7 @@ function saveOverviewBatchAssessment() {
   });
 
   playSuccessSound();
-  showToast(`학급 전체 부원(${savedCount}명)의 수행평가 점수가 실시간 일괄 저장되었습니다!`, '🎉');
+  showToast(`학급 전체 부원(${savedCount}명)의 탁구+배드민턴 수행평가 점수가 일괄 저장되었습니다!`, '🎉');
   toggleOverviewInlineEdit(); // return to clean overview mode
 }
 
@@ -1050,19 +1458,25 @@ function copyAssessmentOverviewTable() {
   const isGrade2 = (classGrade === 2);
   const rallyColName = isGrade2 ? `백핸드 쇼트(${maxScore})` : `포핸드 드라이브(${maxScore})`;
 
-  let text = `[양주중학교 체육수업 탁구 수행평가 일람표 - ${classKey}]\n`;
-  text += `번호\t이름\t서브(${maxScore})\t${rallyColName}\t총점(${maxScore * 2})\t등급\t피드백\n`;
+  let text = `[양주중학교 체육수업 탁구(50%)+배드민턴(50%) 수행평가 일람표 - ${classKey}]\n`;
+  text += `번호\t이름\t탁구서브(${maxScore})\t${rallyColName}\t탁구합계(50%환산)\t배드민턴서브(${maxScore})\t하이클리어(${maxScore})\t배드민턴합계(50%환산)\t종합점수(100)\t등급\t피드백\n`;
 
   list.forEach(s => {
     const a = s.assessment;
     const num = s.number || '';
     const name = s.name || '';
-    const sv = a ? a.serve : '';
+    const sv = a ? (a.serve || 0) : '';
     const fh = a ? ((typeof a.rally === 'number') ? a.rally : (isGrade2 ? (a.backhand || a.forehand || 0) : (a.forehand || 0))) : '';
+    const ttSub = a ? (sv + fh) : '';
+    const ttW = a ? Math.round(ttSub * 0.5 * 10) / 10 : '';
+    const bmSv = a ? (a.bmServe || 0) : '';
+    const bmCl = a ? (a.bmClear || 0) : '';
+    const bmSub = a ? (bmSv + bmCl) : '';
+    const bmW = a ? Math.round(bmSub * 0.5 * 10) / 10 : '';
     const total = a ? a.total : '';
     const grade = a ? a.grade : '';
     const comment = a ? a.comment : '';
-    text += `${num}\t${name}\t${sv}\t${fh}\t${total}\t${grade}\t${comment}\n`;
+    text += `${num}\t${name}\t${sv}\t${fh}\t${a ? `${ttSub}(${ttW})` : ''}\t${bmSv}\t${bmCl}\t${a ? `${bmSub}(${bmW})` : ''}\t${total}\t${grade}\t${comment}\n`;
   });
 
   navigator.clipboard.writeText(text).then(() => {
@@ -1088,10 +1502,10 @@ function downloadAssessmentCSV() {
   const m = classKey.match(/(\d+)학년/);
   const classGrade = m ? parseInt(m[1], 10) : 3;
   const isGrade2 = (classGrade === 2);
-  const rallyColName = isGrade2 ? `백핸드 쇼트(${maxScore}점)` : `포핸드 드라이브(${maxScore}점)`;
+  const rallyColName = isGrade2 ? `탁구_백핸드쇼트(${maxScore}점)` : `탁구_포핸드드라이브(${maxScore}점)`;
 
   let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Korean encoding
-  csvContent += `학년,반,번호,이름,서브(${maxScore}점),${rallyColName},총점(${maxScore * 2}점),등급,평가일자,선생님 피드백\n`;
+  csvContent += `학년,반,번호,이름,탁구_서브(${maxScore}점),${rallyColName},탁구소계(100점),탁구환산(50%),배드민턴_서브(${maxScore}점),배드민턴_하이클리어(${maxScore}점),배드민턴소계(100점),배드민턴환산(50%),종합총점(100점),등급,평가일자,선생님 피드백\n`;
 
   list.forEach(s => {
     const a = s.assessment;
@@ -1099,27 +1513,33 @@ function downloadAssessmentCSV() {
     const c = s.classNum || '';
     const num = s.number || '';
     const name = (s.name || '').replaceAll('"', '""');
-    const sv = a ? a.serve : 0;
+    const sv = a ? (a.serve || 0) : 0;
     const fh = a ? ((typeof a.rally === 'number') ? a.rally : (isGrade2 ? (a.backhand || a.forehand || 0) : (a.forehand || 0))) : 0;
+    const ttSub = sv + fh;
+    const ttW = Math.round(ttSub * 0.5 * 10) / 10;
+    const bmSv = a ? (a.bmServe || 0) : 0;
+    const bmCl = a ? (a.bmClear || 0) : 0;
+    const bmSub = bmSv + bmCl;
+    const bmW = Math.round(bmSub * 0.5 * 10) / 10;
     const total = a ? a.total : 0;
     const grade = a ? a.grade : '미평가';
     const date = a ? a.date : '';
     const comment = a ? `"${(a.comment || '').replaceAll('"', '""')}"` : '""';
 
-    csvContent += `${g},${c},${num},"${name}",${sv},${fh},${total},${grade},${date},${comment}\n`;
+    csvContent += `${g},${c},${num},"${name}",${sv},${fh},${ttSub},${ttW},${bmSv},${bmCl},${bmSub},${bmW},${total},${grade},${date},${comment}\n`;
   });
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `양주중_체육_탁구수행평가_${classKey.replaceAll(' ', '_')}.csv`;
+  a.download = `양주중_체육_탁구배드민턴_수행평가_${classKey.replaceAll(' ', '_')}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  showToast(`[${classKey}] 탁구 수행평가 CSV 파일이 다운로드되었습니다.`, '📥');
+  showToast(`[${classKey}] 탁구+배드민턴 수행평가 CSV 파일이 다운로드되었습니다.`, '📥');
 }
 
 /* ==========================================================================
@@ -1732,5 +2152,592 @@ function playRallyHitSound(count) {
 
     osc.start(now);
     osc.stop(now + 0.13);
+  } catch (e) {}
+}
+
+/* ==========================================================================
+   BADMINTON SERVE ASSESSMENT MODULE (배드민턴 서브 3·2·1점 구역 채점판 모듈)
+   ========================================================================== */
+
+let bmServeHits = [];
+let currentBmServeStudent = null;
+
+function openBadmintonServeModal() {
+  const studentSelect = document.getElementById('assessmentStudentSelect');
+  let studentId = studentSelect?.value;
+
+  if (!studentId) {
+    const current = getCurrentStudent();
+    if (current) studentId = current.id;
+  }
+
+  currentBmServeStudent = state.students.find(s => s.id === studentId);
+  const nameEl = document.getElementById('bmServeStudentName');
+  const nameElMobile = document.getElementById('bmServeStudentNameMobile');
+  const modeBadge = document.getElementById('bmServeModeBadge');
+  const specBadge = document.getElementById('bmServeGradeSpecBadge');
+  const goalHint = document.getElementById('bmServeGoalHintText');
+
+  const gradeNum = getStudentGradeNum(currentBmServeStudent);
+  const isGrade2 = (gradeNum === 2);
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const bmSvThA = bmGradeCfg?.serve?.thresholds?.A || (isGrade2 ? 25 : 26);
+  const maxScore = cfg.scores?.A || 50;
+
+  if (specBadge) {
+    specBadge.innerText = isGrade2 ? `🌱 2학년 배드민턴: 10회 중 ${bmSvThA}점 이상 ${maxScore}점(A) · 30점 만점` : `🎓 3학년 배드민턴: 10회 중 ${bmSvThA}점 이상 ${maxScore}점(A) · 30점 만점`;
+  }
+  if (goalHint) {
+    goalHint.innerText = `${isGrade2 ? '2학년' : '3학년'}: 10회 시도 (${bmSvThA}점 이상 ${maxScore}점)`;
+  }
+
+  if (currentBmServeStudent) {
+    const classBadge = formatClassBadge(currentBmServeStudent);
+    const fullName = `${classBadge} ${currentBmServeStudent.name}`;
+    if (nameEl) nameEl.innerText = fullName;
+    if (nameElMobile) nameElMobile.innerText = fullName;
+  } else {
+    if (nameEl) nameEl.innerText = '부원 선택 필요';
+    if (nameElMobile) nameElMobile.innerText = '부원 선택 필요';
+  }
+
+  if (modeBadge) {
+    if (state.role === 'admin') {
+      modeBadge.className = 'text-xs bg-indigo-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-indigo-400/40';
+      modeBadge.innerText = '👑 선생님 채점';
+    } else {
+      modeBadge.className = 'text-xs bg-sky-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-sky-400/40';
+      modeBadge.innerText = '👤 부원 연습 모드';
+    }
+  }
+
+  bmServeHits = [];
+  updateBmServeUI();
+
+  openModal('badmintonServeModal');
+}
+
+function calculateBmServeRubricScore(rawPoints, gradeNum = 3, hasAttempts = false) {
+  const isGrade2 = (gradeNum === 2);
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const th = bmGradeCfg?.serve?.thresholds || (isGrade2 ? { A: 25, B: 21, C: 17, D: 13 } : { A: 26, B: 22, C: 18, D: 14 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
+
+  if (rawPoints <= 0 && !hasAttempts) {
+    return { score: 0, tier: '-', tierName: '미평가', gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+  }
+  if (rawPoints <= 0 && hasAttempts) {
+    return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+  }
+
+  if (rawPoints >= th.A) {
+    return { score: sc.A, tier: 'A', tierName: 'A', gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
+  }
+  if (rawPoints >= th.B) {
+    return { score: sc.B, tier: 'B', tierName: 'B', gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
+  }
+  if (rawPoints >= th.C) {
+    return { score: sc.C, tier: 'C', tierName: 'C', gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
+  }
+  if (rawPoints >= th.D) {
+    return { score: sc.D, tier: 'D', tierName: 'D', gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
+  }
+  return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+}
+
+function hitBmServeZone(point, name, index) {
+  if (bmServeHits.length >= 10) {
+    showToast('이미 10회 시도가 모두 기록되었습니다. (수정하려면 1회 취소 또는 초기화를 눌러주세요)', '⚠️');
+    return;
+  }
+
+  bmServeHits.push({
+    point: point,
+    name: name,
+    index: index,
+    time: Date.now()
+  });
+
+  playHitZoneSound(point);
+  updateBmServeUI();
+}
+
+function undoBmServeHit() {
+  if (bmServeHits.length === 0) {
+    showToast('취소할 배드민턴 서브 기록이 없습니다.', '⚠️');
+    return;
+  }
+  const removed = bmServeHits.pop();
+  showToast(`마지막 ${removed.point}점 (${removed.name}) 기록이 취소되었습니다.`, '↩️');
+  updateBmServeUI();
+}
+
+function resetBmServeHits() {
+  if (bmServeHits.length === 0) return;
+  bmServeHits = [];
+  updateBmServeUI();
+  showToast('배드민턴 서브 타격 기록이 0점으로 초기화되었습니다.', '🔄');
+}
+
+function updateBmServeUI() {
+  const totalPoints = bmServeHits.reduce((sum, h) => sum + h.point, 0);
+  const totalAttempts = bmServeHits.length;
+  const successHits = bmServeHits.filter(h => h.point > 0).length;
+  const failHits = bmServeHits.filter(h => h.point === 0).length;
+
+  const scoreEl = document.getElementById('bmServeCurrentScore');
+  const countBadge = document.getElementById('bmServeHitCountBadge');
+  const countText = document.getElementById('bmServeHitCountText');
+  const logEl = document.getElementById('bmServeHitLog');
+  const gradeBadge = document.getElementById('bmServeGradeBadge');
+
+  const rawScoreText = document.getElementById('bmServeLiveRawScoreText');
+  const finalScoreText = document.getElementById('bmServeLiveFinalScoreText');
+  const tierBadge = document.getElementById('bmServeConversionTierBadge');
+  const summarySentence = document.getElementById('bmServeSummarySentence');
+
+  const gradeNum = getStudentGradeNum(currentBmServeStudent);
+  const rubric = calculateBmServeRubricScore(totalPoints, gradeNum, totalAttempts > 0);
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const maxScore = cfg.scores?.A || 50;
+
+  if (scoreEl) scoreEl.innerText = totalPoints;
+  if (countBadge) {
+    if (totalAttempts === 0) {
+      countBadge.innerText = '0 / 10회 시도 (0/30점)';
+    } else {
+      countBadge.innerText = `${totalAttempts} / 10회 시도 (${successHits}성공 · ${totalPoints}/30점)`;
+    }
+  }
+  if (countText) {
+    if (totalAttempts === 0) {
+      countText.innerText = '0 / 10회';
+    } else {
+      countText.innerText = `${totalAttempts}/10회 (성공 ${successHits} / 폴트 ${failHits})`;
+    }
+  }
+
+  if (gradeBadge) {
+    gradeBadge.innerText = rubric.gradeName;
+    gradeBadge.className = `text-xs sm:text-sm font-black px-4 py-1.5 rounded-xl ${rubric.badgeClass}`;
+  }
+
+  if (rawScoreText) {
+    rawScoreText.innerText = `${totalPoints}점 (30점 만점)`;
+  }
+  if (finalScoreText) {
+    finalScoreText.innerText = `${rubric.score}점 (${maxScore}점 만점)`;
+  }
+  if (tierBadge) {
+    if (totalAttempts === 0) {
+      tierBadge.innerText = '대기 중 ⏳';
+      tierBadge.className = 'text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+    } else {
+      tierBadge.innerText = `${rubric.tier}구간 확정 ✨`;
+      tierBadge.className = `text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded ${rubric.badgeClass}`;
+    }
+  }
+  if (summarySentence) {
+    if (totalAttempts === 0) {
+      summarySentence.innerHTML = '🏸 배드민턴 서브 구역(3, 2, 1) 또는 [실패 0점]을 누르면 실시간 환산 점수가 표시됩니다.';
+    } else {
+      summarySentence.innerHTML = `🏸 서브 구역에서 <span class="text-amber-300 font-black font-mono text-xs sm:text-sm">${totalPoints}점</span>(30점 만점, ${totalAttempts}회) 획득 ➔ 수행평가 <span class="text-sky-300 font-black font-mono text-xs sm:text-sm">${rubric.score}점</span>(${rubric.tier}구간)으로 환산되었습니다!`;
+    }
+  }
+
+  if (logEl) {
+    if (bmServeHits.length === 0) {
+      logEl.innerHTML = '<span class="text-xs text-slate-500">서브 구역(3, 2, 1점) 또는 [폴트 0점] 버튼을 누르면 실시간 기록됩니다.</span>';
+    } else {
+      logEl.innerHTML = bmServeHits.map((h, i) => {
+        let colorClass = 'bg-amber-950/80 text-amber-300 border-amber-500/60 shadow-[0_0_8px_rgba(245,158,11,0.3)]';
+        let label = '코너/라인';
+        if (h.point === 2) {
+          colorClass = 'bg-cyan-950/80 text-cyan-300 border-cyan-500/60 shadow-[0_0_8px_rgba(6,182,212,0.3)]';
+          label = '사이드/경계';
+        } else if (h.point === 1) {
+          colorClass = 'bg-rose-950/80 text-rose-300 border-rose-500/60 shadow-[0_0_8px_rgba(244,63,94,0.3)]';
+          label = '센터';
+        } else if (h.point === 0) {
+          colorClass = 'bg-slate-900/90 text-rose-400 border-rose-600/80 shadow-[0_0_8px_rgba(225,29,72,0.4)]';
+          label = '폴트/아웃 ❌';
+        }
+        return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border ${colorClass} animate-pop flex items-center space-x-1"><span>#${i + 1}</span><span class="font-mono">${h.point > 0 ? '+' + h.point : '0'}점</span><span>(${label})</span></span>`;
+      }).join('');
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+  }
+}
+
+function applyBmServeScore(autoSave = false) {
+  const totalPoints = bmServeHits.reduce((sum, h) => sum + h.point, 0);
+  const totalAttempts = bmServeHits.length;
+  const gradeNum = getStudentGradeNum(currentBmServeStudent);
+  const rubric = calculateBmServeRubricScore(totalPoints, gradeNum, totalAttempts > 0);
+  const finalScore = rubric.score;
+
+  const bmSvInput = document.getElementById('assessScoreBmSv');
+  if (bmSvInput) {
+    bmSvInput.value = finalScore;
+  }
+
+  if (currentBmServeStudent) {
+    if (!currentBmServeStudent.assessment) {
+      currentBmServeStudent.assessment = {};
+    }
+    currentBmServeStudent.assessment.bmServeRaw = totalPoints;
+    currentBmServeStudent.assessment.bmServeAttempts = totalAttempts;
+    currentBmServeStudent.assessment.bmServe = finalScore;
+  }
+
+  const resultBox = document.getElementById('assessBmServeResultBox');
+  const resultText = document.getElementById('assessBmServeResultText');
+  if (resultBox && resultText) {
+    resultText.innerHTML = `배드민턴 서브 실기 <b class="text-amber-600 font-mono">${totalPoints}점</b>(30점 만점, ${totalAttempts}회) 획득 ➔ <b class="text-sky-700 font-mono">${finalScore}점</b>(${rubric.tier}구간)으로 환산 반영됨`;
+    resultBox.classList.remove('hidden');
+  }
+
+  calcAssessmentTotal();
+  closeModal('badmintonServeModal');
+
+  const conversionMsg = `🏸 배드민턴 서브 ${totalPoints}점(30점 만점)을 얻어 ➔ 수행평가 ${finalScore}점(${rubric.tier}구간)으로 환산 반영되었습니다!`;
+
+  if (autoSave) {
+    if (state.role !== 'admin') {
+      showToast('선생님 모드에서만 서버 저장이 가능합니다. (점수는 반영됨)', '🔒');
+      return;
+    }
+    saveStudentAssessment();
+  } else {
+    showToast(conversionMsg, '🏸');
+  }
+}
+
+/* ==========================================================================
+   BADMINTON HIGH CLEAR ASSESSMENT MODULE (배드민턴 하이클리어 10회 실기 채점판)
+   ========================================================================== */
+
+let bmClearShots = []; // array of booleans (true = IN, false = OUT)
+let currentBmClearStudent = null;
+
+function openBadmintonClearModal() {
+  const studentSelect = document.getElementById('assessmentStudentSelect');
+  let studentId = studentSelect?.value;
+
+  if (!studentId) {
+    const current = getCurrentStudent();
+    if (current) studentId = current.id;
+  }
+
+  currentBmClearStudent = state.students.find(s => s.id === studentId);
+  const nameEl = document.getElementById('bmClearStudentName');
+  const nameElMobile = document.getElementById('bmClearStudentNameMobile');
+  const modeBadge = document.getElementById('bmClearModeBadge');
+  const specBadge = document.getElementById('bmClearGradeSpecBadge');
+  const targetGoalBadge = document.getElementById('bmClearTargetGoalBadge');
+
+  const gradeNum = getStudentGradeNum(currentBmClearStudent);
+  const isGrade2 = (gradeNum === 2);
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const thA = bmGradeCfg?.clear?.thresholds?.A || (isGrade2 ? 7 : 8);
+  const maxScore = cfg.scores?.A || 50;
+
+  if (specBadge) {
+    specBadge.innerText = isGrade2 ? `🌱 2학년: 10회 중 목표 구역 ${thA}회 이상 성공 시 ${maxScore}점(A)` : `🎓 3학년: 10회 중 목표 구역 ${thA}회 이상 성공 시 ${maxScore}점(A)`;
+  }
+  if (targetGoalBadge) {
+    targetGoalBadge.innerText = `${isGrade2 ? '2학년' : '3학년'} 목표: 10회 중 ${thA}회 이상 ➔ ${maxScore}점(A)`;
+  }
+
+  if (currentBmClearStudent) {
+    const classBadge = formatClassBadge(currentBmClearStudent);
+    const fullName = `${classBadge} ${currentBmClearStudent.name}`;
+    if (nameEl) nameEl.innerText = fullName;
+    if (nameElMobile) nameElMobile.innerText = fullName;
+  } else {
+    if (nameEl) nameEl.innerText = '부원 선택 필요';
+    if (nameElMobile) nameElMobile.innerText = '부원 선택 필요';
+  }
+
+  if (modeBadge) {
+    if (state.role === 'admin') {
+      modeBadge.className = 'text-xs bg-indigo-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-indigo-400/40';
+      modeBadge.innerText = '👑 선생님 채점';
+    } else {
+      modeBadge.className = 'text-xs bg-sky-600 text-white font-extrabold px-3 py-1 rounded-xl shadow-sm border border-sky-400/40';
+      modeBadge.innerText = '👤 부원 연습 모드';
+    }
+  }
+
+  bmClearShots = [];
+  updateBmClearUI();
+
+  openModal('badmintonClearModal');
+}
+
+function calculateBmClearRubricScore(successCount, gradeNum = 3, hasAttempts = false) {
+  const isGrade2 = (gradeNum === 2);
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const th = bmGradeCfg?.clear?.thresholds || (isGrade2 ? { A: 7, B: 5, C: 3, D: 1 } : { A: 8, B: 6, C: 4, D: 2 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
+
+  if (successCount <= 0 && !hasAttempts) {
+    return { score: 0, tier: '-', tierName: '미평가', gradeName: '미평가 📋', badgeClass: 'bg-slate-800 text-slate-300 border border-slate-700' };
+  }
+  if (successCount <= 0 && hasAttempts) {
+    return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+  }
+
+  if (successCount >= th.A) {
+    return { score: sc.A, tier: 'A', tierName: 'A', gradeName: `A (${sc.A}점 환산 🥇)`, badgeClass: 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] border border-amber-300' };
+  }
+  if (successCount >= th.B) {
+    return { score: sc.B, tier: 'B', tierName: 'B', gradeName: `B (${sc.B}점 환산 🥈)`, badgeClass: 'bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.6)] border border-emerald-300' };
+  }
+  if (successCount >= th.C) {
+    return { score: sc.C, tier: 'C', tierName: 'C', gradeName: `C (${sc.C}점 환산 🥉)`, badgeClass: 'bg-sky-400 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.6)] border border-sky-300' };
+  }
+  if (successCount >= th.D) {
+    return { score: sc.D, tier: 'D', tierName: 'D', gradeName: `D (${sc.D}점 환산 🌱)`, badgeClass: 'bg-orange-400 text-slate-950 shadow-[0_0_15px_rgba(249,115,22,0.6)] border border-orange-300' };
+  }
+  return { score: sc.E, tier: 'E', tierName: 'E', gradeName: `E (${sc.E}점 환산 ⚠️)`, badgeClass: 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] border border-rose-400' };
+}
+
+function recordBmClearShot(isSuccess) {
+  if (bmClearShots.length >= 10) {
+    showToast('이미 10회 시도가 모두 완료되었습니다! (수정하려면 1회 취소 또는 초기화를 눌러주세요)', '⚠️');
+    return;
+  }
+
+  bmClearShots.push(Boolean(isSuccess));
+  playShuttleHitSound(isSuccess);
+  updateBmClearUI();
+}
+
+function undoBmClearShot() {
+  if (bmClearShots.length === 0) {
+    showToast('취소할 하이클리어 기록이 없습니다.', '⚠️');
+    return;
+  }
+  const removed = bmClearShots.pop();
+  showToast(`마지막 #${bmClearShots.length + 1}차 (${removed ? '구역 IN 성공' : 'OUT/실패'}) 기록이 취소되었습니다.`, '↩️');
+  updateBmClearUI();
+}
+
+function resetBmClearShots() {
+  if (bmClearShots.length === 0) return;
+  bmClearShots = [];
+  updateBmClearUI();
+  showToast('하이클리어 10회 타격 기록이 초기화되었습니다.', '🔄');
+}
+
+function updateBmClearUI() {
+  const totalAttempts = bmClearShots.length;
+  const successCount = bmClearShots.filter(Boolean).length;
+  const failCount = totalAttempts - successCount;
+
+  const gradeNum = getStudentGradeNum(currentBmClearStudent);
+  const isGrade2 = (gradeNum === 2);
+  const gradeKey = isGrade2 ? 'grade2' : 'grade3';
+  const cfg = state.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG;
+  const bmGradeCfg = cfg.badminton?.[gradeKey] || DEFAULT_ASSESSMENT_CONFIG.badminton[gradeKey];
+  const th = bmGradeCfg?.clear?.thresholds || (isGrade2 ? { A: 7, B: 5, C: 3, D: 1 } : { A: 8, B: 6, C: 4, D: 2 });
+  const sc = cfg.scores || { A: 50, B: 42, C: 35, D: 28, E: 20 };
+  const maxScore = sc.A || 50;
+
+  const rubric = calculateBmClearRubricScore(successCount, gradeNum, totalAttempts > 0);
+
+  const countText = document.getElementById('bmClearCurrentSuccessText');
+  const attemptBadge = document.getElementById('bmClearCountBadge');
+  const attemptCounterText = document.getElementById('bmClearAttemptCounterText');
+  const gradeBadge = document.getElementById('bmClearGradeBadge');
+  const progressHint = document.getElementById('bmClearTierProgressHint');
+  const slotsContainer = document.getElementById('bmClearShotSlotsGrid');
+  const rawCountText = document.getElementById('bmClearLiveRawCountText');
+  const finalScoreText = document.getElementById('bmClearLiveFinalScoreText');
+  const tierBadge = document.getElementById('bmClearConversionTierBadge');
+  const summarySentence = document.getElementById('bmClearSummarySentence');
+  const shotLogSummary = document.getElementById('bmClearShotLogSummary');
+  const shotLog = document.getElementById('bmClearShotLog');
+
+  if (countText) countText.innerText = successCount;
+  if (attemptBadge) {
+    if (totalAttempts === 0) {
+      attemptBadge.innerText = '0회 시도 (0회 성공)';
+    } else {
+      attemptBadge.innerText = `${totalAttempts}/10회 시도 (IN ${successCount} · OUT ${failCount})`;
+    }
+  }
+  if (attemptCounterText) {
+    attemptCounterText.innerText = `${totalAttempts} / 10회 완료 (성공 ${successCount}회)`;
+  }
+
+  if (gradeBadge) {
+    gradeBadge.innerText = rubric.gradeName;
+    gradeBadge.className = `text-[10px] sm:text-xs md:text-sm font-black px-3 py-1 rounded-xl ${rubric.badgeClass}`;
+  }
+
+  if (progressHint) {
+    if (successCount >= th.A) {
+      progressHint.innerText = `🎉 최고 등급 A구간 달성! (${th.A}회 이상 성공)`;
+    } else {
+      const remainingShots = 10 - totalAttempts;
+      const neededForA = th.A - successCount;
+      if (neededForA <= remainingShots) {
+        progressHint.innerText = `A구간(${th.A}회)까지 +${neededForA}회 더 성공 필요 (남은 기회 ${remainingShots}회)`;
+      } else {
+        progressHint.innerText = `남은 기회 ${remainingShots}회 · 최선을 다해 성공 횟수를 높이세요!`;
+      }
+    }
+  }
+
+  // Render 10 Shot Progress Slots
+  if (slotsContainer) {
+    let slotsHtml = '';
+    for (let i = 0; i < 10; i++) {
+      if (i < bmClearShots.length) {
+        const isOk = bmClearShots[i];
+        if (isOk) {
+          slotsHtml += `<div class="h-8 sm:h-9 rounded-lg bg-emerald-500 border border-emerald-300 text-slate-950 font-black text-[10px] sm:text-xs flex flex-col items-center justify-center shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pop leading-none"><span>#${i + 1}</span><span class="text-[9px]">⭕IN</span></div>`;
+        } else {
+          slotsHtml += `<div class="h-8 sm:h-9 rounded-lg bg-rose-950/90 border border-rose-500/70 text-rose-300 font-black text-[10px] sm:text-xs flex flex-col items-center justify-center leading-none"><span>#${i + 1}</span><span class="text-[9px]">❌OUT</span></div>`;
+        }
+      } else {
+        slotsHtml += `<div class="h-8 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-500 font-bold text-[10px] flex items-center justify-center">#${i + 1}</div>`;
+      }
+    }
+    slotsContainer.innerHTML = slotsHtml;
+  }
+
+  if (rawCountText) {
+    rawCountText.innerText = `${successCount}회 (${totalAttempts}/10회)`;
+  }
+  if (finalScoreText) {
+    finalScoreText.innerText = `${rubric.score}점 (${maxScore}점 만점)`;
+  }
+  if (tierBadge) {
+    if (totalAttempts === 0) {
+      tierBadge.innerText = '대기 중 ⏳';
+      tierBadge.className = 'text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+    } else {
+      tierBadge.innerText = `${rubric.tier}구간 확정 ✨`;
+      tierBadge.className = `text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded ${rubric.badgeClass}`;
+    }
+  }
+
+  if (summarySentence) {
+    if (totalAttempts === 0) {
+      summarySentence.innerHTML = '🚀 [성공(IN)] 또는 [실패(OUT)] 버튼을 누르면 실시간 환산 점수가 표시됩니다.';
+    } else {
+      summarySentence.innerHTML = `🚀 하이클리어 10회 중 <span class="text-cyan-300 font-black font-mono text-xs sm:text-sm">${successCount}회</span> 구역 IN 성공 ➔ 수행평가 <span class="text-emerald-300 font-black font-mono text-xs sm:text-sm">${rubric.score}점</span>(${rubric.tier}구간)으로 환산되었습니다!`;
+    }
+  }
+
+  if (shotLogSummary) {
+    shotLogSummary.innerText = `${totalAttempts}/10회 시도 (IN ${successCount} · OUT ${failCount})`;
+  }
+
+  if (shotLog) {
+    if (bmClearShots.length === 0) {
+      shotLog.innerHTML = '<span class="text-[11px] text-slate-500">타구 결과(성공/실패) 터치 시 순서대로 기록됩니다.</span>';
+    } else {
+      shotLog.innerHTML = bmClearShots.map((isOk, i) => {
+        if (isOk) {
+          return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border bg-emerald-950/80 text-emerald-300 border-emerald-500/60 shadow-[0_0_8px_rgba(16,185,129,0.3)] flex items-center space-x-1 animate-pop"><span>#${i + 1}구</span><span>⭕ IN 성공</span></span>`;
+        } else {
+          return `<span class="text-xs font-black px-2.5 py-1 rounded-xl border bg-slate-900/90 text-rose-400 border-rose-600/70 flex items-center space-x-1 animate-pop"><span>#${i + 1}구</span><span>❌ OUT/미달</span></span>`;
+        }
+      }).join('');
+      shotLog.scrollTop = shotLog.scrollHeight;
+    }
+  }
+}
+
+function applyBmClearScore(autoSave = false) {
+  const totalAttempts = bmClearShots.length;
+  const successCount = bmClearShots.filter(Boolean).length;
+  const gradeNum = getStudentGradeNum(currentBmClearStudent);
+  const rubric = calculateBmClearRubricScore(successCount, gradeNum, totalAttempts > 0);
+  const finalScore = rubric.score;
+
+  const bmClInput = document.getElementById('assessScoreBmCl');
+  if (bmClInput) {
+    bmClInput.value = finalScore;
+  }
+
+  if (currentBmClearStudent) {
+    if (!currentBmClearStudent.assessment) {
+      currentBmClearStudent.assessment = {};
+    }
+    currentBmClearStudent.assessment.bmClearRaw = successCount;
+    currentBmClearStudent.assessment.bmClearAttempts = totalAttempts || 10;
+    currentBmClearStudent.assessment.bmClear = finalScore;
+  }
+
+  const resultBox = document.getElementById('assessBmClearResultBox');
+  const resultText = document.getElementById('assessBmClearResultText');
+  if (resultBox && resultText) {
+    resultText.innerHTML = `하이클리어 실기 <b class="text-sky-600 font-mono">${successCount}/${totalAttempts || 10}회</b> 구역 IN 성공 ➔ <b class="text-sky-700 font-mono">${finalScore}점</b>(${rubric.tier}구간)으로 환산 반영됨`;
+    resultBox.classList.remove('hidden');
+  }
+
+  calcAssessmentTotal();
+  closeModal('badmintonClearModal');
+
+  const conversionMsg = `🏸 하이클리어 ${successCount}회 성공을 달성하여 ➔ 수행평가 ${finalScore}점(${rubric.tier}구간)으로 환산 반영되었습니다!`;
+
+  if (autoSave) {
+    if (state.role !== 'admin') {
+      showToast('선생님 모드에서만 서버 저장이 가능합니다. (점수는 반영됨)', '🔒');
+      return;
+    }
+    saveStudentAssessment();
+  } else {
+    showToast(conversionMsg, '🏸');
+  }
+}
+
+function playShuttleHitSound(isSuccess) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    if (!isSuccess) {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.16);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+      return;
+    }
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(784, now); // G5
+    osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.1); // D6
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.26, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
   } catch (e) {}
 }
