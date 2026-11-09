@@ -5,6 +5,10 @@ let tournamentSetupCollapsed = false;
 let tournamentChecklistVisible = false;
 let activeTournamentMatchContext = null; // { slotKey, roundIdx, matchIdx, isThirdPlace }
 let tournamentOverviewMode = 'single'; // 'single' (현재 선택 슬롯) | 'all' (진행 중 대진표 모두 보기)
+let tournamentFixedPairs = []; // [{ id, type: 'versus' | 'team', p1, p2 }]
+let tournamentFixedPairsBySlot = { slot_1: [], slot_2: [], slot_3: [] };
+let tournamentFixedPairType = 'versus'; // 'versus' (⚔️ 1라운드 맞대결 짝) | 'team' (🤝 한 팀 파트너 짝)
+let quickPairFirstStudent = null; // 참가자 칩 연속 2명 클릭으로 빠른 짝 지정 시 1번째 선택 학생 이름
 
 const TOURNAMENT_SLOT_DEFS = [
   { key: 'slot_1', num: 1, label: '제1 대진표', subLabel: '1코트 · A그룹', defaultTitle: '🏓 제1 토너먼트 대진표' },
@@ -183,12 +187,23 @@ function applySlotStateToSetupInputs() {
     if (matchTypeSelect && tour.matchType) matchTypeSelect.value = tour.matchType;
     if (seedModeSelect && tour.seedMode) seedModeSelect.value = tour.seedMode;
     if (thirdPlaceCheck && typeof tour.includeThirdPlace === 'boolean') thirdPlaceCheck.checked = tour.includeThirdPlace;
+    tournamentFixedPairs = Array.isArray(tour.fixedPairs) ? JSON.parse(JSON.stringify(tour.fixedPairs)) : (tournamentFixedPairsBySlot[state.activeTournamentSlot] || []);
+    tournamentFixedPairsBySlot[state.activeTournamentSlot] = [...tournamentFixedPairs];
+    tournamentFixedPairType = tour.matchType === 'doubles' ? 'team' : 'versus';
+    quickPairFirstStudent = null;
     tournamentSetupCollapsed = true;
   } else {
     if (textarea) textarea.value = '';
     if (titleInput) titleInput.value = slotMeta.defaultTitle;
+    tournamentFixedPairs = Array.isArray(tournamentFixedPairsBySlot[state.activeTournamentSlot])
+      ? [...tournamentFixedPairsBySlot[state.activeTournamentSlot]]
+      : [];
+    const curMatchType = matchTypeSelect ? matchTypeSelect.value : 'singles';
+    tournamentFixedPairType = curMatchType === 'doubles' ? 'team' : 'versus';
+    quickPairFirstStudent = null;
     tournamentSetupCollapsed = false;
   }
+  syncTournamentFixedPairTypeButtons();
 }
 
 function switchTournamentSlot(slotKey) {
@@ -715,8 +730,301 @@ function removeTournamentParticipantAt(idx) {
 function clearTournamentRosterInput() {
   const textarea = document.getElementById('tournamentRosterInput');
   if (textarea) textarea.value = '';
+  tournamentFixedPairs = [];
+  tournamentFixedPairsBySlot[state.activeTournamentSlot || 'slot_1'] = [];
+  quickPairFirstStudent = null;
   onTournamentRosterInput();
   if (tournamentChecklistVisible) renderTournamentStudentChecklist();
+}
+
+// 🎯 임의 지정 짝(고정 매치 / 고정 팀) 관리 헬퍼 함수들
+function onTournamentMatchTypeChange() {
+  const matchType = document.getElementById('tournamentMatchTypeSelect')?.value || 'singles';
+  // 단식일 때는 '1라운드 맞대결 짝(versus)', 복식일 때는 '같은 팀 파트너 짝(team)'을 기본 선택으로 전환
+  setTournamentFixedPairType(matchType === 'doubles' ? 'team' : 'versus');
+  updateTournamentScalePreview();
+}
+
+function syncTournamentFixedPairTypeButtons() {
+  const vsBtn = document.getElementById('tournamentPairTypeVersusBtn');
+  const teamBtn = document.getElementById('tournamentPairTypeTeamBtn');
+  const connLabel = document.getElementById('tournamentPairConnectorLabel');
+
+  if (vsBtn && teamBtn) {
+    if (tournamentFixedPairType === 'team') {
+      teamBtn.className = 'px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer bg-indigo-600 text-white shadow-2xs';
+      vsBtn.className = 'px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer text-slate-600 hover:bg-indigo-50';
+    } else {
+      vsBtn.className = 'px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer bg-indigo-600 text-white shadow-2xs';
+      teamBtn.className = 'px-2 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer text-slate-600 hover:bg-indigo-50';
+    }
+  }
+  if (connLabel) {
+    connLabel.innerText = tournamentFixedPairType === 'team' ? '&' : 'VS';
+  }
+}
+
+function setTournamentFixedPairType(type) {
+  tournamentFixedPairType = type === 'team' ? 'team' : 'versus';
+  syncTournamentFixedPairTypeButtons();
+  populateTournamentPairSelects();
+}
+
+function getStudentFixedPairInfo(cleanStudentName) {
+  if (!cleanStudentName) return null;
+  for (let i = 0; i < tournamentFixedPairs.length; i++) {
+    const fp = tournamentFixedPairs[i];
+    if (fp.p1 === cleanStudentName || fp.p2 === cleanStudentName) {
+      return { pair: fp, num: i + 1, other: fp.p1 === cleanStudentName ? fp.p2 : fp.p1 };
+    }
+  }
+  return null;
+}
+
+function populateTournamentPairSelects() {
+  const p1Select = document.getElementById('tournamentPairP1Select');
+  const p2Select = document.getElementById('tournamentPairP2Select');
+  if (!p1Select || !p2Select) return;
+
+  const prevP1 = p1Select.value;
+  const prevP2 = p2Select.value;
+
+  const pairedNamesSet = new Set();
+  tournamentFixedPairs.forEach(fp => {
+    if (fp.p1) pairedNamesSet.add(fp.p1);
+    if (fp.p2 && fp.p2 !== '__BYE__') pairedNamesSet.add(fp.p2);
+  });
+
+  const rosterNames = [...tournamentParticipantsDraft];
+  const rosterSet = new Set(rosterNames);
+
+  const buildOptions = (isSecondSelect, excludeName = '') => {
+    let html = `<option value="">${isSecondSelect ? '학생 2 선택' : '학생 1 선택'}</option>`;
+
+    if (isSecondSelect && tournamentFixedPairType === 'versus') {
+      html += `<option value="__BYE__">⏩ 부전승(BYE) 우선 배정</option>`;
+    }
+
+    const availableRoster = rosterNames.filter(n => n !== excludeName);
+    if (availableRoster.length > 0) {
+      html += `<optgroup label="🏆 현재 참가 명단 (${availableRoster.length}명)">`;
+      availableRoster.forEach(name => {
+        const isAlreadyPaired = pairedNamesSet.has(name);
+        const suffix = isAlreadyPaired ? ' (지정됨)' : '';
+        html += `<option value="${escapeHtml(name)}">${escapeHtml(name)}${suffix}</option>`;
+      });
+      html += `</optgroup>`;
+    }
+
+    // 아직 참가 명단에 없지만 학급에 등록된 전체 부원도 선택 시 자동 추가되도록 제공
+    const otherStudents = state.students.filter(s => {
+      const cName = stripStudentNumberPrefix(s.name);
+      return cName && !rosterSet.has(cName) && cName !== excludeName;
+    });
+    if (otherStudents.length > 0) {
+      html += `<optgroup label="🏫 등록 학급 부원 (선택 시 명단 자동 추가)">`;
+      otherStudents.forEach(s => {
+        const cName = stripStudentNumberPrefix(s.name);
+        const clsKey = getStudentExactClassKey(s);
+        html += `<option value="${escapeHtml(cName)}">${escapeHtml(cName)} (${escapeHtml(clsKey)})</option>`;
+      });
+      html += `</optgroup>`;
+    }
+
+    return html;
+  };
+
+  p1Select.innerHTML = buildOptions(false, '');
+  if (quickPairFirstStudent) {
+    p1Select.value = quickPairFirstStudent;
+  } else if (prevP1 && Array.from(p1Select.options).some(o => o.value === prevP1)) {
+    p1Select.value = prevP1;
+  } else {
+    // 아직 짝이 지정되지 않은 첫 번째 참가자를 기본 후보로 선택
+    const firstUnpaired = rosterNames.find(n => !pairedNamesSet.has(n));
+    if (firstUnpaired) p1Select.value = firstUnpaired;
+  }
+
+  const selectedP1 = p1Select.value;
+  p2Select.innerHTML = buildOptions(true, selectedP1);
+  if (prevP2 && prevP2 !== selectedP1 && Array.from(p2Select.options).some(o => o.value === prevP2)) {
+    p2Select.value = prevP2;
+  } else {
+    const secondUnpaired = rosterNames.find(n => n !== selectedP1 && !pairedNamesSet.has(n));
+    if (secondUnpaired) p2Select.value = secondUnpaired;
+  }
+}
+
+function onTournamentPairP1Change() {
+  const p1Select = document.getElementById('tournamentPairP1Select');
+  const p2Select = document.getElementById('tournamentPairP2Select');
+  if (!p1Select || !p2Select) return;
+  const selectedP1 = p1Select.value;
+  quickPairFirstStudent = selectedP1 || null;
+  populateTournamentPairSelects();
+}
+
+function addTournamentFixedPair(p1Raw, p2Raw, pairType = tournamentFixedPairType) {
+  const p1 = stripStudentNumberPrefix(p1Raw);
+  const p2 = p2Raw === '__BYE__' ? '__BYE__' : stripStudentNumberPrefix(p2Raw);
+
+  if (!p1 || !p2) {
+    showToast('짝으로 묶을 두 학생을 선택해 주세요!', '⚠️');
+    return;
+  }
+  if (p1 === p2) {
+    showToast('서로 다른 두 학생을 선택해 주세요!', '⚠️');
+    return;
+  }
+
+  // 만약 참가 명단(textarea)에 아직 없는 학생이면 자동으로 명단에 추가
+  const textarea = document.getElementById('tournamentRosterInput');
+  if (textarea) {
+    const currentList = parseStudentRosterText(textarea.value);
+    const existingSet = new Set(currentList.map(n => stripStudentNumberPrefix(n)));
+    let modified = false;
+    if (!existingSet.has(p1)) {
+      currentList.push(p1);
+      existingSet.add(p1);
+      modified = true;
+    }
+    if (p2 !== '__BYE__' && !existingSet.has(p2)) {
+      currentList.push(p2);
+      existingSet.add(p2);
+      modified = true;
+    }
+    if (modified) {
+      textarea.value = currentList.join('\n');
+    }
+  }
+
+  // 기존에 p1 또는 p2가 포함된 지정 짝이 있으면 교체
+  tournamentFixedPairs = tournamentFixedPairs.filter(fp =>
+    fp.p1 !== p1 && fp.p2 !== p1 &&
+    (p2 === '__BYE__' || (fp.p1 !== p2 && fp.p2 !== p2))
+  );
+
+  const finalType = (p2 === '__BYE__') ? 'versus' : (pairType === 'team' ? 'team' : 'versus');
+  tournamentFixedPairs.push({
+    id: 'fp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    type: finalType,
+    p1: p1,
+    p2: p2
+  });
+
+  ensureTournamentSlotsState();
+  tournamentFixedPairsBySlot[state.activeTournamentSlot] = [...tournamentFixedPairs];
+  quickPairFirstStudent = null;
+
+  onTournamentRosterInput();
+  const labelStr = p2 === '__BYE__'
+    ? `🎯 [${p1}] 부전승(BYE) 우선 배정 추가!`
+    : (finalType === 'team' ? `🤝 지정 파트너 팀 추가: ${p1} & ${p2}` : `⚔️ 1라운드 맞대결 짝 추가: ${p1} vs ${p2}`);
+  showToast(labelStr, '🔗');
+}
+
+function addTournamentFixedPairFromSelects() {
+  const p1 = document.getElementById('tournamentPairP1Select')?.value || '';
+  const p2 = document.getElementById('tournamentPairP2Select')?.value || '';
+  addTournamentFixedPair(p1, p2, tournamentFixedPairType);
+}
+
+function onTournamentChipQuickPairClick(studentName) {
+  const clean = stripStudentNumberPrefix(studentName);
+  if (!clean) return;
+
+  if (!quickPairFirstStudent) {
+    quickPairFirstStudent = clean;
+    onTournamentRosterInput();
+    return;
+  }
+
+  if (quickPairFirstStudent === clean) {
+    quickPairFirstStudent = null;
+    onTournamentRosterInput();
+    return;
+  }
+
+  addTournamentFixedPair(quickPairFirstStudent, clean, tournamentFixedPairType);
+}
+
+function removeTournamentFixedPair(pairId) {
+  tournamentFixedPairs = tournamentFixedPairs.filter(fp => fp.id !== pairId);
+  ensureTournamentSlotsState();
+  tournamentFixedPairsBySlot[state.activeTournamentSlot] = [...tournamentFixedPairs];
+  onTournamentRosterInput();
+}
+
+function clearTournamentFixedPairs() {
+  if (tournamentFixedPairs.length === 0 && !quickPairFirstStudent) return;
+  tournamentFixedPairs = [];
+  quickPairFirstStudent = null;
+  ensureTournamentSlotsState();
+  tournamentFixedPairsBySlot[state.activeTournamentSlot] = [];
+  onTournamentRosterInput();
+  showToast('지정된 짝 목록이 초기화되었습니다. (전체 랜덤 추첨)', '🔄');
+}
+
+function renderTournamentFixedPairsUI() {
+  const badgeEl = document.getElementById('tournamentFixedPairsCountBadge');
+  const listEl = document.getElementById('tournamentFixedPairsList');
+  const quickStatusEl = document.getElementById('tournamentQuickPairStatus');
+
+  if (badgeEl) {
+    badgeEl.innerText = `${tournamentFixedPairs.length}쌍 지정`;
+  }
+
+  if (quickStatusEl) {
+    if (quickPairFirstStudent) {
+      quickStatusEl.classList.remove('hidden');
+      quickStatusEl.innerHTML = `🔗 <b>${escapeHtml(quickPairFirstStudent)}</b> 선택됨 ➔ 짝지을 두 번째 학생을 클릭하세요!`;
+    } else {
+      quickStatusEl.classList.add('hidden');
+      quickStatusEl.innerHTML = '';
+    }
+  }
+
+  if (listEl) {
+    if (tournamentFixedPairs.length === 0) {
+      listEl.innerHTML = `
+        <p class="text-[10px] text-indigo-800/80 font-bold leading-snug">
+          💡 지정한 짝만 대진(또는 복식 팀)을 고정하고, <b>나머지 인원은 전체 랜덤</b>으로 편성됩니다.
+        </p>
+      `;
+    } else {
+      listEl.innerHTML = tournamentFixedPairs.map((fp, idx) => {
+        const isTeam = fp.type === 'team';
+        const isBye = fp.p2 === '__BYE__';
+        const badgeText = isBye ? `⏩ #${idx + 1} 부전승` : (isTeam ? `🤝 #${idx + 1} 한팀` : `⚔️ #${idx + 1} 맞대결`);
+        const badgeClass = isTeam
+          ? 'bg-emerald-600 text-white'
+          : 'bg-indigo-600 text-white';
+        const midText = isBye ? '➔' : (isTeam ? '&' : 'VS');
+        const rightText = isBye ? '부전승(BYE)' : fp.p2;
+
+        return `
+          <div class="flex items-center justify-between gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-indigo-200 shadow-2xs text-[11px]">
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${badgeClass} shrink-0">${badgeText}</span>
+              <span class="font-black text-slate-800 truncate">${escapeHtml(fp.p1)}</span>
+              <span class="text-[10px] font-black ${isTeam ? 'text-emerald-600' : 'text-indigo-600'} shrink-0">${midText}</span>
+              <span class="font-black text-slate-800 truncate">${escapeHtml(rightText)}</span>
+            </div>
+            <button
+              type="button"
+              onclick="removeTournamentFixedPair('${escapeHtml(fp.id)}')"
+              class="text-slate-400 hover:text-rose-600 px-1 font-black cursor-pointer shrink-0"
+              title="이 지정 짝 해제"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  populateTournamentPairSelects();
 }
 
 function onTournamentRosterInput() {
@@ -730,25 +1038,55 @@ function onTournamentRosterInput() {
     countBadge.innerText = `총 ${tournamentParticipantsDraft.length}명`;
   }
 
-  // 참가 학생 칩 렌더링
+  // 참가 학생 칩 렌더링 (클릭 시 빠른 짝 지정 가능 + 이미 지정된 짝 번호 표시)
   const chipsContainer = document.getElementById('tournamentParticipantChips');
   if (chipsContainer) {
     if (tournamentParticipantsDraft.length === 0) {
       chipsContainer.innerHTML = `<span class="text-[11px] text-slate-400 py-1">위에 학생 명단을 입력하거나 학급 명단을 불러오면 이곳에 참가자 목록이 표시됩니다.</span>`;
     } else {
-      chipsContainer.innerHTML = tournamentParticipantsDraft.map((name, idx) => `
-        <span class="inline-flex items-center space-x-1 bg-amber-50 text-amber-950 border border-amber-200/80 px-2.5 py-1 rounded-xl text-[11px] font-extrabold shadow-2xs">
-          <span class="text-amber-600 font-black">${idx + 1}.</span>
-          <span>${escapeHtml(name)}</span>
-          <button type="button" onclick="removeTournamentParticipantAt(${idx})" class="text-amber-400 hover:text-rose-500 ml-1 transition-colors cursor-pointer" title="명단에서 제외">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </span>
-      `).join('');
+      chipsContainer.innerHTML = tournamentParticipantsDraft.map((name, idx) => {
+        const clean = stripStudentNumberPrefix(name);
+        const pairInfo = getStudentFixedPairInfo(clean);
+        const isFirstSelected = quickPairFirstStudent === clean;
+
+        let chipStyle = 'bg-amber-50 hover:bg-indigo-50 text-amber-950 border-amber-200/80';
+        let pairTag = '';
+        if (isFirstSelected) {
+          chipStyle = 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-300';
+          pairTag = `<span class="text-[9px] bg-white text-indigo-700 px-1 rounded font-black">1번째 선택</span>`;
+        } else if (pairInfo) {
+          const isTeam = pairInfo.pair.type === 'team';
+          chipStyle = isTeam
+            ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300'
+            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-300';
+          pairTag = `<span class="text-[9px] ${isTeam ? 'bg-emerald-600' : 'bg-indigo-600'} text-white px-1 rounded font-black" title="지정 짝: ${escapeHtml(pairInfo.other === '__BYE__' ? '부전승' : pairInfo.other)}">${isTeam ? `🤝${pairInfo.num}팀` : `🎯${pairInfo.num}짝`}</span>`;
+        }
+
+        return `
+          <span
+            onclick="onTournamentChipQuickPairClick('${escapeHtml(clean)}')"
+            class="inline-flex items-center space-x-1 border px-2.5 py-1 rounded-xl text-[11px] font-extrabold shadow-2xs cursor-pointer transition-all select-none ${chipStyle}"
+            title="클릭하여 다른 학생과 지정 짝으로 묶기"
+          >
+            <span class="${isFirstSelected ? 'text-indigo-200' : 'text-amber-600'} font-black">${idx + 1}.</span>
+            <span>${escapeHtml(name)}</span>
+            ${pairTag}
+            <button
+              type="button"
+              onclick="event.stopPropagation(); removeTournamentParticipantAt(${idx})"
+              class="${isFirstSelected ? 'text-indigo-200 hover:text-white' : 'text-amber-400 hover:text-rose-500'} ml-1 transition-colors cursor-pointer"
+              title="명단에서 제외"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </span>
+        `;
+      }).join('');
     }
   }
 
   renderTournamentClassCheckboxes();
+  renderTournamentFixedPairsUI();
   updateTournamentScalePreview();
 }
 
@@ -806,7 +1144,10 @@ function updateTournamentScalePreview() {
   const gameFormat = document.getElementById('tournamentGameFormatSelect')?.value || 'single_11';
   const formatBadgeText = getTournamentGameFormatLabel(gameFormat, false);
   const rawCount = tournamentParticipantsDraft.length;
-  const entryCount = matchType === 'doubles' ? Math.ceil(rawCount / 2) : rawCount;
+  const fixedTeamCount = tournamentFixedPairs.filter(fp => fp.type === 'team' && fp.p2 !== '__BYE__').length;
+  const entryCount = matchType === 'doubles'
+    ? Math.ceil(rawCount / 2)
+    : Math.max(0, rawCount - fixedTeamCount);
   const unitLabel = matchType === 'doubles' ? '팀' : '명';
 
   if (entryCount < 2) {
@@ -828,6 +1169,9 @@ function updateTournamentScalePreview() {
   const firstRoundMatches = entryCount - (bracketSize / 2);
 
   const scaleLabel = bracketSize === 2 ? '결승 직행(2강)' : `${bracketSize}강 토너먼트`;
+  const fixedPairBadge = tournamentFixedPairs.length > 0
+    ? `<span class="text-[10px] font-black px-2 py-0.5 rounded-lg bg-indigo-100 text-indigo-900 border border-indigo-300">🎯 지정짝 ${tournamentFixedPairs.length}쌍 고정 + 나머지 랜덤</span>`
+    : '';
 
   previewEl.innerHTML = `
     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -835,6 +1179,7 @@ function updateTournamentScalePreview() {
         <span class="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg">${scaleLabel}</span>
         <span class="font-extrabold text-slate-800">참가 ${rawCount}명 ${matchType === 'doubles' ? `(복식 ${entryCount}팀)` : ''}</span>
         <span class="text-[10px] font-black px-2 py-0.5 rounded-lg ${gameFormat === 'bo3_11' ? 'bg-orange-100 text-orange-800 border border-orange-300' : 'bg-sky-100 text-sky-800 border border-sky-300'}">${formatBadgeText}</span>
+        ${fixedPairBadge}
       </div>
       <div class="text-[11px] font-bold text-emerald-800">
         1라운드 <b>${firstRoundMatches}경기</b> 진행 · 부전승(BYE) <b>${byesCount}${unitLabel}</b> · 총 <b>${roundsCount}라운드</b>
@@ -870,6 +1215,25 @@ function getRoundTitle(numMatchesInRound, roundIdx, totalRounds) {
   return `${slots}강 (${roundIdx + 1}라운드)`;
 }
 
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function createByeSlotEntry() {
+  return {
+    entryId: 'BYE',
+    name: '부전승 (BYE)',
+    shortName: 'BYE',
+    avatar: '⏩',
+    isBye: true,
+    seed: null
+  };
+}
+
 function generateTournamentBracket(isReshuffle = false) {
   const textarea = document.getElementById('tournamentRosterInput');
   let rawNames = parseStudentRosterText(textarea ? textarea.value : '');
@@ -880,6 +1244,13 @@ function generateTournamentBracket(isReshuffle = false) {
     onTournamentRosterInput();
   }
 
+  // 재추첨 시 기존 저장된 지정 짝(fixedPairs)이 있으면 유지
+  if (isReshuffle && tournamentFixedPairs.length === 0 && state.savedTournament && Array.isArray(state.savedTournament.fixedPairs)) {
+    tournamentFixedPairs = JSON.parse(JSON.stringify(state.savedTournament.fixedPairs));
+    ensureTournamentSlotsState();
+    tournamentFixedPairsBySlot[state.activeTournamentSlot] = [...tournamentFixedPairs];
+  }
+
   const matchType = document.getElementById('tournamentMatchTypeSelect')?.value || (isReshuffle && state.savedTournament?.matchType) || 'singles';
   const gameFormat = document.getElementById('tournamentGameFormatSelect')?.value || (isReshuffle && state.savedTournament?.gameFormat) || 'single_11';
   const seedMode = document.getElementById('tournamentSeedModeSelect')?.value || 'random';
@@ -887,6 +1258,21 @@ function generateTournamentBracket(isReshuffle = false) {
   const preferredClass = document.getElementById('tournamentClassSelect')?.value || 'all';
   const titleInput = document.getElementById('tournamentTitleInput');
   const tournamentTitle = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : '🏓 탁구 챔피언십 토너먼트';
+
+  // 지정 짝에 등록된 학생이 rawNames에 누락되어 있으면 자동 포함
+  const rawCleanSet = new Set(rawNames.map(n => stripStudentNumberPrefix(n)));
+  tournamentFixedPairs.forEach(fp => {
+    const c1 = stripStudentNumberPrefix(fp.p1);
+    const c2 = fp.p2 === '__BYE__' ? '__BYE__' : stripStudentNumberPrefix(fp.p2);
+    if (c1 && !rawCleanSet.has(c1)) {
+      rawNames.push(c1);
+      rawCleanSet.add(c1);
+    }
+    if (c2 && c2 !== '__BYE__' && !rawCleanSet.has(c2)) {
+      rawNames.push(c2);
+      rawCleanSet.add(c2);
+    }
+  });
 
   if (matchType === ' singles' || matchType === 'singles') {
     if (rawNames.length < 2) {
@@ -906,14 +1292,51 @@ function generateTournamentBracket(isReshuffle = false) {
     originalOrder: idx + 1
   }));
 
-  // 추첨/배정 방식 적용
-  if (seedMode === 'random' || isReshuffle) {
-    for (let i = enrichedPlayers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [enrichedPlayers[i], enrichedPlayers[j]] = [enrichedPlayers[j], enrichedPlayers[i]];
+  // 1단계: 'team'(🤝 한 팀 파트너 짝) 우선 구성
+  const usedPlayerIdxSet = new Set();
+  const takePlayerByCleanName = (targetClean) => {
+    if (!targetClean) return null;
+    for (let i = 0; i < enrichedPlayers.length; i++) {
+      if (usedPlayerIdxSet.has(i)) continue;
+      if (enrichedPlayers[i].cleanName === targetClean || stripStudentNumberPrefix(enrichedPlayers[i].name) === targetClean) {
+        usedPlayerIdxSet.add(i);
+        return enrichedPlayers[i];
+      }
     }
+    return null;
+  };
+
+  const fixedTeamEntries = [];
+  const teamPairs = tournamentFixedPairs.filter(fp => fp.type === 'team' && fp.p2 !== '__BYE__');
+  teamPairs.forEach((tp, idx) => {
+    const p1 = takePlayerByCleanName(stripStudentNumberPrefix(tp.p1));
+    const p2 = takePlayerByCleanName(stripStudentNumberPrefix(tp.p2));
+    if (p1 && p2) {
+      fixedTeamEntries.push({
+        entryId: `fixed_team_${idx + 1}`,
+        name: `${p1.name} & ${p2.name}`,
+        shortName: `${p1.cleanName}·${p2.cleanName}`,
+        memberNames: [p1.name, p2.name],
+        avatar: '🤝',
+        playerIds: [p1.id, p2.id].filter(Boolean),
+        isFixedTeam: true,
+        fixedPairNum: idx + 1,
+        winRate: ((p1.winRate || 0) + (p2.winRate || 0)) / 2,
+        wins: (p1.wins || 0) + (p2.wins || 0),
+        points: (p1.points || 0) + (p2.points || 0),
+        seed: 0
+      });
+    }
+  });
+
+  // 고정 팀에 속하지 않은 나머지 학생 풀
+  let remainingPlayers = enrichedPlayers.filter((_, idx) => !usedPlayerIdxSet.has(idx));
+
+  // 추첨/배정 방식 적용 (나머지 학생들을 랜덤 셔플 또는 랭킹 정렬)
+  if (seedMode === 'random' || isReshuffle) {
+    shuffleInPlace(remainingPlayers);
   } else if (seedMode === 'ranking') {
-    enrichedPlayers.sort((a, b) => {
+    remainingPlayers.sort((a, b) => {
       if (b.winRate !== a.winRate) return b.winRate - a.winRate;
       if (b.wins !== a.wins) return b.wins - a.wins;
       return b.points - a.points;
@@ -921,70 +1344,244 @@ function generateTournamentBracket(isReshuffle = false) {
   }
 
   // 단식 / 복식 참가 엔트리 구성
-  let entries = [];
+  let allCandidateEntries = [...fixedTeamEntries];
   if (matchType === 'doubles') {
-    for (let i = 0; i < enrichedPlayers.length; i += 2) {
-      const p1 = enrichedPlayers[i];
-      const p2 = enrichedPlayers[i + 1];
+    for (let i = 0; i < remainingPlayers.length; i += 2) {
+      const p1 = remainingPlayers[i];
+      const p2 = remainingPlayers[i + 1];
       if (p2) {
-        entries.push({
-          entryId: `team_${i / 2 + 1}`,
+        allCandidateEntries.push({
+          entryId: `team_${allCandidateEntries.length + 1}`,
           name: `${p1.name} & ${p2.name}`,
           shortName: `${p1.cleanName}·${p2.cleanName}`,
           memberNames: [p1.name, p2.name],
           avatar: '👥',
           playerIds: [p1.id, p2.id].filter(Boolean),
-          seed: entries.length + 1
+          winRate: ((p1.winRate || 0) + (p2.winRate || 0)) / 2,
+          wins: (p1.wins || 0) + (p2.wins || 0),
+          points: (p1.points || 0) + (p2.points || 0),
+          seed: 0
         });
       } else {
         // 홀수 인원일 경우 단독/파트너 미정 팀
-        entries.push({
-          entryId: `team_${Math.floor(i / 2) + 1}`,
+        allCandidateEntries.push({
+          entryId: `team_${allCandidateEntries.length + 1}`,
           name: `${p1.name} (파트너 미정)`,
           shortName: p1.cleanName,
           memberNames: [p1.name],
           avatar: '👤',
           playerIds: p1.id ? [p1.id] : [],
-          seed: entries.length + 1
+          winRate: p1.winRate || 0,
+          wins: p1.wins || 0,
+          points: p1.points || 0,
+          seed: 0
         });
       }
     }
   } else {
-    entries = enrichedPlayers.map((p, idx) => ({
-      entryId: p.id || `p_${idx + 1}`,
-      name: p.name,
-      shortName: p.cleanName,
-      avatar: p.avatar || '🏓',
-      playerIds: p.id ? [p.id] : [],
-      seed: idx + 1
-    }));
+    remainingPlayers.forEach((p, idx) => {
+      allCandidateEntries.push({
+        entryId: p.id || `p_${idx + 1}`,
+        name: p.name,
+        shortName: p.cleanName,
+        avatar: p.avatar || '🏓',
+        playerIds: p.id ? [p.id] : [],
+        winRate: p.winRate || 0,
+        wins: p.wins || 0,
+        points: p.points || 0,
+        seed: 0
+      });
+    });
   }
 
-  const N = entries.length;
+  // 2단계: 'versus'(⚔️ 1라운드 맞대결 짝 또는 부전승 지정) 분리
+  const usedEntryIdxSet = new Set();
+  const takeEntryByStudentName = (targetClean) => {
+    if (!targetClean) return null;
+    for (let i = 0; i < allCandidateEntries.length; i++) {
+      if (usedEntryIdxSet.has(i)) continue;
+      const ent = allCandidateEntries[i];
+      const entClean = stripStudentNumberPrefix(ent.name);
+      const hasInMembers = Array.isArray(ent.memberNames) && ent.memberNames.some(m => stripStudentNumberPrefix(m) === targetClean);
+      if (entClean === targetClean || ent.shortName === targetClean || hasInMembers) {
+        usedEntryIdxSet.add(i);
+        return ent;
+      }
+    }
+    return null;
+  };
+
+  const lockedVersusPairs = []; // [{ entry1, entry2, pairNum }]
+  const lockedByeEntries = [];  // [{ entry1, pairNum }]
+  const versusPairs = tournamentFixedPairs.filter(fp => fp.type === 'versus');
+
+  versusPairs.forEach((vp, idx) => {
+    const c1 = stripStudentNumberPrefix(vp.p1);
+    const c2 = vp.p2 === '__BYE__' ? '__BYE__' : stripStudentNumberPrefix(vp.p2);
+    if (c2 === '__BYE__') {
+      const e1 = takeEntryByStudentName(c1);
+      if (e1) {
+        lockedByeEntries.push({ entry1: e1, pairNum: idx + 1 });
+      }
+    } else {
+      const e1 = takeEntryByStudentName(c1);
+      const e2 = takeEntryByStudentName(c2);
+      if (e1 && e2) {
+        lockedVersusPairs.push({ entry1: e1, entry2: e2, pairNum: idx + 1 });
+      } else {
+        // 한쪽만 찾아진 경우 다시 자유 풀로 복원
+        if (e1) {
+          const foundIdx = allCandidateEntries.indexOf(e1);
+          if (foundIdx !== -1) usedEntryIdxSet.delete(foundIdx);
+        }
+        if (e2) {
+          const foundIdx = allCandidateEntries.indexOf(e2);
+          if (foundIdx !== -1) usedEntryIdxSet.delete(foundIdx);
+        }
+      }
+    }
+  });
+
+  // 맞대결 고정에 속하지 않은 일반 엔트리 풀
+  let freeEntries = allCandidateEntries.filter((_, idx) => !usedEntryIdxSet.has(idx));
+  if (seedMode === 'random' || isReshuffle) {
+    shuffleInPlace(freeEntries);
+    shuffleInPlace(lockedVersusPairs);
+  } else if (seedMode === 'ranking') {
+    freeEntries.sort((a, b) => {
+      if ((b.winRate || 0) !== (a.winRate || 0)) return (b.winRate || 0) - (a.winRate || 0);
+      if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
+      return (b.points || 0) - (a.points || 0);
+    });
+  }
+
+  const N = lockedVersusPairs.length * 2 + lockedByeEntries.length + freeEntries.length;
   const totalRounds = Math.ceil(Math.log2(N));
   const bracketSize = Math.pow(2, totalRounds);
   const byesCount = bracketSize - N;
+  const numFirstRoundMatches = bracketSize / 2;
 
-  // 시드 배치 순서 계산:
-  // 'order'(입력 순서대로)이고 부전승이 없으면 순서대로(1vs2, 3vs4),
-  // 그 외에는 부전승이 한쪽에 몰리지 않도록 균형 시드 트리 배치 사용
   let slotEntries = [];
-  if (seedMode === 'order' && byesCount === 0 && !isReshuffle) {
-    slotEntries = [...entries];
+  const fixedMatchMetaByIdx = {}; // { [matchIdx]: { isFixedPairMatch: true, fixedPairNum } }
+
+  if (lockedVersusPairs.length === 0 && lockedByeEntries.length === 0) {
+    // 기존 시드 배치 방식 100% 유지
+    const entries = freeEntries.map((ent, idx) => ({ ...ent, seed: idx + 1 }));
+    if (seedMode === 'order' && byesCount === 0 && !isReshuffle) {
+      slotEntries = [...entries];
+    } else {
+      const seedOrder = generateStandardSeedOrder(bracketSize); // 1-based seeds
+      slotEntries = seedOrder.map(seedNum => {
+        if (seedNum <= N) {
+          return entries[seedNum - 1];
+        }
+        return createByeSlotEntry();
+      });
+    }
   } else {
-    const seedOrder = generateStandardSeedOrder(bracketSize); // 1-based seeds
-    slotEntries = seedOrder.map(seedNum => {
-      if (seedNum <= N) {
-        return entries[seedNum - 1];
+    // 🎯 지정된 1라운드 맞대결 짝(lockedVersusPairs) 및 부전승 지정(lockedByeEntries)을 우선 배치하고 나머지는 전체 랜덤 배정
+    slotEntries = new Array(bracketSize).fill(null);
+    const seedOrder = generateStandardSeedOrder(bracketSize);
+    const fullMatchIndices = [];
+    const byeMatchIndices = [];
+
+    for (let m = 0; m < numFirstRoundMatches; m++) {
+      const sA = seedOrder[m * 2];
+      const sB = seedOrder[m * 2 + 1];
+      if (sA <= N && sB <= N) {
+        fullMatchIndices.push(m);
+      } else {
+        byeMatchIndices.push(m);
       }
-      return {
-        entryId: 'BYE',
-        name: '부전승 (BYE)',
-        shortName: 'BYE',
-        avatar: '⏩',
-        isBye: true,
-        seed: null
-      };
+    }
+
+    if (seedMode === 'random' || isReshuffle) {
+      shuffleInPlace(fullMatchIndices);
+      shuffleInPlace(byeMatchIndices);
+    }
+
+    const usedMatchIndices = new Set();
+
+    // 1) ⚔️ 1라운드 맞대결 짝(lockedVersusPairs)을 실제 1라운드 경기 슬롯(fullMatchIndices 우선)에 고정 배치
+    const versusCandidateMatches = [...fullMatchIndices, ...byeMatchIndices];
+    lockedVersusPairs.forEach((vp, idx) => {
+      const targetMatchIdx = versusCandidateMatches.find(mIdx => !usedMatchIndices.has(mIdx));
+      if (targetMatchIdx !== undefined) {
+        usedMatchIndices.add(targetMatchIdx);
+        slotEntries[targetMatchIdx * 2] = {
+          ...vp.entry1,
+          isFixedVersus: true,
+          fixedPairNum: vp.pairNum
+        };
+        slotEntries[targetMatchIdx * 2 + 1] = {
+          ...vp.entry2,
+          isFixedVersus: true,
+          fixedPairNum: vp.pairNum
+        };
+        fixedMatchMetaByIdx[targetMatchIdx] = {
+          isFixedPairMatch: true,
+          fixedPairNum: vp.pairNum
+        };
+      }
+    });
+
+    // 2) 남은 1라운드 매치 슬롯 확인 (부전승 슬롯 vs 일반 2인 대진 슬롯)
+    const remByeMatches = byeMatchIndices.filter(mIdx => !usedMatchIndices.has(mIdx));
+    const remFullMatches = fullMatchIndices.filter(mIdx => !usedMatchIndices.has(mIdx));
+    const remAllMatches = [...remByeMatches, ...remFullMatches];
+
+    // 남은 실제 엔트리 풀 (부전승 우선 지정된 학생을 맨 앞에 배치하여 remByeMatches에 우선 배정)
+    const remainingRealPool = [
+      ...lockedByeEntries.map(lb => ({ ...lb.entry1, isFixedBye: true, fixedPairNum: lb.pairNum })),
+      ...freeEntries
+    ];
+
+    const R_rem = remainingRealPool.length;
+    const M_rem = remAllMatches.length;
+
+    if (R_rem >= M_rem) {
+      // M_rem개의 매치 중 (2*M_rem - R_rem)개는 (실제 선수 1명 + BYE 1개), (R_rem - M_rem)개는 (실제 선수 2명)
+      const singleWithByeCount = Math.max(0, 2 * M_rem - R_rem);
+      let poolCursor = 0;
+
+      for (let i = 0; i < M_rem; i++) {
+        const mIdx = remAllMatches[i];
+        if (i < singleWithByeCount) {
+          const p1 = remainingRealPool[poolCursor++];
+          slotEntries[mIdx * 2] = p1 || createByeSlotEntry();
+          slotEntries[mIdx * 2 + 1] = createByeSlotEntry();
+          if (p1 && p1.isFixedBye) {
+            fixedMatchMetaByIdx[mIdx] = { isFixedByeMatch: true, fixedPairNum: p1.fixedPairNum };
+          }
+        } else {
+          const p1 = remainingRealPool[poolCursor++];
+          const p2 = remainingRealPool[poolCursor++];
+          slotEntries[mIdx * 2] = p1 || createByeSlotEntry();
+          slotEntries[mIdx * 2 + 1] = p2 || createByeSlotEntry();
+        }
+      }
+    } else {
+      // 지정 짝 수가 많아 남은 개별 선수 수(R_rem)가 남은 매치 수(M_rem)보다 적은 경우
+      let poolCursor = 0;
+      for (let i = 0; i < M_rem; i++) {
+        const mIdx = remAllMatches[i];
+        if (poolCursor < R_rem) {
+          const p1 = remainingRealPool[poolCursor++];
+          slotEntries[mIdx * 2] = p1;
+          slotEntries[mIdx * 2 + 1] = createByeSlotEntry();
+        } else {
+          slotEntries[mIdx * 2] = createByeSlotEntry();
+          slotEntries[mIdx * 2 + 1] = createByeSlotEntry();
+        }
+      }
+    }
+
+    // 시드 번호 부여
+    let seedCounter = 1;
+    slotEntries.forEach(ent => {
+      if (ent && !ent.isBye) {
+        ent.seed = seedCounter++;
+      }
     });
   }
 
@@ -1009,7 +1606,12 @@ function generateTournamentBracket(isReshuffle = false) {
         } else if (!isP1Bye && isP2Bye) {
           winnerSlot = 1;
           isByeMatch = true;
+        } else if (isP1Bye && isP2Bye) {
+          winnerSlot = 1;
+          isByeMatch = true;
         }
+
+        const fixedMeta = fixedMatchMetaByIdx[m] || {};
 
         roundMatches.push({
           matchId: `r0_m${m}`,
@@ -1026,7 +1628,10 @@ function generateTournamentBracket(isReshuffle = false) {
             { s1: null, s2: null }
           ],
           winnerSlot: winnerSlot,
-          isByeMatch: isByeMatch
+          isByeMatch: isByeMatch,
+          isFixedPairMatch: !!fixedMeta.isFixedPairMatch,
+          isFixedByeMatch: !!fixedMeta.isFixedByeMatch,
+          fixedPairNum: fixedMeta.fixedPairNum || null
         });
       } else {
         roundMatches.push({
@@ -1056,20 +1661,33 @@ function generateTournamentBracket(isReshuffle = false) {
     });
   }
 
-  // 1라운드 부전승(BYE) 승자를 2라운드로 자동 진출 반영
+  // 1라운드 부전승(BYE) 승자를 2라운드로 자동 진출 반영 (연쇄 부전승 포함)
   if (totalRounds > 1) {
-    rounds[0].matches.forEach((match, mIdx) => {
-      if (match.winnerSlot === 1 || match.winnerSlot === 2) {
-        const advancingPlayer = match.winnerSlot === 1 ? match.player1 : match.player2;
-        const nextMatchIdx = Math.floor(mIdx / 2);
-        const isTopSlot = (mIdx % 2 === 0);
-        if (isTopSlot) {
-          rounds[1].matches[nextMatchIdx].player1 = advancingPlayer;
-        } else {
-          rounds[1].matches[nextMatchIdx].player2 = advancingPlayer;
+    for (let r = 0; r < totalRounds - 1; r++) {
+      rounds[r].matches.forEach((match, mIdx) => {
+        if (match.winnerSlot === 1 || match.winnerSlot === 2) {
+          const advancingPlayer = match.winnerSlot === 1 ? match.player1 : match.player2;
+          const nextMatchIdx = Math.floor(mIdx / 2);
+          const isTopSlot = (mIdx % 2 === 0);
+          const nextMatch = rounds[r + 1].matches[nextMatchIdx];
+          if (isTopSlot) {
+            nextMatch.player1 = advancingPlayer;
+          } else {
+            nextMatch.player2 = advancingPlayer;
+          }
+          // 만약 다음 라운드 매치의 두 슬롯이 모두 채워졌는데 한쪽이 BYE이면 자동 부전승 처리
+          if (nextMatch.player1 && nextMatch.player2) {
+            if (nextMatch.player1.isBye && !nextMatch.player2.isBye) {
+              nextMatch.winnerSlot = 2;
+              nextMatch.isByeMatch = true;
+            } else if (!nextMatch.player1.isBye && nextMatch.player2.isBye) {
+              nextMatch.winnerSlot = 1;
+              nextMatch.isByeMatch = true;
+            }
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // 3·4위 결정전 객체 (4강 이상일 때)
@@ -1105,6 +1723,7 @@ function generateTournamentBracket(isReshuffle = false) {
     gameFormat: gameFormat,
     seedMode: seedMode,
     includeThirdPlace: includeThirdPlace,
+    fixedPairs: JSON.parse(JSON.stringify(tournamentFixedPairs)),
     rawRosterList: rawNames,
     participantCount: rawNames.length,
     entryCount: N,
@@ -1228,6 +1847,19 @@ function propagateWinnerToNextRound(tour, roundIdx, matchIdx) {
         nextMatch.score2 = null;
         nextMatch.sets = [{ s1: null, s2: null }, { s1: null, s2: null }, { s1: null, s2: null }];
         clearDownstreamAdvancement(tour, roundIdx + 1, nextMatchIdx);
+      }
+
+      // 만약 다음 라운드 상대 슬롯이 부전승(BYE)인 경우 자동으로 다음 라운드도 진출 처리
+      if (nextMatch.player1 && nextMatch.player2) {
+        if (nextMatch.player1.isBye && !nextMatch.player2.isBye) {
+          nextMatch.winnerSlot = 2;
+          nextMatch.isByeMatch = true;
+          propagateWinnerToNextRound(tour, roundIdx + 1, nextMatchIdx);
+        } else if (!nextMatch.player1.isBye && nextMatch.player2.isBye) {
+          nextMatch.winnerSlot = 1;
+          nextMatch.isByeMatch = true;
+          propagateWinnerToNextRound(tour, roundIdx + 1, nextMatchIdx);
+        }
       }
     }
   }
@@ -1692,12 +2324,15 @@ function renderTournamentMatchCard(match, roundIdx, matchIdx, totalRounds, isThi
     statusBadge = `<span class="text-[11px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-bold">⏳ 하위 승자 대기</span>`;
   }
 
-  // 경기 방식에 따른 상단 표기 배지 (단판 11점제 vs 11점 3판2선승제)
+  // 경기 방식에 따른 상단 표기 배지 (단판 11점제 vs 11점 3판2선승제) 및 지정 짝 배지
   const formatMiniBadge = !isBye ? (
     bo3
       ? `<span class="text-[10px] bg-orange-50 text-orange-800 border border-orange-200 px-1.5 py-0.5 rounded-md font-black" title="11점 1세트 · 3판 2선승제">🔥 3판2선승(11점)</span>`
       : `<span class="text-[10px] bg-sky-50 text-sky-800 border border-sky-200 px-1.5 py-0.5 rounded-md font-black" title="11점 1세트 단판 승부">⚡ 11점 단판</span>`
   ) : '';
+  const fixedMatchBadge = match.isFixedPairMatch
+    ? `<span class="text-[10px] bg-indigo-100 text-indigo-900 border border-indigo-300 px-1.5 py-0.5 rounded-md font-black" title="임의 지정된 1라운드 고정 대진">🎯 지정짝${match.fixedPairNum ? ` #${match.fixedPairNum}` : ''}</span>`
+    : (match.isFixedByeMatch ? `<span class="text-[10px] bg-indigo-50 text-indigo-800 border border-indigo-200 px-1.5 py-0.5 rounded-md font-black">🎯 지정부전승</span>` : '');
 
   const renderSlot = (player, slotNum) => {
     const isWinner = match.winnerSlot === slotNum;
@@ -1836,6 +2471,7 @@ function renderTournamentMatchCard(match, roundIdx, matchIdx, totalRounds, isThi
             <span class="text-base sm:text-[17px] font-black tracking-tight break-keep leading-snug ${isWinner ? 'text-emerald-950' : (isLoser ? 'text-slate-400 line-through' : 'text-slate-900')}">
               ${escapeHtml(cleanName)}
             </span>
+            ${player.isFixedTeam ? `<span class="text-[9px] bg-emerald-100 text-emerald-900 border border-emerald-300 px-1.5 py-0.5 rounded-md font-black shrink-0">🤝지정팀</span>` : ''}
           </div>
           ${rightScorePill}
         </div>
@@ -1909,10 +2545,11 @@ function renderTournamentMatchCard(match, roundIdx, matchIdx, totalRounds, isThi
   return `
     <div class="tournament-match-card p-3 space-y-2 ${cardStateClass}">
       <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 gap-1.5 flex-wrap">
-        <span class="text-xs font-black text-slate-700 flex items-center space-x-1">
+        <span class="text-xs font-black text-slate-700 flex items-center space-x-1 flex-wrap gap-y-1">
           <span class="inline-block w-2 h-2 rounded-full ${isCompleted || isBye ? 'bg-emerald-500' : (isReady ? 'bg-amber-500' : 'bg-slate-300')}"></span>
           <span>${escapeHtml(match.label)}</span>
           ${formatMiniBadge}
+          ${fixedMatchBadge}
         </span>
         <div class="flex items-center space-x-1">
           ${isReady ? `
@@ -2033,6 +2670,7 @@ function renderTournamentBracketUI() {
             <span class="text-xs font-black px-2.5 py-0.5 rounded-lg border ${
               bo3 ? 'bg-orange-100 text-orange-900 border-orange-300' : 'bg-sky-100 text-sky-900 border-sky-300'
             }">${gameFormatLabel}</span>
+            ${Array.isArray(tour.fixedPairs) && tour.fixedPairs.length > 0 ? `<span class="text-xs font-black px-2.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-900 border border-indigo-300">🎯 지정짝 ${tour.fixedPairs.length}쌍 반영 (나머지 랜덤)</span>` : ''}
             ${tour.byesCount > 0 ? `<span class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">부전승 ${tour.byesCount}${unitLabel}</span>` : ''}
             <span class="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">
               ⬆️ 하단(1라운드)에서 승리할수록 상단(결승·우승)으로 올라가는 계단식 트리 구조
@@ -2386,14 +3024,19 @@ function resetTournamentBracket(resetAllSlots = false) {
     if (resetAllSlots) {
       state.savedTournaments = { slot_1: null, slot_2: null, slot_3: null };
       state.savedTournament = null;
+      tournamentFixedPairs = [];
+      tournamentFixedPairsBySlot = { slot_1: [], slot_2: [], slot_3: [] };
       saveTournamentToRTDB(null, 'slot_1');
       saveTournamentToRTDB(null, 'slot_2');
       saveTournamentToRTDB(null, 'slot_3');
     } else {
       state.savedTournament = null;
+      tournamentFixedPairs = [];
+      tournamentFixedPairsBySlot[state.activeTournamentSlot] = [];
       saveTournamentToRTDB(null, state.activeTournamentSlot);
     }
     applySlotStateToSetupInputs();
+    onTournamentRosterInput();
     tournamentSetupCollapsed = false;
     syncTournamentSetupVisibility();
     onTournamentRosterInput();
