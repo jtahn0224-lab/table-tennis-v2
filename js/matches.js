@@ -38,9 +38,148 @@ function setScoreboardMode(mode) {
   updateScoreboardPlayerDisplays();
 }
 
+function getTournamentRosterStudents() {
+  let rawNames = [];
+  if (state.savedTournament && Array.isArray(state.savedTournament.rawRosterList) && state.savedTournament.rawRosterList.length > 0) {
+    rawNames = [...state.savedTournament.rawRosterList];
+  }
+  if (state.savedTournaments && typeof state.savedTournaments === 'object') {
+    ['slot_1', 'slot_2', 'slot_3'].forEach(slotKey => {
+      const slotData = state.savedTournaments[slotKey];
+      if (slotData && Array.isArray(slotData.rawRosterList) && slotData.rawRosterList.length > 0) {
+        rawNames.push(...slotData.rawRosterList);
+      }
+    });
+  }
+  if (rawNames.length === 0 && typeof tournamentParticipantsDraft !== 'undefined' && Array.isArray(tournamentParticipantsDraft) && tournamentParticipantsDraft.length > 0) {
+    rawNames = [...tournamentParticipantsDraft];
+  }
+
+  const seenIds = new Set();
+  const result = [];
+
+  rawNames.forEach(raw => {
+    const trimmed = String(raw || '').trim();
+    if (!trimmed) return;
+    const cleanName = typeof stripStudentNumberPrefix === 'function'
+      ? stripStudentNumberPrefix(trimmed)
+      : trimmed.replace(/^\d+번\s*/, '').trim();
+    const numMatch = trimmed.match(/^(\d+)번/);
+    const numStr = numMatch ? numMatch[1] : '';
+
+    // 등록된 부원 중 이름(및 번호)이 일치하는 학생 찾기
+    const matched = state.students.find(s =>
+      (s.name === cleanName && (!numStr || String(s.number) === numStr)) ||
+      `${s.number}번 ${s.name}` === trimmed ||
+      s.name === trimmed
+    );
+
+    if (matched) {
+      if (!seenIds.has(matched.id)) {
+        seenIds.add(matched.id);
+        result.push({
+          ...matched,
+          displayName: cleanName || matched.name,
+          isFromTournament: true
+        });
+      }
+    } else {
+      const vId = 'tour_std_' + encodeURIComponent(cleanName || trimmed);
+      if (!seenIds.has(vId)) {
+        seenIds.add(vId);
+        result.push({
+          id: vId,
+          name: cleanName || trimmed,
+          displayName: cleanName || trimmed,
+          number: numStr,
+          grade: '',
+          classNum: '',
+          className: '🏆 토너먼트 참가 명단',
+          isTournamentVirtual: true,
+          isFromTournament: true
+        });
+      }
+    }
+  });
+
+  return result;
+}
+
+function findScoreboardPlayer(id) {
+  if (!id) return null;
+  const realStd = state.students.find(s => s.id === id);
+  if (realStd) return realStd;
+
+  if (String(id).startsWith('tour_std_')) {
+    try {
+      const rawName = decodeURIComponent(String(id).replace(/^tour_std_/, ''));
+      const cleanName = typeof stripStudentNumberPrefix === 'function'
+        ? stripStudentNumberPrefix(rawName)
+        : rawName.replace(/^\d+번\s*/, '').trim();
+      const numMatch = rawName.match(/^(\d+)번/);
+      return {
+        id: id,
+        name: cleanName || rawName,
+        displayName: cleanName || rawName,
+        number: numMatch ? numMatch[1] : '',
+        grade: '',
+        classNum: '',
+        className: '🏆 토너먼트 참가 명단',
+        isTournamentVirtual: true,
+        isFromTournament: true
+      };
+    } catch (e) {}
+  }
+
+  const tourList = getTournamentRosterStudents();
+  return tourList.find(s => s.id === id || s.name === id || s.displayName === id) || null;
+}
+
+function resolveScoreboardPlayerIdByName(nameStr) {
+  if (!nameStr) return '';
+  const trimmed = String(nameStr).trim();
+  const cleanName = trimmed.replace(/^\d+번\s*/, '').trim();
+  const tourList = getTournamentRosterStudents();
+
+  const tourMatch = tourList.find(s =>
+    s.displayName === trimmed ||
+    s.name === trimmed ||
+    s.name === cleanName
+  );
+  if (tourMatch) return tourMatch.id;
+
+  const stdMatch = state.students.find(s =>
+    `${s.number}번 ${s.name}` === trimmed ||
+    s.name === trimmed ||
+    s.name === cleanName
+  );
+  if (stdMatch) return stdMatch.id;
+
+  return 'tour_std_' + encodeURIComponent(trimmed);
+}
+
 function buildClassGroupedStudentOptions(filterClass = 'all') {
+  let html = '';
+  const tourStudents = getTournamentRosterStudents();
+  const tourIds = new Set();
+
+  if ((filterClass === 'all' || filterClass === 'tournament') && tourStudents.length > 0) {
+    html += `<optgroup label="🏆 토너먼트 참가 명단 (${tourStudents.length}명)">`;
+    tourStudents.forEach(s => {
+      tourIds.add(s.id);
+      const labelText = s.displayName || `${s.number ? s.number + '번 ' : ''}${s.name}`;
+      html += `<option value="${escapeHtml(s.id)}">🏆 ${escapeHtml(labelText)}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+
+  if (filterClass === 'tournament') {
+    return html;
+  }
+
   const groups = {};
   state.students.forEach(s => {
+    if (tourIds.has(s.id)) return;
     const classKey = getStudentExactClassKey(s);
     if (filterClass !== 'all' && classKey !== filterClass) return;
     if (!groups[classKey]) groups[classKey] = [];
@@ -48,7 +187,6 @@ function buildClassGroupedStudentOptions(filterClass = 'all') {
   });
 
   const sortedKeys = Object.keys(groups).sort(compareExactClassKeys);
-  let html = '';
   sortedKeys.forEach(classKey => {
     // 💡 각 학년/반 내부에서 번호(number) 오름차순 (1번, 2번, 3번... 10번, 11번...) 정렬
     const list = groups[classKey].sort(compareStudentsByNumber);
@@ -69,8 +207,11 @@ function filterDoublesByClass() {
   const selectors = ['sbTeam1P1Select', 'sbTeam1P2Select', 'sbTeam2P1Select', 'sbTeam2P2Select'];
   
   let targetStudents = [];
-  if (filterVal === 'all') {
-    targetStudents = [...state.students].sort(compareStudentsByNumber);
+  const tourStudents = getTournamentRosterStudents();
+  if (filterVal === 'tournament') {
+    targetStudents = [...tourStudents];
+  } else if (filterVal === 'all') {
+    targetStudents = [...tourStudents, ...state.students.filter(s => !tourStudents.some(ts => ts.id === s.id))];
   } else {
     targetStudents = state.students.filter(s => getStudentExactClassKey(s) === filterVal).sort(compareStudentsByNumber);
   }
@@ -90,11 +231,16 @@ function filterDoublesByClass() {
   syncDoublesSelectors();
 }
 
-function openScoreboardModal() {
+function openScoreboardModal(fromTournamentMatch = false) {
   const p1Select = document.getElementById('sbPlayer1Select');
   if (!p1Select) return;
 
+  if (!fromTournamentMatch && typeof activeTournamentMatchContext !== 'undefined') {
+    activeTournamentMatchContext = null;
+  }
+
   const groupedOpts = buildClassGroupedStudentOptions('all');
+  const tourStudents = getTournamentRosterStudents();
 
   p1Select.innerHTML = groupedOpts;
   updateScoreboardPlayer2();
@@ -107,6 +253,9 @@ function openScoreboardModal() {
       classes.add(getStudentExactClassKey(s));
     });
     let filterOpts = `<option value="all">전체 학급 부원 (모든 반 보기)</option>`;
+    if (tourStudents.length > 0) {
+      filterOpts += `<option value="tournament">🏆 토너먼트 참가 명단 (${tourStudents.length}명)</option>`;
+    }
     Array.from(classes).sort(compareExactClassKeys).forEach(c => {
       filterOpts += `<option value="${c}">🏫 ${c}</option>`;
     });
@@ -114,18 +263,65 @@ function openScoreboardModal() {
   }
 
   // Populate Doubles Selectors with Grade/Class Optgroups
-  const sortedStudents = [...state.students].sort(compareStudentsByNumber);
+  const combinedStudents = [...tourStudents, ...state.students.filter(s => !tourStudents.some(ts => ts.id === s.id))];
   ['sbTeam1P1Select', 'sbTeam1P2Select', 'sbTeam2P1Select', 'sbTeam2P2Select'].forEach((id, idx) => {
     const el = document.getElementById(id);
     if (el) {
       el.innerHTML = groupedOpts;
-      if (sortedStudents[idx]) {
-        el.value = sortedStudents[idx].id;
+      if (combinedStudents[idx]) {
+        el.value = combinedStudents[idx].id;
       }
     }
   });
 
   setScoreboardMode('singles');
+
+  // 일반 [경기 전광판] 버튼으로 열었을 때도 진행 중인 토너먼트 대진이 있으면 다음 경기를 자동 세팅 (3개 대진표 슬롯 모두 탐색)
+  const bannerEl = document.getElementById('sbTournamentMatchBanner');
+  if (!fromTournamentMatch) {
+    if (bannerEl) bannerEl.classList.add('hidden');
+    const activeSlot = state.activeTournamentSlot || 'slot_1';
+    const candidateSlots = [activeSlot, ...['slot_1', 'slot_2', 'slot_3'].filter(k => k !== activeSlot)];
+    let nextReady = null;
+
+    for (let sIdx = 0; sIdx < candidateSlots.length; sIdx++) {
+      const sKey = candidateSlots[sIdx];
+      const tourData = (state.savedTournaments && state.savedTournaments[sKey]) || (sKey === activeSlot ? state.savedTournament : null);
+      if (!tourData || !Array.isArray(tourData.rounds)) continue;
+
+      for (let r = 0; r < tourData.rounds.length; r++) {
+        const matches = tourData.rounds[r].matches || [];
+        for (let m = 0; m < matches.length; m++) {
+          const item = matches[m];
+          if (!item.isByeMatch && !item.winnerSlot && item.player1 && item.player2 && !item.player1.isBye && !item.player2.isBye) {
+            nextReady = { slotKey: sKey, roundIdx: r, matchIdx: m, isThirdPlace: false, match: item, roundTitle: tourData.rounds[r].title, tourData };
+            break;
+          }
+        }
+        if (nextReady) break;
+      }
+      if (!nextReady && tourData.thirdPlaceMatch) {
+        const tp = tourData.thirdPlaceMatch;
+        if (!tp.winnerSlot && tp.player1 && tp.player2) {
+          nextReady = { slotKey: sKey, roundIdx: tourData.rounds.length - 1, matchIdx: 0, isThirdPlace: true, match: tp, roundTitle: '3·4위 결정전', tourData };
+        }
+      }
+      if (nextReady) break;
+    }
+
+    if (nextReady && typeof applyTournamentMatchPlayersToScoreboard === 'function') {
+      if (typeof activeTournamentMatchContext !== 'undefined') {
+        activeTournamentMatchContext = {
+          slotKey: nextReady.slotKey,
+          roundIdx: nextReady.roundIdx,
+          matchIdx: nextReady.matchIdx,
+          isThirdPlace: nextReady.isThirdPlace
+        };
+      }
+      applyTournamentMatchPlayersToScoreboard(nextReady.match, nextReady.roundTitle, nextReady.slotKey);
+    }
+  }
+
   openModal('scoreboardModal');
 }
 
@@ -134,14 +330,30 @@ function updateScoreboardPlayer2() {
   const p2Select = document.getElementById('sbPlayer2Select');
   if (!p1Id || !p2Select) return;
 
-  const p1 = state.students.find(s => s.id === p1Id);
+  const prevP2Id = p2Select.value;
+  const p1 = findScoreboardPlayer(p1Id);
   if (!p1) return;
 
-  const p1ClassKey = getStudentExactClassKey(p1);
-  const sameClass = state.students.filter(s => s.id !== p1Id && getStudentExactClassKey(s) === p1ClassKey).sort(compareStudentsByNumber);
-  const otherStudents = state.students.filter(s => s.id !== p1Id && getStudentExactClassKey(s) !== p1ClassKey);
-  
+  const tourStudents = getTournamentRosterStudents().filter(s => s.id !== p1Id);
+  const tourIds = new Set(tourStudents.map(s => s.id));
+  tourIds.add(p1Id);
+
   let html = '';
+  if (tourStudents.length > 0) {
+    html += `<optgroup label="🏆 토너먼트 참가 명단 (${tourStudents.length}명)">`;
+    tourStudents.forEach(s => {
+      const labelText = s.displayName || `${s.number ? s.number + '번 ' : ''}${s.name}`;
+      html += `<option value="${escapeHtml(s.id)}">🏆 ${escapeHtml(labelText)}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+
+  const p1ClassKey = p1.isTournamentVirtual ? '' : getStudentExactClassKey(p1);
+  const sameClass = p1ClassKey
+    ? state.students.filter(s => !tourIds.has(s.id) && getStudentExactClassKey(s) === p1ClassKey).sort(compareStudentsByNumber)
+    : [];
+  const otherStudents = state.students.filter(s => !tourIds.has(s.id) && (!p1ClassKey || getStudentExactClassKey(s) !== p1ClassKey));
+  
   if (sameClass.length > 0) {
     html += `<optgroup label="같은 학급 (${p1ClassKey} - ${sameClass.length}명)">`;
     sameClass.forEach(s => {
@@ -168,6 +380,9 @@ function updateScoreboardPlayer2() {
     });
   }
   p2Select.innerHTML = html;
+  if (prevP2Id && prevP2Id !== p1Id && Array.from(p2Select.options).some(o => o.value === prevP2Id)) {
+    p2Select.value = prevP2Id;
+  }
   updateScoreboardPlayerDisplays();
 }
 
@@ -184,21 +399,24 @@ function updateScoreboardPlayerDisplays() {
   if (sbMode === 'singles') {
     const p1Id = document.getElementById('sbPlayer1Select')?.value;
     const p2Id = document.getElementById('sbPlayer2Select')?.value;
-    const p1 = state.students.find(s => s.id === p1Id);
-    const p2 = state.students.find(s => s.id === p2Id);
+    const p1 = findScoreboardPlayer(p1Id);
+    const p2 = findScoreboardPlayer(p2Id);
 
-    if (p1NameEl) p1NameEl.innerText = p1 ? `👤 ${p1.name}` : '선수 1';
-    if (p2NameEl) p2NameEl.innerText = p2 ? `👤 ${p2.name}` : '선수 2';
+    const p1Label = p1 ? (p1.displayName || p1.name) : '선수 1';
+    const p2Label = p2 ? (p2.displayName || p2.name) : '선수 2';
+
+    if (p1NameEl) p1NameEl.innerText = `👤 ${p1Label}`;
+    if (p2NameEl) p2NameEl.innerText = `👤 ${p2Label}`;
   } else {
     const t1p1Id = document.getElementById('sbTeam1P1Select')?.value;
     const t1p2Id = document.getElementById('sbTeam1P2Select')?.value;
     const t2p1Id = document.getElementById('sbTeam2P1Select')?.value;
     const t2p2Id = document.getElementById('sbTeam2P2Select')?.value;
 
-    const t1p1 = state.students.find(s => s.id === t1p1Id);
-    const t1p2 = state.students.find(s => s.id === t1p2Id);
-    const t2p1 = state.students.find(s => s.id === t2p1Id);
-    const t2p2 = state.students.find(s => s.id === t2p2Id);
+    const t1p1 = findScoreboardPlayer(t1p1Id);
+    const t1p2 = findScoreboardPlayer(t1p2Id);
+    const t2p1 = findScoreboardPlayer(t2p1Id);
+    const t2p2 = findScoreboardPlayer(t2p2Id);
 
     const t1Name = `👥 팀 1 (${t1p1 ? t1p1.name : 'A1'} & ${t1p2 ? t1p2.name : 'A2'})`;
     const t2Name = `👥 팀 2 (${t2p1 ? t2p1.name : 'B1'} & ${t2p2 ? t2p2.name : 'B2'})`;
@@ -300,15 +518,15 @@ function applyServerBadge(server) {
     const t2p1Id = document.getElementById('sbTeam2P1Select')?.value;
     const t2p2Id = document.getElementById('sbTeam2P2Select')?.value;
 
-    const t1p1 = state.students.find(s => s.id === t1p1Id);
-    const t1p2 = state.students.find(s => s.id === t1p2Id);
-    const t2p1 = state.students.find(s => s.id === t2p1Id);
-    const t2p2 = state.students.find(s => s.id === t2p2Id);
+    const t1p1 = findScoreboardPlayer(t1p1Id);
+    const t1p2 = findScoreboardPlayer(t1p2Id);
+    const t2p1 = findScoreboardPlayer(t2p1Id);
+    const t2p2 = findScoreboardPlayer(t2p2Id);
 
-    const nameA1 = t1p1 ? t1p1.name : 'A1';
-    const nameA2 = t1p2 ? t1p2.name : 'A2';
-    const nameB1 = t2p1 ? t2p1.name : 'B1';
-    const nameB2 = t2p2 ? t2p2.name : 'B2';
+    const nameA1 = t1p1 ? (t1p1.displayName || t1p1.name) : 'A1';
+    const nameA2 = t1p2 ? (t1p2.displayName || t1p2.name) : 'A2';
+    const nameB1 = t2p1 ? (t2p1.displayName || t2p1.name) : 'B1';
+    const nameB2 = t2p2 ? (t2p2.displayName || t2p2.name) : 'B2';
 
     let serverName = '';
     let receiverName = '';
@@ -472,6 +690,8 @@ function endScoreboardMatch() {
     return;
   }
 
+  const hasTournamentHook = (typeof activeTournamentMatchContext !== 'undefined' && activeTournamentMatchContext !== null && typeof applyScoreboardResultToTournament === 'function');
+
   const dateStr = new Date().toLocaleDateString('ko-KR') + ' ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
   if (sbMode === 'singles') {
@@ -484,58 +704,87 @@ function endScoreboardMatch() {
     const p2Id = p2Select.value;
 
     if (!p1Id || !p2Id || p1Id === p2Id) {
+      if (hasTournamentHook) {
+        const tourRes = applyScoreboardResultToTournament(s1, s2);
+        if (tourRes && typeof tourRes === 'object' && tourRes.finished === false) {
+          playSuccessSound();
+          showToast(`🔥 ${tourRes.currentSet}세트 종료! (세트 ${tourRes.w1}:${tourRes.w2}) — 이어서 ${tourRes.currentSet + 1}세트를 진행해 주세요!`, '🏓');
+          return;
+        }
+        closeModal('scoreboardModal');
+        playSuccessSound();
+        triggerConfetti();
+        showToast('토너먼트 대진표에 경기 결과가 반영되었습니다!', '🏆');
+        return;
+      }
       showToast('선수를 올바르게 선택해 주세요 (서로 다른 선수 선택 필요)!', '⚠️');
       return;
     }
 
-    const p1 = state.students.find(s => s.id === p1Id);
-    const p2 = state.students.find(s => s.id === p2Id);
+    const p1 = findScoreboardPlayer(p1Id);
+    const p2 = findScoreboardPlayer(p2Id);
     if (!p1 || !p2) return;
 
     const winner = s1 > s2 ? p1 : p2;
     const loser = s1 > s2 ? p2 : p1;
 
-    winner.wins = (winner.wins || 0) + 1;
-    winner.totalPoints = (winner.totalPoints || 0) + 10;
-    loser.losses = (loser.losses || 0) + 1;
-    loser.totalPoints = (loser.totalPoints || 0) + 5;
+    if (!winner.isTournamentVirtual) {
+      winner.wins = (winner.wins || 0) + 1;
+      winner.totalPoints = (winner.totalPoints || 0) + 10;
+      if (!winner.history) winner.history = [];
+      winner.history.unshift({
+        title: `[단식 승리] vs ${loser.name} (${s1}:${s2})`,
+        points: 10,
+        date: dateStr
+      });
+      saveStudentToRTDB(winner);
+    }
 
-    if (!winner.history) winner.history = [];
-    winner.history.unshift({
-      title: `[단식 승리] vs ${loser.name} (${s1}:${s2})`,
-      points: 10,
-      date: dateStr
-    });
-
-    if (!loser.history) loser.history = [];
-    loser.history.unshift({
-      title: `[단식 참가] vs ${winner.name} (${s1}:${s2})`,
-      points: 5,
-      date: dateStr
-    });
+    if (!loser.isTournamentVirtual) {
+      loser.losses = (loser.losses || 0) + 1;
+      loser.totalPoints = (loser.totalPoints || 0) + 5;
+      if (!loser.history) loser.history = [];
+      loser.history.unshift({
+        title: `[단식 참가] vs ${winner.name} (${s1}:${s2})`,
+        points: 5,
+        date: dateStr
+      });
+      saveStudentToRTDB(loser);
+    }
 
     const matchObj = {
       id: 'm_' + Date.now(),
       matchType: 'singles',
-      p1Name: p1.name,
-      p2Name: p2.name,
+      p1Name: p1.displayName || p1.name,
+      p2Name: p2.displayName || p2.name,
       p1Id: p1.id,
       p2Id: p2.id,
       score1: s1,
       score2: s2,
-      winnerName: winner.name,
+      winnerName: winner.displayName || winner.name,
       winnerId: winner.id,
       date: dateStr
     };
 
-    saveStudentToRTDB(winner);
-    saveStudentToRTDB(loser);
     saveMatchToRTDB(matchObj);
+
+    let tourRes = null;
+    if (hasTournamentHook) {
+      tourRes = applyScoreboardResultToTournament(s1, s2);
+    } else if (typeof syncMatchResultWithActiveTournament === 'function') {
+      syncMatchResultWithActiveTournament(p1, p2, s1, s2);
+    }
+
+    if (tourRes && typeof tourRes === 'object' && tourRes.finished === false) {
+      playSuccessSound();
+      showToast(`🔥 ${tourRes.currentSet}세트 종료! (세트 ${tourRes.w1}:${tourRes.w2}) — 이어서 ${tourRes.currentSet + 1}세트를 진행해 주세요!`, '🏓');
+      return;
+    }
 
     closeModal('scoreboardModal');
     playSuccessSound();
     triggerConfetti(winner.equippedCeremony);
-    showToast(`단식 경기 결과 저장 완료! (${winner.name} 승리 +10P)`, '🏆');
+    showToast(`단식 경기 결과 저장 완료! (${winner.displayName || winner.name} 승리)`, '🏆');
 
   } else {
     // 👥 복식 경기 저장
@@ -548,14 +797,27 @@ function endScoreboardMatch() {
     const uniqueIds = new Set(selectedIds.filter(Boolean));
 
     if (uniqueIds.size < 4) {
+      if (hasTournamentHook) {
+        const tourRes = applyScoreboardResultToTournament(s1, s2);
+        if (tourRes && typeof tourRes === 'object' && tourRes.finished === false) {
+          playSuccessSound();
+          showToast(`🔥 ${tourRes.currentSet}세트 종료! (세트 ${tourRes.w1}:${tourRes.w2}) — 이어서 ${tourRes.currentSet + 1}세트를 진행해 주세요!`, '🏓');
+          return;
+        }
+        closeModal('scoreboardModal');
+        playSuccessSound();
+        triggerConfetti();
+        showToast('토너먼트 대진표에 복식 경기 결과가 반영되었습니다!', '🏆');
+        return;
+      }
       showToast('복식 경기는 4명의 서로 다른 선수를 모두 선택해야 합니다!', '⚠️');
       return;
     }
 
-    const t1p1 = state.students.find(s => s.id === t1p1Id);
-    const t1p2 = state.students.find(s => s.id === t1p2Id);
-    const t2p1 = state.students.find(s => s.id === t2p1Id);
-    const t2p2 = state.students.find(s => s.id === t2p2Id);
+    const t1p1 = findScoreboardPlayer(t1p1Id);
+    const t1p2 = findScoreboardPlayer(t1p2Id);
+    const t2p1 = findScoreboardPlayer(t2p1Id);
+    const t2p2 = findScoreboardPlayer(t2p2Id);
 
     if (!t1p1 || !t1p2 || !t2p1 || !t2p2) return;
 
@@ -565,6 +827,7 @@ function endScoreboardMatch() {
     const losingTeamName = s1 > s2 ? `${t2p1.name} & ${t2p2.name}` : `${t1p1.name} & ${t1p2.name}`;
 
     winningTeam.forEach(s => {
+      if (s.isTournamentVirtual) return;
       s.wins = (s.wins || 0) + 1;
       s.totalPoints = (s.totalPoints || 0) + 10;
       if (!s.history) s.history = [];
@@ -577,6 +840,7 @@ function endScoreboardMatch() {
     });
 
     losingTeam.forEach(s => {
+      if (s.isTournamentVirtual) return;
       s.losses = (s.losses || 0) + 1;
       s.totalPoints = (s.totalPoints || 0) + 5;
       if (!s.history) s.history = [];
@@ -604,10 +868,21 @@ function endScoreboardMatch() {
 
     saveMatchToRTDB(matchObj);
 
+    let tourRes = null;
+    if (hasTournamentHook) {
+      tourRes = applyScoreboardResultToTournament(s1, s2);
+    }
+
+    if (tourRes && typeof tourRes === 'object' && tourRes.finished === false) {
+      playSuccessSound();
+      showToast(`🔥 ${tourRes.currentSet}세트 종료! (세트 ${tourRes.w1}:${tourRes.w2}) — 이어서 ${tourRes.currentSet + 1}세트를 진행해 주세요!`, '🏓');
+      return;
+    }
+
     closeModal('scoreboardModal');
     playSuccessSound();
     triggerConfetti(winningTeam[0].equippedCeremony);
-    showToast(`복식 경기 결과 저장 완료! (${winningTeamName} 팀 승리 각각 +10P)`, '🏆');
+    showToast(`복식 경기 결과 저장 완료! (${winningTeamName} 팀 승리)`, '🏆');
   }
 }
 

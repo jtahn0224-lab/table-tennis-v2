@@ -375,7 +375,7 @@
           <h3 class="font-extrabold text-slate-800 text-sm sm:text-base flex items-center space-x-1.5">
             <span>🏓 학급별 경기 & 랭킹</span>
           </h3>
-          <div class="flex items-center space-x-1.5">
+          <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
             <!-- 교사용 랜덤 조 편성 버튼 -->
             <button id="groupGeneratorTeacherBtn" onclick="openGroupGeneratorModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
               <i class="fa-solid fa-shuffle"></i>
@@ -385,6 +385,11 @@
             <button id="groupResultsStudentBtn" onclick="openGroupGeneratorModal()" class="hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
               <i class="fa-solid fa-list-check"></i>
               <span>📋 조 편성 결과</span>
+            </button>
+            <!-- 토너먼트 대진표 생성 및 보기 버튼 -->
+            <button id="tournamentModalBtn" onclick="openTournamentModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-sitemap"></i>
+              <span>🏆 토너먼트</span>
             </button>
             <button onclick="openScoreboardModal()" class="bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1">
               <i class="fa-solid fa-play"></i>
@@ -396,6 +401,9 @@
             </button>
           </div>
         </div>
+
+        <!-- 진행 중인 토너먼트 대진표 빠른 열기 배너 -->
+        <div id="activeTournamentQuickBanner" class="hidden mb-3"></div>
 
         <div class="flex bg-slate-100 p-1 rounded-2xl mb-3 border border-slate-200/80">
           <button id="rankingViewListBtn" onclick="switchRankingView('list')" class="flex-1 py-1.5 rounded-xl text-xs font-black transition-all bg-white text-emerald-800 shadow-sm flex items-center justify-center space-x-1">
@@ -684,7 +692,7 @@
   </div>
 
   <!-- MODAL: Scoreboard & Live Referee Tool (Fullscreen Display) -->
-  <div id="scoreboardModal" class="fixed inset-0 bg-slate-950/98 backdrop-blur-xl flex flex-col p-2 sm:p-5 z-50 hidden scoreboard-stadium-bg">
+  <div id="scoreboardModal" style="z-index: 70;" class="fixed inset-0 bg-slate-950/98 backdrop-blur-xl flex flex-col p-2 sm:p-5 z-50 hidden scoreboard-stadium-bg">
     <div class="bg-slate-900/90 border-2 border-slate-700/80 w-full h-full rounded-2xl sm:rounded-3xl p-3 sm:p-7 flex flex-col justify-between text-white relative shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-y-auto">
       
       <!-- Top Header Bar -->
@@ -697,6 +705,7 @@
                 SPIN & SMASH 탁구 공식 전광판
               </h3>
               <span class="hidden sm:inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">11점 공식 룰</span>
+              <span id="sbTournamentMatchBanner" class="hidden text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 shrink-0"></span>
             </div>
             <p class="text-[9px] sm:text-xs text-slate-400 font-medium truncate sm:whitespace-normal">2점마다 서브 교대 • 10:10 듀스 시 1점마다 교대 (2점 차 승리)</p>
           </div>
@@ -745,7 +754,7 @@
           <label class="block text-[10px] sm:text-xs font-black text-rose-300 mb-1 flex items-center space-x-1 truncate">
             <span>🟥 선수 2 (후공)</span>
           </label>
-          <select id="sbPlayer2Select" class="w-full bg-slate-900/90 border border-rose-500/50 text-rose-100 font-black text-xs sm:text-sm rounded-xl p-1.5 sm:p-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer truncate">
+          <select id="sbPlayer2Select" onchange="updateScoreboardPlayerDisplays()" class="w-full bg-slate-900/90 border border-rose-500/50 text-rose-100 font-black text-xs sm:text-sm rounded-xl p-1.5 sm:p-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer truncate">
             <!-- Dynamic Options -->
           </select>
         </div>
@@ -1402,7 +1411,7 @@
   </div>
 
   <!-- Custom Confirm Modal -->
-  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div id="confirmModal" style="z-index: 80;" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop text-center">
       <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center text-xl mx-auto mb-3">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -1417,7 +1426,7 @@
   </div>
 
   <!-- Toast Notification Bar -->
-  <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+  <div id="toastNotification" style="z-index: 90;" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
     <span id="toastIcon">✨</span>
     <span id="toastMessage">메시지</span>
   </div>
@@ -3105,6 +3114,360 @@
     </div>
   </div>
 
+  <!-- MODAL: Tournament Bracket Generator & Interactive Manager -->
+  <div id="tournamentModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-5xl rounded-3xl p-4 sm:p-6 shadow-2xl animate-pop max-h-[93vh] flex flex-col text-left">
+
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 shrink-0">
+        <div class="min-w-0 pr-2">
+          <div class="flex items-center space-x-1.5 mb-0.5">
+            <span class="text-[10px] sm:text-xs bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded-lg border border-amber-200">🏆 자동 대진표 시스템</span>
+            <span id="tournamentRosterCountBadge" class="text-[10px] sm:text-xs bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-lg">총 0명</span>
+          </div>
+          <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center space-x-1.5 truncate">
+            <span>🏓 탁구 토너먼트 대진표 자동 작성</span>
+          </h3>
+        </div>
+        <button type="button" onclick="closeModal('tournamentModal')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors shrink-0 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
+
+        <!-- 3-Slot Simultaneous Tournament Switcher Bar (최대 3개 대진표 동시 운영 탭) -->
+        <div class="bg-gradient-to-r from-amber-50 via-orange-50/70 to-amber-50 border border-amber-200/90 rounded-2xl p-2.5 sm:p-3 space-y-2 shadow-2xs">
+          <div class="flex flex-wrap items-center justify-between gap-1.5 px-1">
+            <span class="text-xs font-black text-amber-950 flex items-center space-x-1.5">
+              <i class="fa-solid fa-layer-group text-amber-600"></i>
+              <span>동시 운영 토너먼트 슬롯 선택 (최대 3개 대진표 동시 생성·진행 가능)</span>
+            </span>
+            <span id="tournamentActiveSlotsSummary" class="text-[11px] font-extrabold text-emerald-800 bg-white/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              진행 중 0 / 3개
+            </span>
+          </div>
+          <div id="tournamentSlotTabsBar" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <!-- Dynamic 3-slot tabs rendered by renderTournamentSlotTabs() -->
+          </div>
+        </div>
+
+        <!-- STEP 1: Student Roster Input & Tournament Options Panel -->
+        <div id="tournamentSetupPanel" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 space-y-3.5">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Left 7 Cols: Student Roster Input -->
+            <div class="lg:col-span-7 space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-1.5">
+                <label class="text-xs font-black text-slate-800 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-users text-amber-500"></i>
+                  <span>1. 참가 학생 명단 입력</span>
+                </label>
+                <div class="flex items-center space-x-1">
+                  <button type="button" onclick="loadSampleTournamentRoster(8)" class="text-[11px] bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer">
+                    ⚡ 8명 예시
+                  </button>
+                  <button type="button" onclick="clearTournamentRosterInput()" class="text-[11px] bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer">
+                    비우기
+                  </button>
+                </div>
+              </div>
+
+              <!-- 1-A. Class-by-Class Checkboxes (반별로 체크해서 반 전체를 명단에 넣기) -->
+              <div class="bg-white p-2.5 rounded-xl border border-amber-200/90 space-y-2 shadow-2xs">
+                <div class="flex flex-wrap items-center justify-between gap-1">
+                  <span class="text-[11px] font-black text-slate-800 flex items-center space-x-1">
+                    <i class="fa-solid fa-school text-amber-500"></i>
+                    <span>🏫 반별 전체 체크 (체크한 반의 학생 전체가 명단에 들어갑니다)</span>
+                  </span>
+                  <div class="flex items-center space-x-1">
+                    <button type="button" onclick="toggleAllTournamentClassChecks(true)" class="text-[10px] bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-2 py-0.5 rounded-md font-extrabold cursor-pointer transition-colors">모든 반 체크</button>
+                    <button type="button" onclick="toggleAllTournamentClassChecks(false)" class="text-[10px] bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold cursor-pointer transition-colors">체크 해제</button>
+                  </div>
+                </div>
+                <div id="tournamentClassCheckList" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto pr-0.5">
+                  <!-- Dynamic class checkboxes rendered by renderTournamentClassCheckboxes() -->
+                </div>
+              </div>
+
+              <!-- 1-B. Quick Load or Individual Student Filter from Class -->
+              <div class="flex flex-wrap sm:flex-nowrap gap-1.5 bg-white p-2 rounded-xl border border-slate-200">
+                <select id="tournamentClassSelect" onchange="if(tournamentChecklistVisible) renderTournamentStudentChecklist()" class="flex-1 min-w-[140px] bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                  <!-- Dynamic class options -->
+                </select>
+                <button type="button" onclick="loadClassStudentsToTournament()" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center space-x-1 shrink-0 cursor-pointer active:scale-95">
+                  <i class="fa-solid fa-file-import text-[11px]"></i>
+                  <span>이 반만 불러오기</span>
+                </button>
+                <button type="button" onclick="toggleTournamentChecklist()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center space-x-1 shrink-0 cursor-pointer">
+                  <i class="fa-solid fa-square-check text-amber-600 text-[11px]"></i>
+                  <span>개별 부원 선택</span>
+                </button>
+              </div>
+
+              <!-- Optional Expandable Student Checklist -->
+              <div id="tournamentChecklistBox" class="hidden bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-extrabold text-amber-900">☑️ 참가할 학생만 체크하세요</span>
+                  <div class="space-x-1">
+                    <button type="button" onclick="selectAllTournamentChecklist(true)" class="text-[10px] bg-white border border-amber-300 text-amber-900 px-2 py-0.5 rounded-md font-bold cursor-pointer">전체 선택</button>
+                    <button type="button" onclick="selectAllTournamentChecklist(false)" class="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold cursor-pointer">전체 해제</button>
+                  </div>
+                </div>
+                <div id="tournamentChecklistItems" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                  <!-- Dynamic checkboxes -->
+                </div>
+              </div>
+
+              <!-- Direct Textarea Input -->
+              <div>
+                <textarea
+                  id="tournamentRosterInput"
+                  rows="4"
+                  oninput="onTournamentRosterInput()"
+                  placeholder="학생 이름을 줄바꿈(Enter), 쉼표(,), 또는 띄어쓰기로 구분하여 입력하세요.&#10;예: 김탁구, 이핑퐁, 박스매시, 최드라이브, 정서브, 강커트"
+                  class="w-full p-3 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y leading-relaxed"
+                ></textarea>
+              </div>
+
+              <!-- Quick Single Student Add Row -->
+              <div class="flex space-x-1.5">
+                <input
+                  type="text"
+                  id="tournamentSingleAddInput"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addSingleTournamentParticipant();}"
+                  placeholder="개별 학생 이름 추가 입력 후 Enter..."
+                  class="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                <button type="button" onclick="addSingleTournamentParticipant()" class="bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all shrink-0 cursor-pointer">
+                  + 학생 추가
+                </button>
+              </div>
+
+              <!-- Live Parsed Student Chips -->
+              <div id="tournamentParticipantChips" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-white rounded-xl border border-slate-200/80">
+                <span class="text-[11px] text-slate-400 py-1">위에 학생 명단을 입력하거나 학급 명단을 불러오면 이곳에 참가자 목록이 표시됩니다.</span>
+              </div>
+            </div>
+
+            <!-- Right 5 Cols: Bracket Options & Generate Button -->
+            <div class="lg:col-span-5 flex flex-col justify-between bg-white p-3.5 rounded-2xl border border-slate-200/90 space-y-3">
+              <div class="space-y-3">
+                <label class="text-xs font-black text-slate-800 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-sliders text-emerald-600"></i>
+                  <span>2. 토너먼트 대진 옵션</span>
+                </label>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">대회 제목</label>
+                  <input
+                    type="text"
+                    id="tournamentTitleInput"
+                    value="🏓 탁구 챔피언십 토너먼트"
+                    placeholder="예: 2학년 1반 탁구왕 토너먼트"
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  >
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">경기 방식 (단식 / 복식)</label>
+                    <select id="tournamentMatchTypeSelect" onchange="updateTournamentScalePreview()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                      <option value="singles" selected>👤 단식 (1 vs 1 개인전)</option>
+                      <option value="doubles">👥 복식 (2인 1팀 자동 편성 대진)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">승부 / 세트 방식 (11점제)</label>
+                    <select id="tournamentGameFormatSelect" onchange="updateTournamentScalePreview()" class="w-full bg-amber-50/70 border border-amber-300 text-slate-900 font-extrabold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                      <option value="single_11" selected>⚡ 단판 11점 승부 (11점 1세트로 승패 결정)</option>
+                      <option value="bo3_11">🔥 11점 1세트 · 3판 2선승제 (2세트 선취 승리)</option>
+                    </select>
+                  </div>
+
+                  <div class="sm:col-span-2 lg:col-span-1">
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">대진 배정 방식</label>
+                    <select id="tournamentSeedModeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                      <option value="random" selected>🎲 랜덤 추첨 (무작위 대진 작성)</option>
+                      <option value="order">📋 입력한 명단 순서대로 배정</option>
+                      <option value="ranking">🏅 랭킹 시드 배정 (승률·포인트 상위 분산)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label class="flex items-center space-x-2 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/70 cursor-pointer select-none">
+                  <input type="checkbox" id="tournamentThirdPlaceCheck" checked class="accent-amber-500 w-4 h-4 rounded">
+                  <span class="text-xs font-extrabold text-amber-950">🥉 3·4위 결정전 포함 (4강 이상 자동 생성)</span>
+                </label>
+
+                <!-- Auto-calculated Bracket Scale Preview -->
+                <div id="tournamentScalePreview" class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs">
+                  <!-- Dynamic preview -->
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onclick="generateTournamentBracket(false)"
+                class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black py-3.5 px-4 rounded-2xl shadow-lg shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 text-sm cursor-pointer"
+              >
+                <i class="fa-solid fa-bolt"></i>
+                <span>토너먼트 대진표 자동 작성하기</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Empty State (Before Bracket Generation) -->
+        <div id="tournamentEmptyState" class="p-8 text-center bg-slate-50/70 rounded-2xl border-2 border-dashed border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-2.5 shadow-inner">
+            <i class="fa-solid fa-sitemap"></i>
+          </div>
+          <p class="text-sm font-black text-slate-700">학생 명단을 넣고 [토너먼트 대진표 자동 작성하기] 버튼을 눌러보세요!</p>
+          <p class="text-xs text-slate-400 font-semibold mt-1">인원수에 맞춰 4강·8강·16강·32강 및 부전승(BYE)이 균형 있게 자동 배치됩니다.</p>
+        </div>
+
+        <!-- STEP 2: Interactive Tournament Bracket View -->
+        <div id="tournamentBracketSection" class="hidden space-y-3">
+          <!-- Meta & Quick Controls Bar -->
+          <div id="tournamentMetaHeader" class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200"></div>
+
+          <!-- Champion Podium Banner -->
+          <div id="tournamentChampionBanner" class="hidden"></div>
+
+          <!-- Usage Tip -->
+          <div class="px-3 py-2 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-emerald-900">
+            <span>💡 <b>대진표 사용 팁:</b> 하단(1라운드)부터 시작하여 선수 이름이나 <b>[승리 선택 ⬆️]</b> 버튼을 누르면 계단식 가지선을 따라 <b>위쪽 상위 라운드(결승·최종 우승)</b>로 올라가며, <b>[전광판]</b>과 실시간 연동됩니다.</span>
+          </div>
+
+          <!-- Horizontal Scrollable Bracket Tree -->
+          <div class="bg-slate-100/80 rounded-2xl border border-slate-200/90 p-2 sm:p-3">
+            <div id="tournamentBracketTree" class="tournament-bracket-scroll">
+              <!-- Dynamic Bracket Columns -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 mt-2 border-t border-slate-100 flex justify-end shrink-0">
+        <button type="button" onclick="closeModal('tournamentModal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-2.5 px-6 rounded-2xl text-xs transition-all cursor-pointer">
+          닫기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: Spectator Full Tournament Bracket Graphic Viewer (전체 대진표 한눈에 확인하기) -->
+  <div id="tournamentOverviewModal" style="z-index: 65;" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 hidden">
+    <div id="tournamentOverviewCard" class="bg-slate-900 border-2 border-slate-700/90 w-full max-w-[96vw] rounded-3xl p-3 sm:p-5 shadow-2xl animate-pop max-h-[95vh] flex flex-col text-white">
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-2 border-b border-slate-800 shrink-0">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-xl shadow-md font-black">
+            🏆
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 id="tournamentOverviewTitle" class="text-base sm:text-lg font-black text-white tracking-tight">전체 토너먼트 대진표 한눈에 보기</h3>
+              <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-black px-2 py-0.5 rounded-full flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>실시간 승자 반영</span>
+              </span>
+            </div>
+            <p id="tournamentOverviewSubtitle" class="text-[11px] text-slate-400 font-bold">
+              하단 참가 선수에서 시작해 승리할수록 초록·황금 라인을 따라 상단 우승석으로 올라갑니다. (대진 박스 클릭 시 전광판 연동 가능)
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <div class="inline-flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <button
+              type="button"
+              id="tournamentOverviewFitBtnTrue"
+              onclick="setTournamentOverviewFitMode(true)"
+              class="px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center space-x-1 cursor-pointer bg-amber-500 text-slate-950 shadow-2xs"
+            >
+              <i class="fa-solid fa-compress text-[11px]"></i>
+              <span>한 화면 맞춤 보기</span>
+            </button>
+            <button
+              type="button"
+              id="tournamentOverviewFitBtnFalse"
+              onclick="setTournamentOverviewFitMode(false)"
+              class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all flex items-center space-x-1 cursor-pointer text-slate-300 hover:text-white"
+            >
+              <i class="fa-solid fa-magnifying-glass-plus text-[11px]"></i>
+              <span>크게 보기(스크롤)</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            onclick="downloadTournamentBracketImage()"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer active:scale-95"
+          >
+            <i class="fa-solid fa-download text-[11px]"></i>
+            <span>🖼️ 대진표 그림(PNG) 저장</span>
+          </button>
+          <button
+            type="button"
+            onclick="toggleTournamentOverviewFullscreen()"
+            class="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer active:scale-95"
+          >
+            <i class="fa-solid fa-expand text-[11px]"></i>
+            <span>전체화면</span>
+          </button>
+          <button
+            type="button"
+            onclick="closeModal('tournamentOverviewModal')"
+            class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white p-2 rounded-xl transition-colors cursor-pointer"
+            title="닫기"
+          >
+            <i class="fa-solid fa-xmark text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend & Multi-Slot Switcher Bar -->
+      <div id="tournamentOverviewSlotTabs" class="flex flex-wrap items-center gap-1.5 mb-2 shrink-0">
+        <!-- Dynamic slot tabs in overview modal -->
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 mb-2 rounded-xl bg-slate-800/80 border border-slate-700/70 text-[11px] font-bold text-slate-300 shrink-0">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="flex items-center space-x-1.5">
+            <span class="inline-block w-3 h-3 rounded-sm bg-amber-500 border border-amber-300"></span>
+            <span>👑 최종 우승</span>
+          </span>
+          <span class="flex items-center space-x-1.5">
+            <span class="inline-block w-3 h-3 rounded-sm bg-emerald-600 border border-emerald-300"></span>
+            <span>🏆 승리 진출 확정 (실시간 라인 점등)</span>
+          </span>
+          <span class="flex items-center space-x-1.5">
+            <span class="inline-block w-3 h-3 rounded-sm bg-slate-800 border-2 border-amber-400"></span>
+            <span>🏓 현재 대결 가능 (클릭 시 전광판 실행)</span>
+          </span>
+          <span class="flex items-center space-x-1.5">
+            <span class="inline-block w-3 h-3 rounded-sm bg-slate-800 border border-slate-600"></span>
+            <span>⏳ 하위 경기 승자 대기</span>
+          </span>
+        </div>
+        <span id="tournamentOverviewProgressText" class="text-amber-300 font-black"></span>
+      </div>
+
+      <!-- Graphic Canvas Container (flex justify-center 제거하여 가로 스크롤 시에도 왼쪽 시드 잘림 방지) -->
+      <div id="tournamentOverviewGraphicWrap" class="flex-1 overflow-auto bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-slate-800 p-2 sm:p-4 flex min-h-[360px]">
+        <!-- Dynamic SVG Bracket Graphic rendered here -->
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK v10 Compat (Local file:// & Web Server 100% Compatible) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -3118,6 +3481,7 @@
   <script src="./js/customization.js"></script>
   <script src="./js/missions.js"></script>
   <script src="./js/matches.js"></script>
+  <script src="./js/tournament.js"></script>
   <script src="./js/rewards.js"></script>
   <script src="./js/students.js"></script>
   <script src="./js/assessment.js"></script>

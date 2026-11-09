@@ -182,6 +182,45 @@ function setupRealtimeListeners() {
     if (typeof renderGroupButtons === 'function') renderGroupButtons();
   });
 
+  const tournamentRef = db.ref(`artifacts/${appId}/public/data/tournament/current`);
+  tournamentRef.on('value', (snapshot) => {
+    const val = snapshot.val();
+    if (val) {
+      if (val.isMultiSlot && val.slots) {
+        state.savedTournaments = {
+          slot_1: val.slots.slot_1 || null,
+          slot_2: val.slots.slot_2 || null,
+          slot_3: val.slots.slot_3 || null
+        };
+        if (!state.activeTournamentSlot || !['slot_1', 'slot_2', 'slot_3'].includes(state.activeTournamentSlot)) {
+          state.activeTournamentSlot = val.activeSlot || 'slot_1';
+        }
+      } else if (Array.isArray(val.rounds)) {
+        state.savedTournaments = {
+          slot_1: val,
+          slot_2: state.savedTournaments?.slot_2 || null,
+          slot_3: state.savedTournaments?.slot_3 || null
+        };
+      }
+      state.savedTournament = state.savedTournaments[state.activeTournamentSlot] || null;
+      try {
+        localStorage.setItem('tt_saved_tournament', JSON.stringify({
+          isMultiSlot: true,
+          activeSlot: state.activeTournamentSlot,
+          slots: state.savedTournaments
+        }));
+      } catch (e) {}
+    } else {
+      state.savedTournaments = { slot_1: null, slot_2: null, slot_3: null };
+      state.savedTournament = null;
+      try {
+        localStorage.removeItem('tt_saved_tournament');
+      } catch (e) {}
+    }
+    if (typeof renderTournamentActiveBanner === 'function') renderTournamentActiveBanner();
+    if (typeof refreshTournamentModalIfOpen === 'function') refreshTournamentModalIfOpen();
+  });
+
   const assessConfigRef = db.ref(`artifacts/${appId}/public/data/assessment_config`);
   assessConfigRef.on('value', (snapshot) => {
     const val = snapshot.val();
@@ -222,6 +261,37 @@ function saveGroupAssignmentToRTDB(data) {
   if (!db) return;
   db.ref(`artifacts/${appId}/public/data/group_assignment/current`).set(data).catch(e => {
     console.error("Firebase save group_assignment error:", e);
+  });
+}
+
+function saveTournamentToRTDB(data, targetSlotKey = null) {
+  const slotKey = targetSlotKey || state.activeTournamentSlot || 'slot_1';
+  if (!state.savedTournaments) {
+    state.savedTournaments = { slot_1: null, slot_2: null, slot_3: null };
+  }
+  state.savedTournaments[slotKey] = data ? JSON.parse(JSON.stringify(data)) : null;
+  if (slotKey === state.activeTournamentSlot) {
+    state.savedTournament = state.savedTournaments[slotKey];
+  }
+
+  const hasAny = !!(state.savedTournaments.slot_1 || state.savedTournaments.slot_2 || state.savedTournaments.slot_3);
+  const payload = hasAny ? {
+    isMultiSlot: true,
+    activeSlot: state.activeTournamentSlot || 'slot_1',
+    slots: state.savedTournaments
+  } : null;
+
+  try {
+    if (payload) {
+      localStorage.setItem('tt_saved_tournament', JSON.stringify(payload));
+    } else {
+      localStorage.removeItem('tt_saved_tournament');
+    }
+  } catch (e) {}
+
+  if (!db) return;
+  db.ref(`artifacts/${appId}/public/data/tournament/current`).set(payload ? JSON.parse(JSON.stringify(payload)) : null).catch(e => {
+    console.error("Firebase save tournament error:", e);
   });
 }
 

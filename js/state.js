@@ -38,6 +38,41 @@ let state = {
   teacherMode: true,
   passcode: DEFAULT_PASSCODE,
   savedGroupAssignment: null,
+  activeTournamentSlot: 'slot_1',
+  savedTournaments: (function() {
+    const emptySlots = { slot_1: null, slot_2: null, slot_3: null };
+    try {
+      const saved = localStorage.getItem('tt_saved_tournament');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.isMultiSlot && parsed.slots) {
+          return {
+            slot_1: parsed.slots.slot_1 || null,
+            slot_2: parsed.slots.slot_2 || null,
+            slot_3: parsed.slots.slot_3 || null
+          };
+        } else if (parsed && Array.isArray(parsed.rounds)) {
+          return { slot_1: parsed, slot_2: null, slot_3: null };
+        }
+      }
+    } catch (e) {}
+    return emptySlots;
+  })(),
+  savedTournament: (function() {
+    try {
+      const saved = localStorage.getItem('tt_saved_tournament');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.isMultiSlot && parsed.slots) {
+          const activeKey = parsed.activeSlot || 'slot_1';
+          return parsed.slots[activeKey] || parsed.slots.slot_1 || parsed.slots.slot_2 || parsed.slots.slot_3 || null;
+        } else if (parsed && Array.isArray(parsed.rounds)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return null;
+  })(),
   assessmentConfig: (function() {
     try {
       const saved = localStorage.getItem('tt_assessment_config');

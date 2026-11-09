@@ -852,6 +852,10 @@ function renderMatchesView() {
   const historyList = document.getElementById('matchHistoryList');
   if (!container) return;
 
+  if (typeof renderTournamentActiveBanner === 'function') {
+    renderTournamentActiveBanner();
+  }
+
   const viewListBtn = document.getElementById('rankingViewListBtn');
   const viewGraphBtn = document.getElementById('rankingViewGraphBtn');
 
